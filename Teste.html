@@ -671,6 +671,8 @@
     .preparacao-colunas .resumo-grid { grid-template-columns:minmax(0,1fr); }
     .preparacao-colunas .resumo-card { overflow-wrap:anywhere; }
     @media (max-width:900px) { .preparacao-colunas { grid-template-columns:minmax(0,1fr); gap:18px; } }
+    .resumo-card .observacao-destaque { background:#fff3cd; color:#713f12; border-left:3px solid #d99a19; border-radius:4px; padding:7px 9px; font-weight:600; }
+    #resumosComplementares[hidden] { display:none; }
 </style>
 </head>
 <body>
@@ -838,6 +840,7 @@
 </div>
 
 
+<section id="resumosComplementares" class="resumo" aria-label="Informações complementares do PEG" hidden></section>
 <div class="barra-pesquisa no-print">
     <label for="pesquisaRelatorio">🔎 Pesquisar no relatório</label>
     <input id="pesquisaRelatorio" type="search" placeholder="Beneficiário, evento, código ou valor" oninput="aplicarPesquisaRelatorio()" aria-describedby="statusPesquisaRelatorio">
@@ -861,7 +864,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.33</p>
+    <p class="versao-relatorio">Versão 4.34</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -971,7 +974,14 @@ let GLOBAL_DADOS_RESUMO = {};
 let RELATORIO_GERADO = false;
 let FILTRO_EVENTOS_TIMER = null;
 
+function limparResumosComplementares() {
+    const secao = document.getElementById('resumosComplementares');
+    secao.innerHTML = '';
+    secao.hidden = true;
+}
+
 function invalidarRelatorioAnterior() {
+    limparResumosComplementares();
     RELATORIO_GERADO = false;
     clearTimeout(FILTRO_EVENTOS_TIMER); FILTRO_EVENTOS_TIMER = null;
     document.getElementById('saida').innerHTML = '';
@@ -1103,6 +1113,7 @@ function toggleAjuda() { const m = document.getElementById("modalAjuda"); m.styl
 document.getElementById('modalAjuda').addEventListener('click', event => { if (event.target.id === 'modalAjuda') toggleAjuda(); });
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.getElementById('modalAjuda').style.display === 'block') toggleAjuda(); });
 function limparTudo() {
+    limparResumosComplementares();
     clearTimeout(FILTRO_EVENTOS_TIMER); FILTRO_EVENTOS_TIMER = null; RELATORIO_GERADO = false;
     document.getElementById("input").value = ""; document.getElementById("saida").innerHTML = "";
     document.getElementById("palavrasEventos").value = ""; document.getElementById("statusFiltroEventos").textContent = "";
@@ -1176,6 +1187,7 @@ async function copiarValorProcesso(botao) {
 
 // --- FUNÇÃO PARA ATUALIZAR VISUAL E RESUMO ---
 function atualizarFiltroVisual() {
+    limparResumosComplementares();
     const pegSelecionado = document.getElementById("filtroPegSelect").value;
     const cards = document.querySelectorAll(".card");
     const divResumo = document.getElementById("resumo");
@@ -1215,6 +1227,8 @@ function renderizarConteudoResumo(chavePeg) {
     const dados = GLOBAL_DADOS_RESUMO[chavePeg];
     const info = dados.info || {};
     
+    const observacao = String(info.obs || "").trim();
+    const destacarObservacao = observacao !== "" && observacao.toLocaleLowerCase("pt-BR") !== "analisado";
     const tituloPeg = (chavePeg === 'todos') ? info.peg : chavePeg;
 
     let html = `<div class="resumo-grid">`;
@@ -1224,9 +1238,12 @@ function renderizarConteudoResumo(chavePeg) {
              <div class="linha linha-copiavel"><b>PEG:</b> <span class="valor-copiavel">${info.peg || '-'}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar PEG" title="Copiar PEG" onclick="copiarValorProcesso(this)">📋</button></div>
              <div class="linha linha-copiavel"><b>Processo:</b> <span class="valor-copiavel">${info.processo || '-'}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Processo" title="Copiar Processo" onclick="copiarValorProcesso(this)">📋</button></div>
              <div class="linha"><b>Prestador:</b> ${info.prestador || '-'}</div>
-             <div class="linha"><b>Observação:</b> ${info.obs || '-'}</div>
+             <div class="linha${destacarObservacao ? ' observacao-destaque' : ''}"><b>Observação:</b> ${escAuditoria(observacao || '-')}</div>
              <div class="linha linha-copiavel"><b>Valor Informado:</b> <span class="valor-copiavel">${fmt(dados.totalInformado)}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Valor Informado" title="Copiar Valor Informado" onclick="copiarValorProcesso(this)">📋</button></div>
              <div class="linha linha-copiavel"><b>Valor Pago:</b> <span class="valor-copiavel">${fmt(dados.totalPago)}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Valor Pago" title="Copiar Valor Pago" onclick="copiarValorProcesso(this)">📋</button></div></div>`;
+
+    divResumo.innerHTML = html + `</div>`;
+    html = "";
 
     // Card Anos
     const anosKeys = Object.keys(dados.anos).sort();
@@ -1263,11 +1280,13 @@ function renderizarConteudoResumo(chavePeg) {
         html += `</ul></div>`;
     }
 
-    html += `</div>`;
-    divResumo.innerHTML = html;
+    const complementares = document.getElementById("resumosComplementares");
+    complementares.innerHTML = html ? `<div class="resumo-grid">${html}</div>` : "";
+    complementares.hidden = !html;
 }
 
 function render(preservarPeg = false) {
+    limparResumosComplementares();
     try {
         clearTimeout(FILTRO_EVENTOS_TIMER); FILTRO_EVENTOS_TIMER = null;
         const rawLines = document.getElementById("input").value.trim().split(/\r?\n/);
