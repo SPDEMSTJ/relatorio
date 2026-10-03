@@ -782,7 +782,7 @@
                 <option value="sintetico">Sintética por guia</option>
             </select>
         </div>
-        <div class="campo-controle"><label for="ordemAlertasAuditoria">Ordenação</label><select id="ordemAlertasAuditoria" onchange="atualizarAuditoria()"><option value="nome">Nome do beneficiário</option><option value="alertas">Ver alertas primeiro</option></select></div>
+        <div class="campo-controle"><label for="ordemAlertasAuditoria">Ordenação</label><select id="ordemAlertasAuditoria" onchange="atualizarAuditoria()"><option value="nome">Nome do beneficiário</option><option value="alertas" selected>Ver alertas primeiro</option></select></div>
         <div class="campo-controle"><label for="buscarBeneficiarioAuditoria">Buscar beneficiário ou matrícula</label><input id="buscarBeneficiarioAuditoria" type="search" placeholder="Nome ou matrícula" oninput="atualizarAuditoria()"></div>
         <div class="campo-controle"><label for="tabelaPercentualAuditoria">Base do percentual informado</label><select id="tabelaPercentualAuditoria" onchange="atualizarPercentuaisVisiveisAuditoria()"><option value="">Tabela vigente na data</option></select></div>
         <div class="auditoria-textos">
@@ -854,7 +854,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.35</p>
+    <p class="versao-relatorio">Versão 4.36</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
