@@ -737,6 +737,7 @@
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
     <p>Veja todos os eventos do PEG em trabalho com código nas tabelas incorporadas ou importadas, inclusive os sem glosa. Códigos sem referência não aparecem. Quando o código só é encontrado em tabela de outro ano, o evento aparece com aviso, mas sem cálculo de limite ou glosa técnica até que a tabela vigente para a data seja importada.</p>
+    <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
     <div class="rule-highlights">
         <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Sem a via informada, o cálculo é uma hipótese para conferência, não glosa definitiva.</p></div>
         <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>As observações 4.08.99.004/12, 4.09.99.009/5, 4.10.99.001/4 e 4.11.99.006/3 aplicam 100% da UCO ao exame principal e 70% aos adicionais de regiões diferentes. Porte e filme ficam integrais. O relatório sugere a região pelo nome do exame; quando não consegue identificá-la, mantém 100% e pede conferência. Dois RX de tórax com códigos distintos permanecem em 100%, sem atestar que a cobrança conjunta seja válida. O maior porte é sugerido como principal, e você pode ajustar manualmente 100% ou 70%. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
@@ -744,24 +745,12 @@
         <div class="rule-note"><strong>Anestesiologia</strong><p>O primeiro ato usa 100% do porte e os seguintes, provisoriamente, 70%. A mesma via pode exigir 50%; internação e urgência podem alterar o limite. O porte 0 exige justificativa.</p></div>
         <div class="rule-note"><strong>Internação e urgência</strong><p>“Internação Hospitalar” dobra o porte, sem dobrar a UCO. Quando a guia informa urgência ou emergência, o cálculo aplica automaticamente +30% ao porte, com ajuste manual disponível. Vídeo/UCO e acomodações devem ser conferidos.</p></div>
     </div>
-    <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
+
         <p>Os portes expressam a valoração dos honorários; a UCO é componente separado. Ajustes de UCO, acessórios, descartáveis e a banda referencial de até 20% dependem do contrato e não são presumidos automaticamente. Para atos cirúrgicos, o maior porte recebe 100%; os adicionais recebem 70% por padrão, com opção de alterar para 50% pela mesma via ou 100% em equipe/ato distinto. A identificação de ato integrante ou criança com menos de 2,5 kg não é inferida do SQL e exige análise fora desses controles.</p>
         <p>Primeiro auxiliar: 30% do porte do cirurgião do mesmo código e ocorrência; segundo ao quarto: 20% cada. O relatório não soma valores de códigos diferentes para calcular uma linha de auxiliar. O número de auxiliares segue o procedimento de maior porte. Confira se as linhas pertencem ao mesmo ato e se a equipe está completa. Urgência/emergência acrescenta 30% ao porte quando ocorre entre 19h e 7h, aos sábados, domingos e feriados, ou quando mais da metade do ato ultrapassa o horário normal. Sem horário ou calendário de feriados na extração, confirme manualmente antes de glosar.</p>
         <p>Cuidados pós-operatórios até 10 dias podem estar incluídos no porte cirúrgico; visitas nesse período são sinalizadas para conferência, sem glosa automática. Procedimentos cirúrgicos por vídeo seguem a regra de internação; diagnósticos por vídeo não recebem esse modificador por si só. UCO/taxa de equipamento de vídeo depende de quem possui o equipamento e de negociação contratual. Conforme a regra operacional informada para este relatório, “Internação Hospitalar” dobra os honorários cirúrgicos, mas não a UCO; confira a acomodação e o contrato, pois o item 6.2 das instruções especifica apartamento/quarto privativo, hospital-dia ou UTI e exclui certos procedimentos diagnósticos/terapêuticos.</p>
     </details>
     <div id="resumoAreasAuditoria" class="cards-areas" aria-live="polite"></div>
-</div>
-<div class="calculadora-manual">
-    <h2>Cálculo informado por código: 100% / 70% / 50%</h2>
-    <p>Cole códigos e percentuais, um por linha. O resultado aparece enquanto você digita.</p>
-    <details class="help-details"><summary>Como informar FL, beneficiário e percentual</summary><p>“Demais - 50%” define o percentual dos códigos sem indicação própria. “FL 144,165” registra duas folhas individuais do mesmo beneficiário; você pode escrever “Beneficiário: Nome”. Para conferir com a extração SQL, cole os dados no campo principal e escolha um PEG em “Trabalhando no PEG” quando houver vários. Códigos ausentes da tabela selecionada não são exibidos. A extração não informa FL: essa associação continua manual. Para códigos cirúrgicos, o percentual altera apenas os honorários (porte), mantendo UCO e demais componentes integrais; a simulação usa uma unidade por código e não altera os alertas automáticos. Outras tabelas anuais podem ser importadas na aba “Tabelas”.</p></details>
-    <div class="calculadora-controles no-print">
-        <div class="campo-controle"><label for="tabelaCalculoPercentual">Tabela de honorários</label><select id="tabelaCalculoPercentual" onchange="calcularPercentuaisManuais()"></select></div>
-        <div class="campo-controle"><label for="beneficiarioCalculoPercentual">Beneficiário (opcional)</label><input id="beneficiarioCalculoPercentual" placeholder="Nome do beneficiário" oninput="calcularPercentuaisManuais()"></div>
-        <div class="campo-controle"><label for="posicaoFlCalculo">A linha FL identifica</label><select id="posicaoFlCalculo" onchange="calcularPercentuaisManuais()"><option value="seguintes">Os códigos seguintes</option><option value="anteriores">Os códigos anteriores</option></select></div>
-    </div>
-    <textarea id="entradaCalculoPercentual" placeholder="31403034 - 100%&#10;Demais - 50%&#10;FL 84,104,124&#10;31401104 - 100%&#10;31403140 - 70%&#10;31405010 - 50%&#10;FL 144,165&#10;31307183 - 50%" oninput="calcularPercentuaisManuais()"></textarea>
-    <div id="resultadoCalculoPercentual" class="calculadora-resultado" aria-live="polite"><p>Cole os códigos para ver os valores calculados.</p></div>
 </div>
 <details id="painelAuditoria" class="painel-auditoria" open>
     <summary>🔎 Detalhamento da auditoria</summary>
@@ -793,6 +782,7 @@
                 <option value="sintetico">Sintética por guia</option>
             </select>
         </div>
+        <div class="campo-controle"><label for="ordemAlertasAuditoria">Ordenação</label><select id="ordemAlertasAuditoria" onchange="atualizarAuditoria()"><option value="nome">Nome do beneficiário</option><option value="alertas">Ver alertas primeiro</option></select></div>
         <div class="campo-controle"><label for="buscarBeneficiarioAuditoria">Buscar beneficiário ou matrícula</label><input id="buscarBeneficiarioAuditoria" type="search" placeholder="Nome ou matrícula" oninput="atualizarAuditoria()"></div>
         <div class="campo-controle"><label for="tabelaPercentualAuditoria">Base do percentual informado</label><select id="tabelaPercentualAuditoria" onchange="atualizarPercentuaisVisiveisAuditoria()"><option value="">Tabela vigente na data</option></select></div>
         <div class="auditoria-textos">
@@ -864,7 +854,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.34</p>
+    <p class="versao-relatorio">Versão 4.35</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -903,7 +893,7 @@
             <li>Se usar múltiplos PEGs, aparecerá um filtro azul no meio. Selecione um PEG para ver os dados.</li>
         </ol>
         <nav class="manual-indice" aria-label="Índice do manual">
-            <a href="#manualPreparacao">Preparação</a><a href="#manualRelatorio">Relatório</a><a href="#manualFiltros">Busca e filtros</a><a href="#manualAuditoria">Auditoria</a><a href="#manualRegras">Regras por área</a><a href="#manualCalculadora">Cálculo por código</a><a href="#manualTabelas">Tabelas</a><a href="#manualLimites">Limites e segurança</a>
+            <a href="#manualPreparacao">Preparação</a><a href="#manualRelatorio">Relatório</a><a href="#manualFiltros">Busca e filtros</a><a href="#manualAuditoria">Auditoria</a><a href="#manualRegras">Regras por área</a><a href="#manualTabelas">Tabelas</a><a href="#manualLimites">Limites e segurança</a>
         </nav>
         <section id="manualPreparacao" class="manual-secao">
             <h3>1. Preparar e gerar</h3>
@@ -940,13 +930,8 @@
             </ul>
             <p>Em cada linha, abra <b>Detalhes técnicos</b> para ver valores e observações. Ações manuais no popup ou na aba servem para testar a hipótese correta; dados insuficientes permanecem pendentes.</p>
         </section>
-        <section id="manualCalculadora" class="manual-secao">
-            <h3>6. Cálculo informado por código</h3>
-            <p>Na calculadora, selecione a tabela e cole um código por linha, por exemplo <code>31403034 - 100%</code>, <code>31403140 - 70%</code> e <code>Demais - 50%</code>. <code>FL 144,165</code> registra duas folhas do mesmo beneficiário; a posição da linha FL pode identificar os códigos anteriores ou seguintes. Você também pode informar o beneficiário. A calculadora mostra só códigos encontrados na tabela e, quando há SQL, no PEG selecionado.</p>
-            <p>Cada código é calculado uma vez: as FLs organizam a conferência, mas não multiplicam o valor. Nos códigos cirúrgicos, o percentual altera o porte e mantém UCO/outros integrais. <b>Esta calculadora manual não aplica o modificador de internação</b> e não altera a auditoria automática.</p>
-        </section>
         <section id="manualTabelas" class="manual-secao">
-            <h3>7. Aba Tabelas</h3>
+            <h3>6. Aba Tabelas</h3>
             <p>O arquivo já contém bases históricas, tabelas de honorários e escalas anestésicas de 2025 e 2026. Para um novo ano, importe o <b>CSV da tabela de honorários</b> e, separadamente, o <b>CSV da escala anestésica</b>. A tabela deve ter ano e vigência identificáveis; a escala precisa informar vigência, portes 0 a 8 e valores. Os arquivos importados ficam guardados apenas neste navegador e passam a ser usados conforme a data de atendimento.</p>
         </section>
         <section id="manualLimites" class="manual-secao">
@@ -2170,13 +2155,14 @@ function localizarCodigoEmCatalogo(tipo, codigo) {
 
 function atualizarOpcoesCalculadoraPercentual() {
     const seletor = document.getElementById('tabelaCalculoPercentual');
-    if (!seletor) return;
-    const anterior = seletor.value;
+    const anterior = seletor?.value || '';
     const anos = Object.keys(BASES_REFERENCIA.honoraria || {})
         .filter(ano => (BASES_REFERENCIA.honoraria[ano] || []).length)
         .sort((a, b) => Number(b) - Number(a));
+    if (seletor) {
     seletor.innerHTML = anos.map(ano => `<option value="${escAuditoria(ano)}">Tabela de honorários ${escAuditoria(ano)}</option>`).join('');
     seletor.value = anos.includes(anterior) ? anterior : (anos.includes('2026') ? '2026' : anos[0] || '');
+    }
     const seletorAuditoria = document.getElementById('tabelaPercentualAuditoria');
     if (seletorAuditoria) {
         const anteriorAuditoria = seletorAuditoria.value;
@@ -3270,6 +3256,12 @@ function alternarGruposAuditoria(abrir) {
     document.querySelectorAll('#auditoriaSaida .beneficiario-grupo-auditoria').forEach(grupo => { grupo.open = abrir; });
 }
 
+function temAlertaAuditoria(linha, internacoes) {
+    const sarh = situacaoInternacao(linha.guia, internacoes).status;
+    return Boolean(linha.excessoTabela > 0 || linha.alertaValor || linha.alerta
+        || (sarh && sarh !== 'Internação confirmada no SARH'));
+}
+
 function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, gruposAbertos = null) {
     if (!linhas.length) return '<div class="auditoria-vazia">Nenhum evento atende aos filtros selecionados.</div>';
     const grupos = new Map();
@@ -3278,20 +3270,25 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
         if (!grupos.has(chave)) grupos.set(chave, []);
         grupos.get(chave).push(linha);
     });
-    const ordenados = [...grupos.entries()].sort((a, b) => a[1][0].guia.beneficiario.localeCompare(b[1][0].guia.beneficiario, 'pt-BR'));
+    const alertasPrimeiro = document.getElementById('ordemAlertasAuditoria')?.value === 'alertas';
+    const ordenados = [...grupos.entries()].sort((a, b) => {
+        const prioridade = alertasPrimeiro ? Number(b[1].some(item => temAlertaAuditoria(item, internacoes))) - Number(a[1].some(item => temAlertaAuditoria(item, internacoes))) : 0;
+        return prioridade || a[1][0].guia.beneficiario.localeCompare(b[1][0].guia.beneficiario, 'pt-BR');
+    });
     const cartoes = ordenados.map(([chave, itens], indice) => {
+        if (alertasPrimeiro) itens.sort((a, b) => Number(temAlertaAuditoria(b, internacoes)) - Number(temAlertaAuditoria(a, internacoes)));
         const guia = itens[0].guia;
         const nome = guia.beneficiario || 'Beneficiário sem nome';
         const guias = new Set(itens.map(item => item.guia.ordem)).size;
-        const alertas = itens.filter(item => item.excessoTabela > 0).length;
+        const alertas = itens.filter(item => temAlertaAuditoria(item, internacoes)).length;
         const informados = itens.filter(item => PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id)).length;
-        const aberto = gruposAbertos === null ? indice === 0 : gruposAbertos.has(chave);
+        const aberto = gruposAbertos === null ? true : gruposAbertos.has(chave);
         return `<details class="beneficiario-grupo-auditoria" data-beneficiario-chave="${escAuditoria(chave)}" ${aberto ? 'open' : ''}>
             <summary><span class="beneficiario-identidade-auditoria"><strong>${escAuditoria(nome)}</strong><small>Matrícula ${escAuditoria(guia.matricula || 'não informada')}</small></span>
                 <span class="beneficiario-metricas-auditoria"><span>${guias} guia(s)</span><span>${itens.length} evento(s)</span>${alertas ? `<span class="metrica-alerta-auditoria">${alertas} alerta(s)</span>` : ''}${informados ? `<span class="metrica-percentual-auditoria">${informados} percentual(is) informado(s)</span>` : ''}</span>
             </summary>${sintetico ? renderizarSinteticoAuditoria(itens) : renderizarTabelaAuditoria(itens, internacoes)}</details>`;
     }).join('');
-    return `${sintetico ? '<p class="auditoria-info">Para informar o percentual de cada código, escolha a apresentação detalhada.</p>' : ''}<div class="beneficiarios-barra-auditoria"><strong>${ordenados.length} beneficiário(s)</strong><span>Selecione um nome para ver seus eventos.</span><div><button type="button" onclick="alternarGruposAuditoria(true)">Expandir todos</button><button type="button" onclick="alternarGruposAuditoria(false)">Recolher todos</button></div></div><div class="beneficiarios-lista-auditoria">${cartoes}</div>`;
+    return `${sintetico ? '<p class="auditoria-info">Para informar o percentual de cada código, escolha a apresentação detalhada.</p>' : ''}<div class="beneficiarios-barra-auditoria"><strong>${ordenados.length} beneficiário(s)</strong><span>Clique no nome para recolher ou expandir os eventos.</span><div><button type="button" onclick="alternarGruposAuditoria(true)">Expandir todos</button><button type="button" onclick="alternarGruposAuditoria(false)">Recolher todos</button></div></div><div class="beneficiarios-lista-auditoria">${cartoes}</div>`;
 }
 
 let CHAVE_POPUP_AUDITORIA_BENEFICIARIO = '';
