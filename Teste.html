@@ -660,6 +660,17 @@
     @media (max-width:650px) { .header-acoes { justify-content:flex-start; } .tour-cartao { left:16px !important; bottom:16px !important; top:auto !important; } }
     @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } button,.btn-topo { transition:none !important; } }
     @media print { body { padding:0; background:#fff; } .app-header,.setup-panel,.onboarding-overlay,.tour-overlay,.tour-cartao { display:none !important; } .app-shell { max-width:none; } .card,.resumo,.painel-auditoria,.painel-regras,.calculadora-manual,.painel-tabelas { box-shadow:none !important; } #saida .card table { min-width:0; } .beneficiarios-barra-auditoria button,.percentual-evento-auditoria { display:none !important; } .beneficiario-grupo-auditoria { break-inside:avoid; } }
+
+    .preparacao-colunas { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; align-items:start; }
+    .preparacao-campos { min-width:0; }
+    .preparacao-campos .peg-box { flex-wrap:wrap; }
+    .preparacao-campos .peg-box input#peg { flex:1 1 160px; width:100%; min-width:0; }
+    .preparacao-campos #input { min-height:110px; height:110px; }
+    .preparacao-campos .dados-label { flex-wrap:wrap; gap:4px; }
+    .preparacao-colunas #resumo { margin:0; min-width:0; padding:14px; box-shadow:none; }
+    .preparacao-colunas .resumo-grid { grid-template-columns:minmax(0,1fr); }
+    .preparacao-colunas .resumo-card { overflow-wrap:anywhere; }
+    @media (max-width:900px) { .preparacao-colunas { grid-template-columns:minmax(0,1fr); gap:18px; } }
 </style>
 </head>
 <body>
@@ -676,6 +687,8 @@
 <details class="setup-panel no-print" id="painelEntrada" open>
 <summary class="section-heading"><div><h2 id="tituloPreparacao">Preparar relatório</h2><p>Informe o PEG, copie a consulta e cole o resultado da extração.</p></div><span class="step-indicator">Entrada de dados</span></summary>
 
+<div class="preparacao-colunas">
+<div class="preparacao-campos">
 <div class="peg-box no-print">
     <div style="flex-grow: 1;">
         <label>1. Nº do PEG (Individual ou Lote)</label>
@@ -705,6 +718,9 @@
 
     <button id="btnGerarRelatorio" class="btn-primary" onclick="render()">🚀 Gerar Relatório</button>
     <button class="btn-secondary" onclick="limparTudo()">🧹 Limpar</button>
+</div>
+</div>
+<div id="resumo" class="resumo" style="display:none"></div>
 </div>
 </details>
 
@@ -821,7 +837,7 @@
     <span style="font-size: 11px; color: #1e3a8a;">(Selecione um PEG para ver somente o relatório dele)</span>
 </div>
 
-<div id="resumo" class="resumo" style="display:none"></div>
+
 <div class="barra-pesquisa no-print">
     <label for="pesquisaRelatorio">🔎 Pesquisar no relatório</label>
     <input id="pesquisaRelatorio" type="search" placeholder="Beneficiário, evento, código ou valor" oninput="aplicarPesquisaRelatorio()" aria-describedby="statusPesquisaRelatorio">
@@ -845,7 +861,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.32</p>
+    <p class="versao-relatorio">Versão 4.33</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
