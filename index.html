@@ -574,6 +574,7 @@
     #saida .alerta-preco-sem-glosa td:nth-child(4) { border-left:2px solid #d49a36; }
     #saida .card tr.evento-com-glosa td,#saida .card tr.evento-com-glosa:hover td { background:#fff !important; }
     #modalAuditoriaBeneficiario { z-index:1001; }
+    #modalAuditoriaBeneficiario .auditoria-glosa-benner { color:#1e3a8a; background:#eff6ff; border-left:3px solid #2563eb; border-radius:4px; padding:5px 8px; font-size:12px; font-weight:700; line-height:1.4; }
     #modalAuditoriaBeneficiario .modal-content { max-width:1600px; width:min(1600px,98vw); height:96vh; max-height:96vh; margin:1vh auto; padding:14px 16px; display:flex; flex-direction:column; overflow:hidden; }
     #conteudoPopupAuditoriaBeneficiario { display:flex; flex:1; min-height:0; flex-direction:column; }
     .popup-auditoria-cabecalho { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; margin-bottom:12px; }
@@ -3198,7 +3199,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td class="valor">${valorBRL(linha.solicitado)}</td>
             <td class="valor">${linha.limiteReferencia === null ? 'A confirmar' : valorBRL(linha.limiteReferencia)}${!calculado && linha.limiteReferencia !== null ? '<small>Preço-base; regra pendente</small>' : ''}</td>
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
-            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small>Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}</td>
+            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleOftalmo}${percentualControle}
                 ${cirurgia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% no porte<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>Automático pela guia</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
