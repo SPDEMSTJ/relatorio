@@ -858,7 +858,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.39</p>
+    <p class="versao-relatorio">Versão 4.40</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1218,10 +1218,11 @@ function renderizarConteudoResumo(chavePeg) {
     
     const observacao = String(info.obs || "").trim();
     const statusObservacao = observacao.toLocaleLowerCase("pt-BR");
-    const classeObservacao = !statusObservacao || statusObservacao === "analisado" ? ""
-        : statusObservacao === "validado" ? "observacao-validado"
-        : ["arquivado", "devolvido"].includes(statusObservacao) ? "observacao-vermelho"
-        : statusObservacao === "tp" ? "observacao-tp" : "observacao-outros";
+    const classeObservacao = !statusObservacao ? ""
+        : /\bvalidado\b/u.test(statusObservacao) ? "observacao-validado"
+        : /\b(arquivado|devolvido)\b/u.test(statusObservacao) ? "observacao-vermelho"
+        : /\btp\b/u.test(statusObservacao) ? "observacao-tp"
+        : /\banalisado\b/u.test(statusObservacao) ? "" : "observacao-outros";
     const tituloPeg = (chavePeg === 'todos') ? info.peg : chavePeg;
 
     let html = `<div class="resumo-grid">`;
