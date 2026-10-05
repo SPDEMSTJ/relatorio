@@ -677,6 +677,9 @@
     .resumo-card .observacao-tp { background:#ffedd5; color:#9a3412; border-left-color:#ea580c; }
     .resumo-card .observacao-outros { background:#f3e8ff; color:#6b21a8; border-left-color:#9333ea; }
     #resumosComplementares[hidden] { display:none; }
+    #saida .linha-calendario-guia td { white-space:normal; padding:8px 12px; background:#fff7ed; color:#9a3412; border-left:3px solid #ea580c; font-size:11px; line-height:1.5; }
+    #calendarioGuia label { margin-left:13px; }
+    #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
 </style>
 </head>
 <body>
@@ -742,6 +745,7 @@
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
     <p>Veja todos os eventos do PEG em trabalho com código nas tabelas incorporadas ou importadas, inclusive os sem glosa. Códigos sem referência não aparecem. Quando o código só é encontrado em tabela de outro ano, o evento aparece com aviso, mas sem cálculo de limite ou glosa técnica até que a tabela vigente para a data seja importada.</p>
     <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
+        <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% são arredondados para cima no centavo (ex.: 113,054 → 113,06), conforme critério operacional definido para este relatório. Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
     <div class="rule-highlights">
         <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Sem a via informada, o cálculo é uma hipótese para conferência, não glosa definitiva.</p></div>
         <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>As observações 4.08.99.004/12, 4.09.99.009/5, 4.10.99.001/4 e 4.11.99.006/3 aplicam 100% da UCO ao exame principal e 70% aos adicionais de regiões diferentes. Porte e filme ficam integrais. O relatório sugere a região pelo nome do exame; quando não consegue identificá-la, mantém 100% e pede conferência. Dois RX de tórax com códigos distintos permanecem em 100%, sem atestar que a cobrança conjunta seja válida. O maior porte é sugerido como principal, e você pode ajustar manualmente 100% ou 70%. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
@@ -753,6 +757,13 @@
         <p>Os portes expressam a valoração dos honorários; a UCO é componente separado. Ajustes de UCO, acessórios, descartáveis e a banda referencial de até 20% dependem do contrato e não são presumidos automaticamente. Para atos cirúrgicos, o maior porte recebe 100%; os adicionais recebem 70% por padrão, com opção de alterar para 50% pela mesma via ou 100% em equipe/ato distinto. A identificação de ato integrante ou criança com menos de 2,5 kg não é inferida do SQL e exige análise fora desses controles.</p>
         <p>Primeiro auxiliar: 30% do porte do cirurgião do mesmo código e ocorrência; segundo ao quarto: 20% cada. O relatório não soma valores de códigos diferentes para calcular uma linha de auxiliar. O número de auxiliares segue o procedimento de maior porte. Confira se as linhas pertencem ao mesmo ato e se a equipe está completa. Urgência/emergência acrescenta 30% ao porte quando ocorre entre 19h e 7h, aos sábados, domingos e feriados, ou quando mais da metade do ato ultrapassa o horário normal. Sem horário ou calendário de feriados na extração, confirme manualmente antes de glosar.</p>
         <p>Cuidados pós-operatórios até 10 dias podem estar incluídos no porte cirúrgico; visitas nesse período são sinalizadas para conferência, sem glosa automática. Procedimentos cirúrgicos por vídeo seguem a regra de internação; diagnósticos por vídeo não recebem esse modificador por si só. UCO/taxa de equipamento de vídeo depende de quem possui o equipamento e de negociação contratual. Conforme a regra operacional informada para este relatório, “Internação Hospitalar” dobra os honorários cirúrgicos, mas não a UCO; confira a acomodação e o contrato, pois o item 6.2 das instruções especifica apartamento/quarto privativo, hospital-dia ou UTI e exclui certos procedimentos diagnósticos/terapêuticos.</p>
+    </details>
+    <details id="calendarioGuia" class="help-details" ontoggle="if (this.open) mostrarCalendarioFeriados()">
+        <summary>Calendário de conferência: sábados, domingos e feriados nacionais/DF</summary>
+        <p>A data de atendimento da guia é comparada com sábados, domingos e os feriados abaixo. O aviso sugere conferir +30% somente no porte/honorários dos eventos elegíveis; não altera valores nem acumula outro acréscimo quando há urgência na guia. Confira condições contratuais. Carnaval e demais pontos facultativos não são tratados como feriado. Não inclui feriados excepcionais de decretos anuais.</p>
+        <label for="anoCalendarioGuia">Ano para consulta</label>
+        <input id="anoCalendarioGuia" type="number" min="1980" max="2199" onchange="mostrarCalendarioFeriados()">
+        <ul id="listaFeriadosGuia"></ul>
     </details>
     <div id="resumoAreasAuditoria" class="cards-areas" aria-live="polite"></div>
 </div>
@@ -858,7 +869,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.40</p>
+    <p class="versao-relatorio">Versão 4.41</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1582,6 +1593,11 @@ function render(preservarPeg = false) {
 
             const tbl = document.createElement("table");
             tbl.innerHTML = `<tr class="cab-guia"><th>Beneficiário</th><th>Data</th><th>Matrícula</th><th>Regime</th><th>Tratamento</th><th>Condição</th><th class="valor">Valor Apres.</th><th class="valor">Valor Glosa</th><th class="valor">Valor Pgto</th><th class="valor">Valor PF</th><th class="valor">PF Benner</th></tr><tr class="${trClass}" data-eps="${isEps}"><td>${infoGuiaBeneficiario}</td><td>${dataHtml}</td><td>${matricula}${isEps?'<span class="badge-eps">EPS</span>':''}</td><td>${c[29]}</td><td class="${tratClass}">${tratHtml}</td><td>${c[31]||'N/A'}</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor ${pfClass}">-</td></tr>${alertaPrazo ? `<tr class="linha-prazo-beneficiario"><td colspan="11"><span class="tag-prescricao">Glosar - Atendimento com mais de 1 ano - Edital 01/2022${detalhePrazo}</span></td></tr>` : ''}`;
+            const avisoCalendario = avisoCalendarioGuia({ data: c[3], condicao: c[31] });
+            if (avisoCalendario) {
+                const linhaCalendario = tbl.insertRow(); linhaCalendario.className = 'linha-calendario-guia';
+                const celula = linhaCalendario.insertCell(); celula.colSpan = 11; celula.textContent = avisoCalendario;
+            }
             card.appendChild(tbl); 
             tornarColunasAjustaveis(tbl.rows[0]);
             
@@ -1890,8 +1906,18 @@ function anoAuditoria(value) {
     return date ? String(date.getFullYear()) : '';
 }
 
+// Critério operacional solicitado: arredondar valores monetários para cima no centavo.
+// A tolerância remove apenas resíduos de ponto flutuante em valores já exatos.
+function centavosTabelaAcima(valor) {
+    const escalado = Number(valor) * 100;
+    if (!Number.isFinite(escalado)) return 0;
+    const tolerancia = Number.EPSILON * Math.max(1, Math.abs(escalado)) * 4;
+    return Math.ceil(escalado - tolerancia);
+}
+function arredondarTabelaAcima(valor) { return centavosTabelaAcima(valor) / 100; }
+
 function valorBRL(value) {
-    return numeroAuditoria(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return arredondarTabelaAcima(numeroAuditoria(value)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function valorCsvBRL(value) {
@@ -1961,7 +1987,7 @@ function lerTabelaCsv(text, nome = '') {
         // monoculares realizados nos dois olhos, não todo código 4.13 nem cirurgia 3.03.
         const ehOftalmologia = codigo.startsWith('4') && /\bMONOCULAR\b/.test(normalizarAuditoria(row[3]));
         const ehRadiologia = /IMAGEM|TOMOGRAFIA|RESSONANCIA|ULTRASSONOGRAFIA/.test(normalizarAuditoria(secao));
-        const reduzido = total !== null && uco !== null ? Math.round((total - 0.3 * uco) * 100) / 100 : null;
+        const reduzido = total !== null && uco !== null ? arredondarTabelaAcima(total - 0.3 * uco) : null;
         if (ehOftalmologia) oftalmologia.push({ ...item, t70: reduzido });
         else if (ehRadiologia) radiologia.push({ ...item, t70: reduzido });
     }
@@ -2318,8 +2344,8 @@ function calcularPercentuaisManuais() {
         const cirurgico = /^3/.test(item.codigo) && honorarios !== null && honorarios > 0;
         const falha = item.erro || (!referencia ? `Código não localizado na tabela de ${ano}.` : base === null ? 'Código sem valor total na tabela.' : cirurgico && base < honorarios ? 'Honorários superiores ao valor total da tabela.' : '');
         const calculadoCentavos = falha ? null : cirurgico
-            ? Math.round(((honorarios * item.percentual / 100) + (base - honorarios)) * 100)
-            : Math.round(base * item.percentual);
+            ? centavosTabelaAcima((honorarios * item.percentual / 100) + (base - honorarios))
+            : centavosTabelaAcima(base * item.percentual / 100);
         if (calculadoCentavos === null) pendencias++;
         else { totalCentavos += calculadoCentavos; calculados++; }
         const folhas = item.fls?.length ? item.fls.map(numero => `<span class="fl-individual">FL ${escAuditoria(numero)}</span>`).join('') : 'FL não informada';
@@ -2506,26 +2532,109 @@ function aplicarBilateralidadeOftalmo(seletor) {
     atualizarAuditoria();
 }
 
+function feriadosCalendarioGuia(ano) {
+    if (!Number.isInteger(ano) || ano < 1980 || ano > 2199) return [];
+    const lista = [];
+    const add = (mes, dia, nome) => lista.push({ data: new Date(Date.UTC(ano, mes - 1, dia)), nome });
+    [[1,1,'Confraternização Universal'],[4,21,'Tiradentes / aniversário de Brasília'],
+     [5,1,'Dia do Trabalho'],[9,7,'Independência do Brasil'],[10,12,'Nossa Senhora Aparecida'],
+     [11,2,'Finados'],[11,15,'Proclamação da República'],[12,25,'Natal']]
+        .forEach(([mes,dia,nome]) => add(mes,dia,nome));
+    if (ano >= 1995) add(11,30,'Dia do Evangélico (DF)');
+    if (ano >= 2024) add(11,20,'Dia Nacional de Zumbi e da Consciência Negra');
+    const a=ano%19, b=Math.floor(ano/100), c=ano%100, d=Math.floor(b/4), e=b%4;
+    const f=Math.floor((b+8)/25), g=Math.floor((b-f+1)/3);
+    const h=(19*a+b-d-g+15)%30, i=Math.floor(c/4), k=c%4;
+    const l=(32+2*e+2*i-h-k)%7, m=Math.floor((a+11*h+22*l)/451);
+    const mes=Math.floor((h+l-7*m+114)/31), dia=(h+l-7*m+114)%31+1;
+    const pascoa=new Date(Date.UTC(ano,mes-1,dia));
+    [[-2,'Sexta-feira da Paixão (DF)'],[60,'Corpus Christi (DF)']].forEach(([dias,nome]) => {
+        const data=new Date(pascoa); data.setUTCDate(data.getUTCDate()+dias); lista.push({data,nome});
+    });
+    return lista.sort((a,b)=>a.data-b.data);
+}
+function motivosCalendarioGuia(valor) {
+    const partes=String(valor || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s.*)?$/);
+    if (!partes) return [];
+    const [,d,m,a]=partes.map(Number), data=new Date(Date.UTC(a,m-1,d));
+    if (data.getUTCFullYear()!==a || data.getUTCMonth()!==m-1 || data.getUTCDate()!==d) return [];
+    const motivos=[];
+    if (data.getUTCDay()===6) motivos.push('sábado');
+    if (data.getUTCDay()===0) motivos.push('domingo');
+    feriadosCalendarioGuia(a).filter(f=>f.data.getTime()===data.getTime()).forEach(f=>motivos.push(f.nome));
+    return motivos;
+}
+function avisoCalendarioGuia(guia) {
+    const motivos=motivosCalendarioGuia(guia.data);
+    if (!motivos.length) return '';
+    const prefixo='Data da guia '+guia.data+': '+motivos.join(' / ')+'. ';
+    if (/URGEN|EMERGEN/.test(normalizarAuditoria(guia.condicao))) {
+        return prefixo+'Urgência/emergência já registrada na guia: confira o +30% existente nos eventos elegíveis; não some outro acréscimo pelo calendário.';
+    }
+    return prefixo+'Sugestão: conferir +30% sobre porte/honorários dos eventos elegíveis, sem aumentar UCO ou filme. Confirme urgência/emergência e condições contratuais. O calendário não aplica acréscimo automaticamente.';
+}
+function mostrarCalendarioFeriados() {
+    const campo=document.getElementById('anoCalendarioGuia');
+    if (!campo.value) campo.value=String(new Date().getFullYear());
+    const lista=feriadosCalendarioGuia(Number(campo.value));
+    const area=document.getElementById('listaFeriadosGuia');
+    area.textContent='';
+    if (!lista.length) { area.textContent='Informe um ano entre 1980 e 2199.'; return; }
+    lista.forEach(f=>{
+        const item=document.createElement('li');
+        item.textContent=f.data.toLocaleDateString('pt-BR',{timeZone:'UTC'})+' — '+f.nome;
+        area.append(item);
+    });
+}
+
 function regiaoImagemAuditoria(descricao) {
     const texto = normalizarAuditoria(descricao);
+    if (/ORGAOS SUPERFICIAIS|ESTRUTURAS SUPERFICIAIS|ORGAO OU ESTRUTURA ISOLADA|POR ARTICULACAO|PECA CIRURGICA|INCIDENCIA ADICIONAL|PLANIGRAFIA DE OSSO|HEMANGIOMA|DERMATOLOGICO|ESQUELETO|CORPO INTEIRO|DENSITOMETRIA|RADIOSCOPIA|INTRA.OPERATORIO|FISTULOGRAFIA|ARTROGRAFIA/.test(texto)) return '';
+    if (/ABDOME TOTAL|ABDOMEN TOTAL/.test(texto)) return 'ABDOME SUPERIOR|RETROPERITONIO|PELVE';
+    if (/APARELHO URINARIO|UROGRAFIA/.test(texto)) return 'RETROPERITONIO|PELVE';
+    if (/COLUNA TOTAL|COLUNA VERTEBRAL|PLANIGRAFIA DE COLUNA/.test(texto)) return 'COLUNA CERVICAL|COLUNA TORACICA|COLUNA LOMBAR|SACRO';
+    if (/COLUNA DORSO[ -]?LOMBAR|COLUNA TORACO[ -]?LOMBAR/.test(texto)) return 'COLUNA TORACICA|COLUNA LOMBAR';
+    if (/MAOS E PUNHOS/.test(texto)) return 'MAO|PUNHO';
+    if (/MEMBRO[S]? SUPERIOR[ES]*|MEMBROS SUPERIORES/.test(texto)) return 'OMBRO|BRACO|COTOVELO|ANTEBRACO|PUNHO|MAO';
+    if (/MEMBRO[S]? INFERIOR[ES]*|MEMBROS INFERIORES/.test(texto)) return 'QUADRIL|COXA|JOELHO|PERNA|TORNOZELO|PE';
+    const principal=texto.split(/\(NAO INCLUI|\(INCLUI/)[0];
     const regioes = [
-        ['COLUNA DORSO-LOMBAR', /COLUNA DORSO[ -]?LOMBAR|COLUNA TORACO[ -]?LOMBAR/],
         ['COLUNA CERVICAL', /COLUNA CERVICAL/],
-        ['COLUNA TORÁCICA', /COLUNA TORACICA|COLUNA DORSAL/],
+        ['COLUNA TORACICA', /COLUNA TORACICA|COLUNA DORSAL/],
         ['COLUNA LOMBAR', /COLUNA LOMBAR|COLUNA LOMBO[ -]?SACRA|COLUNA LOMBOSSACRA/],
-        ['SEIOS DA FACE', /SEIOS? DA FACE|FACE|MAXILAR|MANDIBULA/],
-        ['TÓRAX', /TORAX|TORACICA|PULMAO|PULMONAR|COSTELA/],
-        ['CRÂNIO', /CRANIO|ENCEFALO|CEREBRO|CEREBRAL|SELA TURCICA/],
-        ['ABDOME SUPERIOR', /ABDOME SUPERIOR|ABDOMEN SUPERIOR/],
-        ['ABDOME INFERIOR', /ABDOME INFERIOR|ABDOMEN INFERIOR|PELV[EIE]|BACIA/],
-        ['ABDOME', /ABDOME|ABDOMEN/],
-        ['MAMA', /MAMA|MAMARIA/],
-        ['PESCOÇO', /PESCOCO|CERVICAL/],
-        ['OMBRO', /OMBRO/], ['COTOVELO', /COTOVELO/], ['PUNHO', /PUNHO/],
-        ['MÃO', /\bMAO\b/], ['QUADRIL', /QUADRIL/], ['JOELHO', /JOELHO/],
-        ['TORNOZELO', /TORNOZELO/], ['PÉ', /\bPE\b/]
+        ['SACRO', /SACRO.COCCIX|SACROILIA/],
+        ['PELVE', /TRANSVAGINAL|ENDOVAGINAL|TRANSRETAL|PROSTATA|OBSTETRIC|HISTEROS|ENDOMETRIOSE|ABDOME INFERIOR|ABDOMEN INFERIOR|PELV[EIE]|BACIA|BEXIGA|URETROCISTOGRAFIA|DEFECOGRAMA/],
+        ['RETROPERITONIO', /RETROPERITON|RINS|RENAL|RENAIS|PIELOGRAFIA/],
+        ['ABDOME SUPERIOR', /ABDOME SUPERIOR|ABDOMEN SUPERIOR|HEPATIC|FIGADO|BILIA|COLANGIO|PANCREA|BACO|ESTOMAGO|DUODENO|DELGADO|CLISTER|ENEMA/],
+        ['ABDOME SUPERIOR|RETROPERITONIO|PELVE', /ABDOME|ABDOMEN|ABDOMINAL/],
+        ['MAMA', /MAMA|MAMARIA|MAMOGRAFIA|DUCTOGRAFIA/],
+        ['PESCOCO', /PESCOCO|TIREOID|GLANDULAS SALIVARES|SIALOGRAFIA|VASOS CERVICAIS|LARINGE|HIPOFARINGE|CAVUM|ADENOID/],
+        ['OLHOS', /GLOBO OCULAR|ORBITA|DACRIOCISTOGRAFIA|BIOMICROSCOPICA|ULTRASSONOGRAFIA DIAGNOSTICA.*MONOCULAR/],
+        ['OUVIDOS', /ORELHA|MASTOID|ROCHEDO/],
+        ['FACE', /SEIOS? DA FACE|FACE|MAXILAR|MANDIBULA|ZIGOMATIC|MALAR|ESTILOID|TEMPOROMANDIBULAR|TELEPERFIL|DENTARIA|PERI.APICAL|OCLUSAL/],
+        ['CRANIO', /CRANIO|ENCEFALO|CEREBRO|CEREBRAL|SELA TURCICA|TRANSFONTANELA|TRANSCRANIANO|NEUROSSONOGRAFIA/],
+        ['TORAX', /TORAX|TORACIC|PULMAO|PULMONAR|COSTELA|ESTERNO|CORACAO|CARDIOGRAMA/],
+        ['OMBRO', /OMBRO|ESCAPUL|OMOPLATA|CLAVICULA|ACROMIOCLAVICULAR/],
+        ['ANTEBRACO', /ANTEBRACO/], ['BRACO', /\bBRACO\b/],
+        ['COTOVELO', /COTOVELO/], ['PUNHO', /PUNHO/],
+        ['MAO', /\bMAO\b|QUIRODACTILO/],
+        ['QUADRIL', /QUADRIL|COXOFEMORAL/], ['COXA', /COXA|FEMUR/],
+        ['JOELHO', /JOELHO|PATELA/], ['PERNA', /\bPERNA\b/],
+        ['TORNOZELO', /TORNOZELO|TIBIOTARSICA/], ['PE', /\bPE\b|PODODACTILO|CALCANEO/],
+        ['PENIS', /PENIAN|PENIS|CAVERNOSOGRAFIA/]
     ];
-    return regioes.find(([, padrao]) => padrao.test(texto))?.[0] || '';
+    const correspondencias=regioes.filter(([,padrao])=>padrao.test(principal));
+    if (/\bOU\b/.test(principal) && new Set(correspondencias.map(([r])=>r)).size>1) return '';
+    return correspondencias[0]?.[0] || '';
+}
+function regiaoImagemEventoAuditoria(item) {
+    // Intervenções guiadas por imagem não são exames diagnósticos independentes por região.
+    if (/^(40813|40814|40902)/.test(item.evento.codigo)
+        || /BIOPSIA|PUNCAO|MARCACAO|MAMOTOMIA|DRENAGEM|ANGIOPLASTIA|EMBOLIZACAO/.test(normalizarAuditoria(item.ref.d))) return '';
+    return regiaoImagemAuditoria(item.ref.d) || regiaoImagemAuditoria(item.evento.descricao);
+}
+function regioesImagemDistintas(a, b) {
+    return Boolean(a && b && !a.split('|').some(regiao=>b.split('|').includes(regiao)));
 }
 
 function avaliarRadiologia(eventos) {
@@ -2574,8 +2683,9 @@ function avaliarRadiologia(eventos) {
     });
     grupos.forEach(items => {
         items.sort((a, b) => porteNumerico(b.ref.p) - porteNumerico(a.ref.p)
-            || (a.evento.codigo === b.evento.codigo ? numeroAuditoria(b.evento.valorApresentado) - numeroAuditoria(a.evento.valorApresentado) : 0)
-            || b.tarifa100 - a.tarifa100 || numeroAuditoria(b.evento.valorApresentado) - numeroAuditoria(a.evento.valorApresentado)
+            || numeroAuditoria(b.evento.valorApresentado) / Math.max(b.quantidade, 1)
+                - numeroAuditoria(a.evento.valorApresentado) / Math.max(a.quantidade, 1)
+            || b.tarifa100 - a.tarifa100
             || a.ordemOriginal - b.ordemOriginal);
         if (items[0].tipo === 'Oftalmologia') {
             const chave = chaveBilateralOftalmo(items[0].evento);
@@ -2622,7 +2732,7 @@ function avaliarRadiologia(eventos) {
             });
             return;
         }
-        const regiaoPrincipal = regiaoImagemAuditoria(items[0].evento.descricao || items[0].ref.d);
+        const regiaoPrincipal = regiaoImagemEventoAuditoria(items[0]);
         items.forEach((item, posicao) => {
             const qtd = item.quantidade;
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
@@ -2630,7 +2740,7 @@ function avaliarRadiologia(eventos) {
             const familia = item.evento.codigo.slice(0, 3);
             const observacao = { '408': '4.08.99.004/12', '409': '4.09.99.009/5', '410': '4.10.99.001/4', '411': '4.11.99.006/3' }[familia] || '';
             const regraNaTabela = Boolean(METADADOS_TABELAS.get(item.ref.anoFonte)?.regrasRegioes?.[familia]);
-            const regiao = regiaoImagemAuditoria(item.evento.descricao || item.ref.d);
+            const regiao = regiaoImagemEventoAuditoria(item);
             // O código do Doppler de órgão isolado não revela a região no nome.
             // Nesta combinação, a conferência solicitou tratá-lo como região
             // diferente do US de abdome superior, mantendo ajuste manual.
@@ -2639,7 +2749,7 @@ function avaliarRadiologia(eventos) {
                 && [items[0].evento.codigo, item.evento.codigo].includes('40901130')
                 && [items[0].evento.codigo, item.evento.codigo].includes('40901386');
             const regioesDiferentes = Boolean(regraNaTabela && posicao > 0
-                && (parUsRegioesDiferentes || (regiaoPrincipal && regiao && regiaoPrincipal !== regiao)));
+                && (parUsRegioesDiferentes || regioesImagemDistintas(regiaoPrincipal, regiao)));
             const sugestao = regioesDiferentes ? 70 : 100;
             const percentual = confirmado ? manual : sugestao;
             const reduzidoDisponivel = item.tarifa70 !== null && item.tarifa70 > 0;
@@ -2648,19 +2758,22 @@ function avaliarRadiologia(eventos) {
                 : percentual === 170 && qtd > 1 && reduzidoDisponivel ? item.tarifa100 + (qtd - 1) * item.tarifa70 : null;
             const permitido = previsto;
             const us = familia === '409';
+            const empatePorte = items.length > 1 && porteNumerico(items[0].ref.p) === porteNumerico(items[1].ref.p);
             const orientacao = `${observacao ? `Observação ${observacao}: ` : ''}${regioesDiferentes
                 ? `${parUsRegioesDiferentes ? 'Abdome superior e Doppler de órgão isolado tratados como regiões diferentes conforme orientação; confirme o órgão na guia' : `regiões diferentes identificadas (${regiaoPrincipal} e ${regiao}); confirme as regiões na guia`}; somente a UCO deste exame fica a 70%.`
                 : posicao === 0 ? `exame principal por maior porte${us ? ` (${item.ref.p || 'não informado'})` : ''}: 100%.`
-                : regiaoPrincipal && regiao && regiaoPrincipal === regiao
-                    ? `mesma região identificada (${regiao}); preço-base a 100%, sem redução automática da UCO. Confira se os exames são cumulativos.`
+                : regiaoPrincipal && regiao && !regioesImagemDistintas(regiaoPrincipal, regiao)
+                    ? `regiões iguais ou sobrepostas (${regiaoPrincipal} / ${regiao}); preço-base a 100%, sem redução automática da UCO. Confira se os exames são cumulativos.`
                     : 'região não identificada com segurança; preço-base a 100%, sem presumir redução. Confira a guia e ajuste manualmente se forem regiões diferentes.'}`;
             resultados.push(criarLinhaAuditoria(item.evento, item.tipo, permitido, {
                 regra: `${item.villasBoas ? 'Vilas Boas — ' : ''}${percentual === 170 ? 'UCO: 1 unidade a 100% e demais a 70%' : `UCO ${percentual}%`}${confirmado ? ' (ajuste manual)' : ' (sugestão automática; conferir região)'}${us ? `; porte ${item.ref.p || '—'}` : ''}`,
-                observacao: `${item.ref.d} — grupo ${item.categoria}, guia ${item.evento.guia.ordem || 'não informada'}. ${orientacao} Honorários/porte e filme permanecem integrais; apenas a UCO do exame adicional em outra região pode receber 70%.${qtd > 1 ? ' Várias unidades na mesma linha não comprovam regiões diferentes.' : ''}${!regraNaTabela ? ' A observação de regiões diferentes não foi encontrada nesta tabela anual; confirme a fonte antes de reduzir.' : ''}`,
+                observacao: `${item.ref.d} — grupo ${item.categoria}, guia ${item.evento.guia.ordem || 'não informada'}. ${orientacao} Honorários/porte e filme permanecem integrais; apenas a UCO do exame adicional em outra região pode receber 70%.${empatePorte ? ' Há empate de porte: o relatório prioriza o maior valor apresentado por unidade como principal; esse desempate é operacional, confirme o principal na guia e ajuste o percentual se necessário.' : ''}${qtd > 1 ? ' Várias unidades na mesma linha não comprovam regiões diferentes.' : ''}${!regraNaTabela ? ' A observação de regiões diferentes não foi encontrada nesta tabela anual; confirme a fonte antes de reduzir.' : ''}`,
                 referencia: item.ref,
                 limiteReferencia: previsto ?? item.tarifa100 * qtd,
                 baseComparacao: item.villasBoas ? 'Vilas Boas 51% e UCO' : 'UCO pela tabela/regra',
-                alerta: (percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
+                alerta: [(percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
+                    items.length > 1 && (!regiaoPrincipal || !regiao) && !parUsRegioesDiferentes && !confirmado
+                        ? 'Região não identificada com segurança: mantidos 100%. Confira a região na guia antes de aplicar 70% da UCO.' : ''].filter(Boolean).join(' '),
                 percentual, sugestaoPercentual: sugestao
             }));
         });
@@ -2809,7 +2922,7 @@ function avaliarCirurgia(eventos) {
                 : percentual === null ? 'Via de acesso indisponível'
                 : `${percentual}% ${percentual === 70 ? 'outra via' : percentual === 50 ? 'mesma via' : item.chaveAto === chavePrincipal ? 'procedimento principal' : 'ato/equipe distinto'}${calculo?.interna ? '; porte × 2 por internação' : ''}${calculo?.urgencia ? '; urgência +30% no porte' : ''}`;
             const permitido = auxiliar ? porteMesmoCodigo === null || auxExcedido ? null
-                    : Math.round(porteMesmoCodigo * item.equipe.multiplicador * 100) / 100
+                    : arredondarTabelaAcima(porteMesmoCodigo * item.equipe.multiplicador)
                 : !principal ? null : calculo?.permitido ?? null;
             resultados.push(criarLinhaAuditoria(item.evento, 'Cirurgia', permitido, {
                 regra, observacao: observacoes.join(' — '), referencia: item.referencia,
@@ -2975,7 +3088,7 @@ function incluirEventosSemReferencia(eventos, linhas) {
 
 function criarLinhaAuditoria(evento, categoria, permitido, detalhes = {}) {
     const solicitado = numeroAuditoria(evento.valorApresentado);
-    const cents = valor => Math.round(numeroAuditoria(valor) * 100);
+    const cents = valor => centavosTabelaAcima(numeroAuditoria(valor));
     const solicitadoCentavos = cents(solicitado);
     const confirmacaoPendente = Boolean(detalhes.confirmacaoPendente);
     const permitidoEfetivo = confirmacaoPendente ? null : permitido;
@@ -3090,7 +3203,7 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const ajusteUrgencia = condicoesEventoAuditoria(linha.evento).urgencia;
         const urgencia = ajusteUrgencia === 'sim' || (ajusteUrgencia !== 'nao' && /URGEN|EMERGEN/.test(normalizarAuditoria(linha.guia.condicao)));
         const valor = escala * Number(percentual) / 100 * (interna ? 2 : 1) * (urgencia ? 1.3 : 1) * Math.max(quantidade, 1);
-        return { valor:Math.round(valor * 100) / 100, tabela:anoSimulacao || ano, simulacao:Boolean(anoSimulacao),
+        return { valor:arredondarTabelaAcima(valor), tabela:anoSimulacao || ano, simulacao:Boolean(anoSimulacao),
             texto:`${anoSimulacao ? 'Simulação' : 'Limite aplicado'} · ${valorBRL(valor)} (${percentual}%${urgencia ? '; urgência +30%' : ''})` };
     }
     if (!referencia || referencia.t === null || !Number.isFinite(Number(referencia.t)) || !(quantidade > 0)) {
@@ -3106,7 +3219,7 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const valor = Number(percentual) === 70
             ? quantidade === 2 ? Number(referencia.t) + reduzido : reduzido
             : Number(referencia.t) * quantidade;
-        return { valor: Math.round(valor * 100) / 100, tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
+        return { valor: arredondarTabelaAcima(valor), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
             texto: `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor)} (${Number(percentual) === 70 ? quantidade === 2 ? 'UCO 100% + 70%; porte integral em ambos' : 'UCO 70%; porte integral' : 'UCO e porte 100% por unidade'})` };
     }
     if (radiologia) {
@@ -3119,7 +3232,7 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const unitario = Number(percentual) === 70 ? reduzido : base;
         if (unitario === null || (Number(percentual) === 170 && reduzido === null)) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Sem UCO/preço reduzido na tabela para confirmar 70%.' };
         const valor = Number(percentual) === 170 ? base + (quantidade - 1) * reduzido : unitario * quantidade;
-        return { valor: Math.round(valor * 100) / 100, tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
+        return { valor: arredondarTabelaAcima(valor), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
             texto: `${anoSimulacao ? 'Simulação' : 'Limite confirmado'} · ${valorBRL(valor)} (${Number(percentual) === 170 ? 'UCO 100% em uma unidade + 70% nas demais' : `UCO ${percentual}%`}; honorários/porte e filme integrais)` };
     }
     if (linha.categoria === 'Cirurgia' && equipeCirurgica(linha.evento.grau)?.numero > 0) {
@@ -3131,9 +3244,9 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
     }
     const cirurgia = linha.categoria === 'Cirurgia' ? calcularAtoCirurgico(linha.evento, referencia, equipeCirurgica(linha.evento.grau), percentual) : null;
     if (linha.categoria === 'Cirurgia' && !cirurgia) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Dados insuficientes para calcular o ato cirúrgico.' };
-    const valor = cirurgia ? cirurgia.permitido : Math.round(Number(referencia.t) * quantidade * Number(percentual)) / 100;
+    const valor = cirurgia ? cirurgia.permitido : arredondarTabelaAcima(Number(referencia.t) * quantidade * Number(percentual) / 100);
     const tabela = anoSimulacao || String(referencia.anoFonte || ano);
-    return { valor: Math.round(valor * 100) / 100, tabela, simulacao: Boolean(anoSimulacao),
+    return { valor: arredondarTabelaAcima(valor), tabela, simulacao: Boolean(anoSimulacao),
         texto: cirurgia
             ? `${anoSimulacao ? 'Simulação' : 'Limite cirúrgico'} · ${valorBRL(valor)} (porte ${percentual}% ${cirurgia.interna ? '× 2 internação ' : ''}+ UCO sem dobro)`
             : `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor)} (${quantidade} × ${valorBRL(referencia.t)} × ${percentual}%)` };
@@ -3188,7 +3301,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
     if (!linhas.length) return '<div class="auditoria-vazia">Nenhuma linha atende aos filtros técnicos selecionados.</div>';
     const rows = linhas.map((linha, indice) => {
         const sarh = situacaoInternacao(linha.guia, internacoes);
-        const alerta = [...new Set([linha.alertaValor, linha.alerta, sarh.status].filter(Boolean))].join(' — ');
+        const alerta = [...new Set([linha.alertaValor, linha.alerta, sarh.status, avisoCalendarioGuia(linha.guia)].filter(Boolean))].join(' — ');
         const ehOftalmologia = linha.categoria === 'Oftalmologia';
         const valorInformado = PERCENTUAIS_EVENTOS_AUDITORIA.get(linha.evento.id);
         const informado = ehOftalmologia && valorInformado === 50 ? undefined : valorInformado;
@@ -3267,7 +3380,7 @@ function alternarGruposAuditoria(abrir) {
 
 function temAlertaAuditoria(linha, internacoes) {
     const sarh = situacaoInternacao(linha.guia, internacoes).status;
-    return Boolean(linha.excessoTabela > 0 || linha.alertaValor || linha.alerta
+    return Boolean(linha.excessoTabela > 0 || linha.alertaValor || linha.alerta || avisoCalendarioGuia(linha.guia)
         || (sarh && sarh !== 'Internação confirmada no SARH'));
 }
 
@@ -3464,7 +3577,7 @@ function atualizarAlertasNasGuias(linhas) {
         texto.colSpan = 9;
         const unitarioTabela = numeroOuNulo(linha.referencia?.t);
         const valorTabela = unitarioTabela === null ? linha.limiteReferencia
-            : Math.round(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1) * 100) / 100;
+            : arredondarTabelaAcima(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1));
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
         texto.textContent = `Evento com possível preço acima da tabela não glosado no benner · Valor da tabela: ${valorBRL(valorTabela)}`
             + (limiteRegra !== null && Math.abs(limiteRegra - valorTabela) > 0.01 ? ` · Limite pela regra: ${valorBRL(limiteRegra)}` : '');
