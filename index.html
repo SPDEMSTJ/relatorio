@@ -570,7 +570,7 @@
     .botao-regra-beneficiario:focus-visible { outline:3px solid #fbbf24; outline-offset:2px; }
     .botao-regra-beneficiario.com-glosa { background:linear-gradient(135deg,#b94c30,#873923); border-color:#873923; color:#fff; box-shadow:0 3px 8px rgba(135,57,35,.2); }
     .botao-regra-beneficiario.com-glosa:hover,.botao-regra-beneficiario.com-glosa:focus-visible { background:linear-gradient(135deg,#c45b3d,#98442b); }
-    #saida .alerta-preco-sem-glosa td { background:#fff8e8; color:#814d08; font-size:11px; font-weight:650; white-space:normal; }
+    #saida .alerta-preco-sem-glosa td { background:#fff8e8; color:#814d08; font-size:13px; font-weight:650; white-space:normal; }
     #saida .alerta-preco-sem-glosa td:nth-child(4) { border-left:2px solid #d49a36; }
     #saida .card tr.evento-com-glosa td,#saida .card tr.evento-com-glosa:hover td { background:#fff !important; }
     #modalAuditoriaBeneficiario { z-index:1001; }
@@ -677,6 +677,7 @@
     .resumo-card .observacao-tp { background:#ffedd5; color:#9a3412; border-left-color:#ea580c; }
     .resumo-card .observacao-outros { background:#f3e8ff; color:#6b21a8; border-left-color:#9333ea; }
     #resumosComplementares[hidden] { display:none; }
+    #saida .alerta-zero-xml td { white-space:normal; background:#fff1f2; color:#9f1239; padding:9px 12px; font-size:13px; font-weight:700; border-left:4px solid #e11d48; line-height:1.5; }
     #saida .linha-calendario-guia td { white-space:normal; padding:8px 12px; background:#fff7ed; color:#9a3412; border-left:3px solid #ea580c; font-size:11px; line-height:1.5; }
     #calendarioGuia label { margin-left:13px; }
     #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
@@ -732,6 +733,15 @@
 <div id="resumo" class="resumo" style="display:none"></div>
 </div>
 </details>
+
+<div id="painelFiltro" class="painel-filtro no-print">
+    <label for="filtroPegSelect">📂 <b>Trabalhando no PEG:</b></label>
+    <select id="filtroPegSelect" onchange="atualizarFiltroVisual(); if (typeof atualizarAuditoria === 'function') atualizarAuditoria()">
+        <option value="todos">Mostrar Todos</option>
+    </select>
+    <button id="proximoPegBtn" class="btn-primary btn-proximo-peg" type="button" onclick="proximoPeg()" title="Depois do último PEG, volta ao primeiro">Próximo PEG →</button>
+    <span style="font-size: 11px; color: #1e3a8a;">(Selecione um PEG para ver somente o relatório dele)</span>
+</div>
 
 <nav class="abas-relatorio no-print" role="tablist" aria-label="Áreas do relatório">
     <button type="button" id="tabRelatorio" role="tab" tabindex="0" aria-controls="abaRelatorio" aria-selected="true" onclick="mostrarAba('relatorio')">📋 Relatório</button>
@@ -835,14 +845,7 @@
 
 <section id="abaRelatorio" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRelatorio">
 <p id="saudacaoRelatorioPessoa" class="mensagem-personalizada no-print">Gere um relatório para começar a conferência.</p>
-<div id="painelFiltro" class="painel-filtro no-print">
-    <label for="filtroPegSelect">📂 <b>Trabalhando no PEG:</b></label>
-    <select id="filtroPegSelect" onchange="atualizarFiltroVisual(); if (typeof atualizarAuditoria === 'function') atualizarAuditoria()">
-        <option value="todos">Mostrar Todos</option>
-    </select>
-    <button id="proximoPegBtn" class="btn-primary btn-proximo-peg" type="button" onclick="proximoPeg()" title="Depois do último PEG, volta ao primeiro">Próximo PEG →</button>
-    <span style="font-size: 11px; color: #1e3a8a;">(Selecione um PEG para ver somente o relatório dele)</span>
-</div>
+
 
 
 <section id="resumosComplementares" class="resumo" aria-label="Informações complementares do PEG" hidden></section>
@@ -869,7 +872,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.41</p>
+    <p class="versao-relatorio">Versão 4.43</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1290,6 +1293,23 @@ function renderizarConteudoResumo(chavePeg) {
     complementares.hidden = !html;
 }
 
+function temCodigoRepetidoComZero(linhas) {
+    const grupos = new Map();
+    for (const linha of linhas) {
+        const c = linha.split('\t');
+        if (c[39] !== '1') continue;
+        const codigo = codigoAuditoria(c[6]);
+        if (!codigo) continue;
+        const grupo = grupos.get(codigo) || { quantidade:0, zerado:false };
+        grupo.quantidade++;
+        // A extracao do Benner tambem representa valores nao informados como campo vazio.
+        const valorApresentado = (c[9] || '').trim();
+        grupo.zerado ||= valorApresentado === '' || valorCsvBRL(valorApresentado) === 0;
+        grupos.set(codigo, grupo);
+    }
+    return [...grupos.values()].some(grupo => grupo.quantidade >= 2 && grupo.zerado);
+}
+
 function render(preservarPeg = false) {
     limparResumosComplementares();
     try {
@@ -1376,6 +1396,8 @@ function render(preservarPeg = false) {
                 }
             }
         });
+
+        guiasObjetos.forEach(guia => { guia.alertaZeroXml = temCodigoRepetidoComZero(guia.linhasEventos); });
 
         const normalizarBuscaEvento = texto => String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
         const termosEventos = [...new Set(document.getElementById("palavrasEventos").value.split(/[\r\n;]+/).map(normalizarBuscaEvento).filter(Boolean))];
@@ -1593,6 +1615,12 @@ function render(preservarPeg = false) {
 
             const tbl = document.createElement("table");
             tbl.innerHTML = `<tr class="cab-guia"><th>Beneficiário</th><th>Data</th><th>Matrícula</th><th>Regime</th><th>Tratamento</th><th>Condição</th><th class="valor">Valor Apres.</th><th class="valor">Valor Glosa</th><th class="valor">Valor Pgto</th><th class="valor">Valor PF</th><th class="valor">PF Benner</th></tr><tr class="${trClass}" data-eps="${isEps}"><td>${infoGuiaBeneficiario}</td><td>${dataHtml}</td><td>${matricula}${isEps?'<span class="badge-eps">EPS</span>':''}</td><td>${c[29]}</td><td class="${tratClass}">${tratHtml}</td><td>${c[31]||'N/A'}</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor ${pfClass}">-</td></tr>${alertaPrazo ? `<tr class="linha-prazo-beneficiario"><td colspan="11"><span class="tag-prescricao">Glosar - Atendimento com mais de 1 ano - Edital 01/2022${detalhePrazo}</span></td></tr>` : ''}`;
+            if (obj.alertaZeroXml) {
+                const avisoZero = tbl.insertRow(2);
+                avisoZero.className = 'alerta-zero-xml';
+                const celulaZero = avisoZero.insertCell(); celulaZero.colSpan = 11;
+                celulaZero.textContent = 'Possível devolução de Guia/PEG com eventos de valor zerado no XML';
+            }
             const avisoCalendario = avisoCalendarioGuia({ data: c[3], condicao: c[31] });
             if (avisoCalendario) {
                 const linhaCalendario = tbl.insertRow(); linhaCalendario.className = 'linha-calendario-guia';
@@ -1912,7 +1940,8 @@ function centavosTabelaAcima(valor) {
     const escalado = Number(valor) * 100;
     if (!Number.isFinite(escalado)) return 0;
     const tolerancia = Number.EPSILON * Math.max(1, Math.abs(escalado)) * 4;
-    return Math.ceil(escalado - tolerancia);
+    const centavos = Math.ceil(escalado - tolerancia);
+    return centavos === 0 ? 0 : centavos;
 }
 function arredondarTabelaAcima(valor) { return centavosTabelaAcima(valor) / 100; }
 
@@ -3579,7 +3608,11 @@ function atualizarAlertasNasGuias(linhas) {
         const valorTabela = unitarioTabela === null ? linha.limiteReferencia
             : arredondarTabelaAcima(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1));
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
+        const consulta = /^10101/.test(codigoAuditoria(linha.evento.codigo))
+            || /\bCONSULTAS?\b/.test(normalizarAuditoria((linha.evento.descricao || '') + ' ' + (linha.referencia?.r || '')));
+
         texto.textContent = `Evento com possível preço acima da tabela não glosado no benner · Valor da tabela: ${valorBRL(valorTabela)}`
+            + (consulta ? ' - Verifique o Carimbo de Especialidade na guia física.' : '')
             + (limiteRegra !== null && Math.abs(limiteRegra - valorTabela) > 0.01 ? ` · Limite pela regra: ${valorBRL(limiteRegra)}` : '');
         row.insertAdjacentElement('afterend', aviso);
     });
