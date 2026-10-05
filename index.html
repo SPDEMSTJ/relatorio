@@ -681,6 +681,7 @@
     #saida .linha-calendario-guia td { white-space:normal; padding:8px 12px; background:#fff7ed; color:#9a3412; border-left:3px solid #ea580c; font-size:11px; line-height:1.5; }
     #calendarioGuia label { margin-left:13px; }
     #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
+    .auditoria-alerta-linha.alerta-regiao-conferencia > td { background:#fff0cf; color:#783d00; border-left:5px solid #d97706; font-size:14px; font-weight:700; padding:14px; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -755,7 +756,7 @@
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
     <p>Veja todos os eventos do PEG em trabalho com código nas tabelas incorporadas ou importadas, inclusive os sem glosa. Códigos sem referência não aparecem. Quando o código só é encontrado em tabela de outro ano, o evento aparece com aviso, mas sem cálculo de limite ou glosa técnica até que a tabela vigente para a data seja importada.</p>
     <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
-        <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% usam arredondamento padrão para duas casas decimais (ex.: 5,044 → 5,04; 5,045 → 5,05). Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
+        <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% usam arredondamento padrão para duas casas decimais (ex.: 5,044 → 5,04; 5,045 → 5,05). Somente os códigos 4.13.xx.xxx são arredondados para cima no centavo (ex.: 5,044 → 5,05). Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
     <div class="rule-highlights">
         <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Sem a via informada, o cálculo é uma hipótese para conferência, não glosa definitiva.</p></div>
         <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>As observações 4.08.99.004/12, 4.09.99.009/5, 4.10.99.001/4 e 4.11.99.006/3 aplicam 100% da UCO ao exame principal e 70% aos adicionais de regiões diferentes. Porte e filme ficam integrais. O relatório sugere a região pelo nome do exame; quando não consegue identificá-la, mantém 100% e pede conferência. Dois RX de tórax com códigos distintos permanecem em 100%, sem atestar que a cobrança conjunta seja válida. O maior porte é sugerido como principal, e você pode ajustar manualmente 100% ou 70%. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
@@ -872,7 +873,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.45</p>
+    <p class="versao-relatorio">Versão 4.46</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1190,6 +1191,11 @@ async function copiarValorProcesso(botao) {
 
 // --- FUNÇÃO PARA ATUALIZAR VISUAL E RESUMO ---
 function atualizarFiltroVisual() {
+    const seletorPeg = document.getElementById('filtroPegSelect');
+    if (seletorPeg.dataset.pegPesquisa !== seletorPeg.value) {
+        document.getElementById('pesquisaRelatorio').value = '';
+        seletorPeg.dataset.pegPesquisa = seletorPeg.value;
+    }
     limparResumosComplementares();
     const pegSelecionado = document.getElementById("filtroPegSelect").value;
     const cards = document.querySelectorAll(".card");
@@ -1936,17 +1942,19 @@ function anoAuditoria(value) {
 
 // Arredondamento monetário padrão para o centavo mais próximo.
 // A tolerância remove apenas resíduos de ponto flutuante em valores já exatos.
-function centavosTabela(valor) {
+function centavosTabela(valor, codigo = '') {
     const escalado = Number(valor) * 100;
     if (!Number.isFinite(escalado)) return 0;
     const tolerancia = Number.EPSILON * Math.max(1, Math.abs(escalado)) * 4;
-    const centavos = Math.sign(escalado) * Math.round(Math.abs(escalado) + tolerancia);
+    const centavos = codigoAuditoria(codigo).startsWith('413')
+        ? Math.ceil(escalado - tolerancia)
+        : Math.sign(escalado) * Math.round(Math.abs(escalado) + tolerancia);
     return centavos === 0 ? 0 : centavos;
 }
-function arredondarTabela(valor) { return centavosTabela(valor) / 100; }
+function arredondarTabela(valor, codigo = '') { return centavosTabela(valor, codigo) / 100; }
 
-function valorBRL(value) {
-    return arredondarTabela(numeroAuditoria(value)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function valorBRL(value, codigo = '') {
+    return arredondarTabela(numeroAuditoria(value), codigo).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function valorCsvBRL(value) {
@@ -2016,7 +2024,7 @@ function lerTabelaCsv(text, nome = '') {
         // monoculares realizados nos dois olhos, não todo código 4.13 nem cirurgia 3.03.
         const ehOftalmologia = codigo.startsWith('4') && /\bMONOCULAR\b/.test(normalizarAuditoria(row[3]));
         const ehRadiologia = /IMAGEM|TOMOGRAFIA|RESSONANCIA|ULTRASSONOGRAFIA/.test(normalizarAuditoria(secao));
-        const reduzido = total !== null && uco !== null ? arredondarTabela(total - 0.3 * uco) : null;
+        const reduzido = total !== null && uco !== null ? arredondarTabela(total - 0.3 * uco, codigo) : null;
         if (ehOftalmologia) oftalmologia.push({ ...item, t70: reduzido });
         else if (ehRadiologia) radiologia.push({ ...item, t70: reduzido });
     }
@@ -2361,6 +2369,7 @@ function calcularPercentuaisManuais() {
         && obterReferencia('honoraria', ano, item.codigo)
         && (!pegAtivo || indicesSql.has(item.codigo)));
     const linhas = registrosDoPeg.map(item => {
+        if (codigoSempreIntegral(item.codigo)) item = { ...item, percentual:100 };
         const referencia = item.erro ? null : obterReferencia('honoraria', ano, item.codigo);
         const encontradosSql = indicesSql.get(item.codigo) || [];
         const beneficiariosSql = [...new Set(encontradosSql.map(evento => evento.beneficiario).filter(Boolean))];
@@ -2373,15 +2382,15 @@ function calcularPercentuaisManuais() {
         const cirurgico = /^3/.test(item.codigo) && honorarios !== null && honorarios > 0;
         const falha = item.erro || (!referencia ? `Código não localizado na tabela de ${ano}.` : base === null ? 'Código sem valor total na tabela.' : cirurgico && base < honorarios ? 'Honorários superiores ao valor total da tabela.' : '');
         const calculadoCentavos = falha ? null : cirurgico
-            ? centavosTabela((honorarios * item.percentual / 100) + (base - honorarios))
-            : centavosTabela(base * item.percentual / 100);
+            ? centavosTabela((honorarios * item.percentual / 100) + (base - honorarios), item.codigo)
+            : centavosTabela(base * item.percentual / 100, item.codigo);
         if (calculadoCentavos === null) pendencias++;
         else { totalCentavos += calculadoCentavos; calculados++; }
         const folhas = item.fls?.length ? item.fls.map(numero => `<span class="fl-individual">FL ${escAuditoria(numero)}</span>`).join('') : 'FL não informada';
         return `<tr class="${falha ? 'linha-pendente' : ''}"><td>${escAuditoria(item.codigo || '—')}</td>
             <td>${escAuditoria(nomeExibido)}</td><td>${folhas}</td>
             <td>${escAuditoria(referencia?.d || '—')}</td><td class="valor">${item.percentual === null || item.percentual === undefined ? '—' : `${item.percentual}%`}</td>
-            <td class="valor">${base === null ? '—' : valorBRL(base)}</td><td class="valor">${calculadoCentavos === null ? '—' : valorBRL(calculadoCentavos / 100)}</td>
+            <td class="valor">${base === null ? '—' : valorBRL(base, item.codigo)}</td><td class="valor">${calculadoCentavos === null ? '—' : valorBRL(calculadoCentavos / 100)}</td>
             <td>${escAuditoria(falha || (cirurgico ? `Porte ${item.percentual}% + UCO/outros integrais` : 'Calculado sobre total'))}</td></tr>`;
     }).join('');
     const metadata = METADADOS_TABELAS.get(ano);
@@ -2777,7 +2786,7 @@ function avaliarRadiologia(eventos) {
                 return outraRegiao && !regioesImagemDistintas(regiao, outraRegiao);
             }) : [];
             const alertaRxSobrepostos = rxSobrepostos.length
-                ? `Conferir RX com regiões iguais ou sobrepostas: ${item.evento.codigo} e ${[...new Set(rxSobrepostos.map(outro => outro.evento.codigo))].join(', ')}. Verifique a guia física e a regra contratual para definir 100%/70% da UCO e se a cobrança conjunta é devida. O percentual exibido não confirma a validade da cobrança.`
+                ? `Conferir RX com regiões iguais ou sobrepostas: ${item.evento.codigo} e ${[...new Set(rxSobrepostos.map(outro => outro.evento.codigo))].join(', ')}. Verifique a guia física e a regra contratual ou encaminhe à AUDITORIA MÉDICA para definir 100%/70% da UCO e se a cobrança conjunta é devida. O percentual exibido não confirma a validade da cobrança.`
                 : '';
             // O código do Doppler de órgão isolado não revela a região no nome.
             // Nesta combinação, a conferência solicitou tratá-lo como região
@@ -3047,8 +3056,9 @@ function avaliarHonorariosGerais(eventos, linhasAnteriores) {
         const laboratorial = /MEDICINA LABORATORIAL/.test(normalizarAuditoria(referencia.r));
         const pacote = ehEventoPacoteAuditoria(evento, referencia);
         const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(evento.id);
-        const informado = !laboratorial && !pacote && [100, 70, 50].includes(manual);
-        const percentual = laboratorial || pacote ? 100 : informado ? manual : posicoes.get(evento.id) > 0 ? 70 : 100;
+        const integral = codigoSempreIntegral(evento.codigo);
+        const informado = !integral && !laboratorial && !pacote && [100, 70, 50].includes(manual);
+        const percentual = integral || laboratorial || pacote ? 100 : informado ? manual : posicoes.get(evento.id) > 0 ? 70 : 100;
         const base = unitario * quantidade;
         const permitido = base * percentual / 100;
         const dataVisita = dataAuditoria(evento.data || evento.guia.data);
@@ -3059,7 +3069,7 @@ function avaliarHonorariosGerais(eventos, linhasAnteriores) {
             return dias >= 0 && dias <= 10;
         });
         return criarLinhaAuditoria(evento, 'Tabela de honorários', permitido, {
-            regra: pacote ? `Pacote a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70`
+            regra: integral ? 'Código 1.01/2.01: 100% por ocorrência; não se aplica 100–70.' : pacote ? `Pacote a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70`
                 : laboratorial ? `Exame laboratorial a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70 por repetição`
                 : informado ? `${percentual}% informado manualmente sobre ${valorBRL(base)}`
                 : `${percentual}% aplicado automaticamente sobre ${valorBRL(base)}${posicoes.get(evento.id) > 0 ? '; código repetido, maior valor a 100%' : ''}`,
@@ -3091,7 +3101,7 @@ function incluirEventosSemReferencia(eventos, linhas) {
                 const equipe = equipeCirurgica(evento.grau);
                 const anoReferencia = tarifa.anoFonte || anoAplicavel || ano;
                 return criarLinhaAuditoria(evento, 'Tabela de honorários', null, {
-                    regra: tarifa.t == null ? `Tabela ${anoReferencia}: sem valor total informado` : `Tabela ${anoReferencia}: ${valorBRL(tarifa.t)} por unidade`,
+                    regra: tarifa.t == null ? `Tabela ${anoReferencia}: sem valor total informado` : `Tabela ${anoReferencia}: ${valorBRL(tarifa.t, evento.codigo)} por unidade`,
                     observacao: anestesista
                         ? 'Sem escala monetária de anestesia aplicável; não é possível comparar o valor apresentado.'
                         : equipe
@@ -3130,9 +3140,9 @@ function criarLinhaAuditoria(evento, categoria, permitido, detalhes = {}) {
     const solicitadoCentavos = cents(solicitado);
     const confirmacaoPendente = Boolean(detalhes.confirmacaoPendente);
     const permitidoEfetivo = confirmacaoPendente ? null : permitido;
-    const permitidoCentavos = permitidoEfetivo === null ? null : Math.max(cents(permitidoEfetivo), 0);
+    const permitidoCentavos = permitidoEfetivo === null ? null : Math.max(centavosTabela(permitidoEfetivo, evento.codigo), 0);
     const limiteBruto = detalhes.limiteReferencia ?? permitido;
-    const limiteCentavos = limiteBruto === null ? null : Math.max(cents(limiteBruto), 0);
+    const limiteCentavos = limiteBruto === null ? null : Math.max(centavosTabela(limiteBruto, evento.codigo), 0);
     const aprovado = permitidoCentavos === null ? null : Math.min(solicitadoCentavos, permitidoCentavos) / 100;
     const glosaTecnica = permitidoCentavos === null ? null : Math.max(solicitadoCentavos - permitidoCentavos, 0) / 100;
     const excessoTabela = limiteCentavos === null ? null : Math.max(solicitadoCentavos - limiteCentavos, 0) / 100;
@@ -3218,6 +3228,7 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
     const oftalmologia = linha.categoria === 'Oftalmologia';
     const radiologia = linha.categoria === 'Radiologia';
     const honorariosGerais = linha.categoria === 'Tabela de honorários';
+    if (codigoSempreIntegral(linha.evento.codigo)) percentual = 100;
     if (honorariosGerais && (/MEDICINA LABORATORIAL/.test(normalizarAuditoria(linha.referencia?.r))
         || ehEventoPacoteAuditoria(linha.evento, linha.referencia))) percentual = 100;
     if ((oftalmologia || radiologia) && Number(percentual) === 50) return null;
@@ -3241,8 +3252,8 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const ajusteUrgencia = condicoesEventoAuditoria(linha.evento).urgencia;
         const urgencia = ajusteUrgencia === 'sim' || (ajusteUrgencia !== 'nao' && /URGEN|EMERGEN/.test(normalizarAuditoria(linha.guia.condicao)));
         const valor = escala * Number(percentual) / 100 * (interna ? 2 : 1) * (urgencia ? 1.3 : 1) * Math.max(quantidade, 1);
-        return { valor:arredondarTabela(valor), tabela:anoSimulacao || ano, simulacao:Boolean(anoSimulacao),
-            texto:`${anoSimulacao ? 'Simulação' : 'Limite aplicado'} · ${valorBRL(valor)} (${percentual}%${urgencia ? '; urgência +30%' : ''})` };
+        return { valor:arredondarTabela(valor, codigo), tabela:anoSimulacao || ano, simulacao:Boolean(anoSimulacao),
+            texto:`${anoSimulacao ? 'Simulação' : 'Limite aplicado'} · ${valorBRL(valor, codigo)} (${percentual}%${urgencia ? '; urgência +30%' : ''})` };
     }
     if (!referencia || referencia.t === null || !Number.isFinite(Number(referencia.t)) || !(quantidade > 0)) {
         return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao),
@@ -3257,8 +3268,8 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const valor = Number(percentual) === 70
             ? quantidade === 2 ? Number(referencia.t) + reduzido : reduzido
             : Number(referencia.t) * quantidade;
-        return { valor: arredondarTabela(valor), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
-            texto: `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor)} (${Number(percentual) === 70 ? quantidade === 2 ? 'UCO 100% + 70%; porte integral em ambos' : 'UCO 70%; porte integral' : 'UCO e porte 100% por unidade'})` };
+        return { valor: arredondarTabela(valor, codigo), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
+            texto: `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor, codigo)} (${Number(percentual) === 70 ? quantidade === 2 ? 'UCO 100% + 70%; porte integral em ambos' : 'UCO 70%; porte integral' : 'UCO e porte 100% por unidade'})` };
     }
     if (radiologia) {
         const villasBoas = /VIL+AS\s+BOAS/.test(normalizarAuditoria(linha.guia.prestador)) && CODIGOS_VILAS_BOAS.has(codigo);
@@ -3270,8 +3281,8 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const unitario = Number(percentual) === 70 ? reduzido : base;
         if (unitario === null || (Number(percentual) === 170 && reduzido === null)) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Sem UCO/preço reduzido na tabela para confirmar 70%.' };
         const valor = Number(percentual) === 170 ? base + (quantidade - 1) * reduzido : unitario * quantidade;
-        return { valor: arredondarTabela(valor), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
-            texto: `${anoSimulacao ? 'Simulação' : 'Limite confirmado'} · ${valorBRL(valor)} (${Number(percentual) === 170 ? 'UCO 100% em uma unidade + 70% nas demais' : `UCO ${percentual}%`}; honorários/porte e filme integrais)` };
+        return { valor: arredondarTabela(valor, codigo), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
+            texto: `${anoSimulacao ? 'Simulação' : 'Limite confirmado'} · ${valorBRL(valor, codigo)} (${Number(percentual) === 170 ? 'UCO 100% em uma unidade + 70% nas demais' : `UCO ${percentual}%`}; honorários/porte e filme integrais)` };
     }
     if (linha.categoria === 'Cirurgia' && equipeCirurgica(linha.evento.grau)?.numero > 0) {
         if (anoSimulacao) return { valor: null, tabela: anoSimulacao, simulacao: true,
@@ -3282,12 +3293,12 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
     }
     const cirurgia = linha.categoria === 'Cirurgia' ? calcularAtoCirurgico(linha.evento, referencia, equipeCirurgica(linha.evento.grau), percentual) : null;
     if (linha.categoria === 'Cirurgia' && !cirurgia) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Dados insuficientes para calcular o ato cirúrgico.' };
-    const valor = cirurgia ? cirurgia.permitido : arredondarTabela(Number(referencia.t) * quantidade * Number(percentual) / 100);
+    const valor = cirurgia ? cirurgia.permitido : arredondarTabela(Number(referencia.t) * quantidade * Number(percentual) / 100, codigo);
     const tabela = anoSimulacao || String(referencia.anoFonte || ano);
-    return { valor: arredondarTabela(valor), tabela, simulacao: Boolean(anoSimulacao),
+    return { valor: arredondarTabela(valor, codigo), tabela, simulacao: Boolean(anoSimulacao),
         texto: cirurgia
-            ? `${anoSimulacao ? 'Simulação' : 'Limite cirúrgico'} · ${valorBRL(valor)} (porte ${percentual}% ${cirurgia.interna ? '× 2 internação ' : ''}+ UCO sem dobro)`
-            : `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor)} (${quantidade} × ${valorBRL(referencia.t)} × ${percentual}%)` };
+            ? `${anoSimulacao ? 'Simulação' : 'Limite cirúrgico'} · ${valorBRL(valor, codigo)} (porte ${percentual}% ${cirurgia.interna ? '× 2 internação ' : ''}+ UCO sem dobro)`
+            : `${anoSimulacao ? 'Simulação' : 'Conferência'} · ${valorBRL(valor, codigo)} (${quantidade} × ${valorBRL(referencia.t, codigo)} × ${percentual}%)` };
 }
 
 function aplicarPercentualEventoAuditoria(seletor) {
@@ -3362,7 +3373,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const explicacao = acima && !calculado ? 'Não concluir glosa sem confirmar a regra.' : !calculado ? 'Faltam dados para calcular a possível glosa.' : '';
         const chaveBilateral = oftalmologia ? chaveBilateralOftalmo(linha.evento) : '';
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
-        const percentualControle = laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência. Sem regra automática 100–70.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
+        const percentualControle = codigoSempreIntegral(linha.evento.codigo) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Código 1.01/2.01' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência. Sem regra automática 100–70.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
                 <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(linha.evento.codigo)}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
                     <option value="" ${!informado ? 'selected' : ''}>${linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
@@ -3386,7 +3397,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
                 ${cirurgia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% no porte<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>Automático pela guia</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
-        </tr>${alerta ? `<tr class="auditoria-alerta-linha ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="7"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
+        </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="7"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
     }).join('');
     return `<div class="auditoria-tabela-wrap"><table class="auditoria-tabela"><thead><tr>
         <th>Evento</th><th class="valor">Qtd.</th><th class="valor">Valor cobrado</th><th class="valor">Limite da tabela/regra</th>
@@ -3476,12 +3487,14 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
     return `${normalizarAuditoria(beneficiario)}|${normalizarAuditoria(matricula)}`;
 }
 
+function codigoSempreIntegral(codigo) { return /^(101|201)/.test(codigoAuditoria(codigo)); }
+
 function ehEventoPacoteAuditoria(evento, referencia = null) {
     return /\bPACOTE\b/.test(normalizarAuditoria(`${evento.grau || ''} ${evento.descricao || ''} ${referencia?.d || ''}`));
 }
 
 function linhasRegraBeneficiarioAuditoria(linhas) {
-    return linhas.filter(linha => linha.referencia && CATEGORIAS_REGRA_BENEFICIARIO.has(linha.categoria)
+    return linhas.filter(linha => !codigoSempreIntegral(linha.evento.codigo) && linha.referencia && CATEGORIAS_REGRA_BENEFICIARIO.has(linha.categoria)
         && !/MEDICINA LABORATORIAL/.test(normalizarAuditoria(linha.referencia.r))
         && !ehEventoPacoteAuditoria(linha.evento, linha.referencia)
         && !/\bCONSULTA\b/.test(normalizarAuditoria(`${linha.evento.descricao || ''} ${linha.referencia.d || ''} ${linha.evento.grau || ''}`)));
@@ -3505,7 +3518,7 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
         if (!pegAtivo || row.dataset.auditoriaPeg !== pegAtivo) { remover(); return; }
         const chave = row.dataset.auditoriaGuiaId;
         const itens = grupos.get(chave);
-        if (!itens?.length) { remover(); return; }
+        if (!itens?.length || new Set(itens.map(item => codigoAuditoria(item.evento.codigo))).size < 2) { remover(); return; }
         if (!botao) {
             botao = document.createElement('button');
             botao.type = 'button';
@@ -3605,6 +3618,7 @@ function atualizarAlertasNasGuias(linhas) {
             row.cells[3]?.append(' ', badge);
             return;
         }
+        if (/\bSIRIO LIBANES\b/.test(normalizarAuditoria(linha.guia.prestador).replace(/[^A-Z0-9]+/g, ' '))) return;
         if (!(linha.excessoTabela > 0)) return;
         if (comGlosaBenner) return;
         const aviso = document.createElement('tr');
@@ -3615,10 +3629,10 @@ function atualizarAlertasNasGuias(linhas) {
         texto.colSpan = 9;
         const unitarioTabela = numeroOuNulo(linha.referencia?.t);
         const valorTabela = unitarioTabela === null ? linha.limiteReferencia
-            : arredondarTabela(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1));
+            : arredondarTabela(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1), linha.evento.codigo);
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
         const consulta = /^10101/.test(codigoAuditoria(linha.evento.codigo))
-            || /\bCONSULTAS?\b/.test(normalizarAuditoria((linha.evento.descricao || '') + ' ' + (linha.referencia?.r || '')));
+            || /^CONSULTAS?\b/.test(normalizarAuditoria(linha.evento.descricao || linha.referencia?.d || ''));
 
         texto.textContent = `Evento com possível preço acima da tabela não glosado no benner · Valor da tabela: ${valorBRL(valorTabela)}`
             + (consulta ? ' - Verifique o Carimbo de Especialidade na guia física.' : '')
