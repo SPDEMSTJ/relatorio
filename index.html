@@ -79,6 +79,8 @@
     .tabela-beneficiarios-processo { table-layout:auto; }
     .tabela-beneficiarios-processo th,.tabela-beneficiarios-processo td { white-space:normal; }
     .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
+    .marcador-beneficiario-popup { display:inline-block; margin-left:5px; padding:2px 5px; border-radius:4px; background:#dbeafe; color:#1e3a8a; font-size:10px; font-weight:800; }
+    .marcador-beneficiario-popup.exercicio { background:#ffedd5; color:#9a3412; }
     .observacao-pacote-correspondente { display:block; margin-top:5px; padding:5px 7px; border-left:4px solid #7c3aed; background:#f3e8ff; color:#581c87; font-weight:700; font-size:11px; }
     .faixa-parecer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 0 10px; padding:13px 16px; border:1px solid #afc9ee; border-left:5px solid #2563b7; border-radius:12px; background:#eef5ff; }
     .faixa-parecer strong { display:block; color:#163c72; font-size:13px; }
@@ -769,7 +771,7 @@
     <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
         <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% usam arredondamento padrão para duas casas decimais (ex.: 5,044 → 5,04; 5,045 → 5,05). Somente os códigos 4.13.xx.xxx são arredondados para cima no centavo (ex.: 5,044 → 5,05). Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
     <div class="rule-highlights">
-        <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Sem a via informada, o cálculo é uma hipótese para conferência, não glosa definitiva.</p></div>
+        <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Os prefixos 1.01, 2.01, 2.02, 3.01, 4.01 a 4.07 e 4.12 ficam sempre em 100%, sem análise 100–70–50.</p></div>
         <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>As observações 4.08.99.004/12, 4.09.99.009/5, 4.10.99.001/4 e 4.11.99.006/3 aplicam 100% da UCO ao exame principal e 70% aos adicionais de regiões diferentes. Porte e filme ficam integrais. O relatório sugere a região pelo nome do exame; quando não consegue identificá-la, mantém 100% e pede conferência. Dois RX de tórax com códigos distintos permanecem em 100%, sem atestar que a cobrança conjunta seja válida. O maior porte é sugerido como principal, e você pode ajustar manualmente 100% ou 70%. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
         <div class="rule-note"><strong>Exames oftalmológicos</strong><p>Nos exames monoculares realizados nos dois olhos, somente a UCO do segundo olho cai para 70%; os portes continuam integrais. Quando o nome traz “monocular”, duas unidades do mesmo código na guia fazem o relatório presumir dois olhos; uma unidade fica a 100%, e mais de duas exigem conferência. Sem essa identificação no nome, a bilateralidade pode ser informada manualmente. Cirurgias de olhos seguem as regras dos atos cirúrgicos.</p></div>
         <div class="rule-note"><strong>Anestesiologia</strong><p>O primeiro ato usa 100% do porte e os seguintes, provisoriamente, 70%. A mesma via pode exigir 50%; internação e urgência podem alterar o limite. O porte 0 exige justificativa.</p></div>
@@ -886,7 +888,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.51</p>
+    <p class="versao-relatorio">Versão 4.53</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -991,7 +993,7 @@
             <div><h2 id="tituloBeneficiariosProcesso">Beneficiários do processo</h2><p id="subtituloBeneficiariosProcesso"></p></div>
             <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button>
         </div>
-        <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Ordem alfabética</option><option value="matricula">Número da matrícula</option><option value="valor">Valor</option><option value="regime">Regime de atendimento</option></select></label></div>
+        <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Nome do beneficiário</option><option value="matricula">Número da matrícula</option><option value="valor">Valor apresentado</option><option value="regime">Regime de atendimento</option></select></label><label>Direção<select id="direcaoBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="asc">Menor para maior / A–Z</option><option value="desc">Maior para menor / Z–A</option></select></label></div>
         <div id="conteudoBeneficiariosProcesso"></div>
     </div>
 </div>
@@ -1030,6 +1032,7 @@ function renderizarPopupBeneficiariosProcesso() {
     const destino = document.getElementById('conteudoBeneficiariosProcesso');
     if (!dados || !destino) return;
     const criterio = document.getElementById('ordemBeneficiariosProcesso')?.value || 'guia';
+    const direcao = document.getElementById('direcaoBeneficiariosProcesso')?.value === 'desc' ? -1 : 1;
     const lista = [...(dados.beneficiarios || [])];
     const texto = valor => String(valor || '');
     const dataNumero = valor => {
@@ -1041,13 +1044,14 @@ function renderizarPopupBeneficiariosProcesso() {
         data: (a,b) => dataNumero(a.data) - dataNumero(b.data) || Number(a.guia) - Number(b.guia),
         nome: (a,b) => texto(a.nome).localeCompare(texto(b.nome), 'pt-BR', { sensitivity:'base' }),
         matricula: (a,b) => texto(a.matricula).localeCompare(texto(b.matricula), 'pt-BR', { numeric:true }),
-        valor: (a,b) => b.valor - a.valor || Number(a.guia) - Number(b.guia),
+        valor: (a,b) => a.valor - b.valor || Number(a.guia) - Number(b.guia),
         regime: (a,b) => texto(a.regime).localeCompare(texto(b.regime), 'pt-BR', { sensitivity:'base' }) || Number(a.guia) - Number(b.guia)
     };
-    lista.sort(comparadores[criterio] || comparadores.guia);
+    const comparador = comparadores[criterio] || comparadores.guia;
+    lista.sort((a,b) => direcao * comparador(a,b));
     document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
     document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s) · valor apresentado total ${fmt(lista.reduce((soma,item) => soma + item.valor, 0))}`;
-    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Exercício distinto</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click', event => {
@@ -1487,6 +1491,13 @@ function render(preservarPeg = false) {
                 matricula: String(c[2] || '').trim(),
                 data: String(c[3] || '').trim(),
                 regime: String(c[29] || '').trim(),
+                eps: /^(05|06)/.test(String(c[2] || '').trim()),
+                exercicioDistinto: guia.linhasEventos.some(linha => {
+                    const evento = linha.split("\t");
+                    const anoGuia = String(c[3] || '').match(/(\d{4})$/)?.[1];
+                    const anoEvento = String(evento[7] || '').match(/(\d{4})$/)?.[1];
+                    return evento[39] === '1' && anoGuia && anoEvento && anoGuia !== anoEvento;
+                }),
                 valor: guia.linhasEventos.reduce((soma, linha) => {
                     const evento = linha.split("\t");
                     return soma + (evento[39] === '1' ? moeda(evento[9]) : 0);
@@ -2786,6 +2797,7 @@ function avaliarRadiologia(eventos) {
         const ano = anoAuditoria(evento.data || evento.guia.data);
         const code = evento.codigo;
         if (!ano || !code) return;
+        if (codigoSempreIntegral(code)) return;
         const data = evento.data || evento.guia.data;
         const honoraria = obterReferencia('honoraria', ano, code, data);
         if (ehEventoPacoteAuditoria(evento, honoraria)) return;
@@ -3047,11 +3059,11 @@ function avaliarCirurgia(eventos) {
         // pode informar a via do mesmo procedimento quando a linha do cirurgião não foi marcada.
         [...cirurgioes, ...items.filter(item => item.equipe.numero > 0)].forEach(item => {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
-            if (!percentuaisPorAto.has(item.chaveAto) && [50, 70, 100].includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
+            if (!codigoSempreIntegral(item.evento.codigo) && !percentuaisPorAto.has(item.chaveAto) && [50, 70, 100].includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
         });
         cirurgioes.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : 70);
+                codigoSempreIntegral(item.evento.codigo) || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : 70);
         });
         const portesCirurgiao = new Map(cirurgioes.map(item => [item.chaveAto,
             calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentuaisPorAto.get(item.chaveAto))]));
@@ -3113,15 +3125,17 @@ function avaliarAnestesia(eventos) {
             const interna = /INTERNACAO/.test(normalizarAuditoria(item.evento.guia.regime));
             const urgencia = /URGEN|EMERGEN/.test(normalizarAuditoria(item.evento.guia.condicao));
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
-            const sugestao = equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || posicao === 0 ? 100 : 70;
-            const percentual = [100, 70, 50].includes(manual) ? manual : sugestao;
+            const integral = codigoSempreIntegral(item.evento.codigo);
+            const sugestao = integral || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || posicao === 0 ? 100 : 70;
+            const percentual = !integral && [100, 70, 50].includes(manual) ? manual : sugestao;
             const acesso = percentual / 100;
             const condicao = (interna ? 2 : 1) * (urgencia ? 1.3 : 1);
             const permitido = item.base === null ? null : item.base * acesso * condicao * Math.max(item.evento.quantidade, 1);
             const observacoes = [`Porte anestésico ${item.porte}`];
             if (item.base === null) observacoes.push(`Escala monetária de anestesia não informada para atendimento em ${item.ano}; percentual sugerido sem cálculo de preço.`);
             if (item.porte === 0) observacoes.push('Porte 0: pagamento condicionado à justificativa para participação do anestesiologista');
-            if (posicao > 0 && sugestao === 70) observacoes.push('70% aplicados automaticamente ao ato adicional; altere se a via de acesso exigir 50%.');
+            if (integral) observacoes.push('Prefixo sem análise 100–70–50 na tabela de honorários: mantido em 100%.');
+            else if (posicao > 0 && sugestao === 70) observacoes.push('70% aplicados automaticamente ao ato adicional; altere se a via de acesso exigir 50%.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe do mesmo código na guia: 100% automático para cada função; ajuste manual disponível.');
             if (item.porte === 7) observacoes.push('Acréscimo de porte 7 exige conferência manual');
             resultados.push(criarLinhaAuditoria(item.evento, 'Anestesia', permitido, {
@@ -3257,7 +3271,7 @@ function avaliarHonorariosGerais(eventos, linhasAnteriores) {
             return dias >= 0 && dias <= 10;
         });
         return criarLinhaAuditoria(evento, 'Tabela de honorários', permitido, {
-            regra: integral ? 'Código 1.01/2.01: 100% por ocorrência; não se aplica 100–70.' : pacote ? `Pacote a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70`
+            regra: integral ? 'Prefixo sem análise 100–70–50: 100% por ocorrência.' : pacote ? `Pacote a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70`
                 : laboratorial ? `Exame laboratorial a 100% por ocorrência (${valorBRL(base)}); sem regra automática 100–70 por repetição`
                 : informado ? `${percentual}% informado manualmente sobre ${valorBRL(base)}`
                 : `${percentual}% aplicado automaticamente sobre ${valorBRL(base)}${posicoes.get(evento.id) > 0 ? '; código repetido, maior valor a 100%' : ''}`,
@@ -3570,7 +3584,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const explicacao = acima && !calculado ? 'Não concluir glosa sem confirmar a regra.' : !calculado ? 'Faltam dados para calcular a possível glosa.' : '';
         const chaveBilateral = oftalmologia ? chaveBilateralOftalmo(linha.evento) : '';
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
-        const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : codigoSempreIntegral(linha.evento.codigo) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Código 1.01/2.01' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência. Sem regra automática 100–70.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
+        const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : codigoSempreIntegral(linha.evento.codigo) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
                 <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(linha.evento.codigo)}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
                     <option value="" ${!informado ? 'selected' : ''}>${linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
@@ -3684,7 +3698,7 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
     return `${normalizarAuditoria(beneficiario)}|${normalizarAuditoria(matricula)}`;
 }
 
-function codigoSempreIntegral(codigo) { return /^(101|201)/.test(codigoAuditoria(codigo)); }
+function codigoSempreIntegral(codigo) { return /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
 
 const CODIGOS_PACOTES_CORRESPONDENTES = new Set([
     '90031199','90031202','90031210','90031229','90031237','90031253','90031261','90031270','90031288','90031296','90031300','90031318','90031326','90031334','90031342','90031350','90031369','90031377','90031385','90031393','90031407','90031415','90031423','90031431','90031440','90031458','90031466','90031474','90031482','90031490','90031504','90031512','90031520','90031539','90031547','90031555','90031571','90031580','90031598','90031601','90031610','90031628','90031636','90031644',
