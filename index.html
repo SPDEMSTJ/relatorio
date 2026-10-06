@@ -81,6 +81,7 @@
     .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
     .marcador-beneficiario-popup { display:inline-block; margin-left:5px; padding:2px 5px; border-radius:4px; background:#dbeafe; color:#1e3a8a; font-size:10px; font-weight:800; }
     .marcador-beneficiario-popup.exercicio { background:#ffedd5; color:#9a3412; }
+    .marcador-beneficiario-popup.prazo { background:#fee2e2; color:#991b1b; }
     .observacao-pacote-correspondente { display:block; margin-top:5px; padding:5px 7px; border-left:4px solid #7c3aed; background:#f3e8ff; color:#581c87; font-weight:700; font-size:11px; }
     .faixa-parecer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 0 10px; padding:13px 16px; border:1px solid #afc9ee; border-left:5px solid #2563b7; border-radius:12px; background:#eef5ff; }
     .faixa-parecer strong { display:block; color:#163c72; font-size:13px; }
@@ -456,7 +457,7 @@
     #saida .card td { padding:9px 10px; border-bottom:1px solid #ecf0f5; }
     #saida .linha-beneficiario td { padding-top:5px; padding-bottom:5px; }
     #saida .linha-prazo-beneficiario td { padding:5px 10px; background:#fff7f7; border-bottom:1px solid #f2d6d9; overflow:visible; text-overflow:clip; }
-    #saida .linha-prazo-beneficiario .tag-prescricao { display:inline-block; max-width:100%; white-space:nowrap; font-size:10px; line-height:1.4; }
+    #saida .linha-prazo-beneficiario .tag-prescricao { display:inline-block; max-width:100%; white-space:normal; font-size:13px; line-height:1.5; font-weight:750; }
     #saida .card tr:not(.glosa):not(.linha-beneficiario):hover td { background:#f3f7ff; }
     #saida .cab-guia th,#saida .cab-evento th { padding:9px 10px; background:#ecf2fa; color:#263b58; border-bottom:1px solid #d1dded; box-shadow:none; font-size:11px; }
     #saida .cab-evento th { background:#f4f7fb; }
@@ -691,6 +692,8 @@
     #resumosComplementares[hidden] { display:none; }
     #saida .alerta-zero-xml td { white-space:normal; background:#fff1f2; color:#9f1239; padding:9px 12px; font-size:13px; font-weight:700; border-left:4px solid #e11d48; line-height:1.5; }
     #saida .linha-calendario-guia td { white-space:normal; padding:8px 12px; background:#fff7ed; color:#9a3412; border-left:3px solid #ea580c; font-size:11px; line-height:1.5; }
+    #saida .condicao-urgencia-acrescimo { display:inline-block; margin-left:4px; color:#166534; font-weight:800; }
+    #saida .alerta-cooperativa-anestesia td { white-space:normal; padding:12px 14px; background:#fee2e2; color:#7f1d1d; border:2px solid #dc2626; border-left-width:6px; font-size:14px; font-weight:850; line-height:1.55; }
     #calendarioGuia label { margin-left:13px; }
     #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
     .auditoria-alerta-linha.alerta-regiao-conferencia > td { background:#fff0cf; color:#783d00; border-left:5px solid #d97706; font-size:14px; font-weight:700; padding:14px; line-height:1.6; }
@@ -888,7 +891,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.53</p>
+    <p class="versao-relatorio">Versão 4.55</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1051,7 +1054,7 @@ function renderizarPopupBeneficiariosProcesso() {
     lista.sort((a,b) => direcao * comparador(a,b));
     document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
     document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s) · valor apresentado total ${fmt(lista.reduce((soma,item) => soma + item.valor, 0))}`;
-    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Exercício distinto</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Guia com exercício distinto</span>' : ''}${item.maisDeUmAno ? '<span class="marcador-beneficiario-popup prazo">Mais de 1 ano do atendimento</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click', event => {
@@ -1271,6 +1274,8 @@ function atualizarFiltroVisual() {
     const seletorPeg = document.getElementById('filtroPegSelect');
     if (seletorPeg.dataset.pegPesquisa !== seletorPeg.value) {
         document.getElementById('pesquisaRelatorio').value = '';
+        const pesquisaBeneficiario = document.getElementById('buscarBeneficiarioAuditoria');
+        if (pesquisaBeneficiario) pesquisaBeneficiario.value = '';
         seletorPeg.dataset.pegPesquisa = seletorPeg.value;
     }
     limparResumosComplementares();
@@ -1481,9 +1486,23 @@ function render(preservarPeg = false) {
             }
         });
 
+        // O exercício principal de cada PEG é o ano mais recente entre as guias.
+        const anosGuiasPorPeg = new Map();
+        guiasObjetos.forEach(guia => {
+            const ano = String(guia.cabecalho.split("\t")[3] || '').match(/(\d{4})$/)?.[1];
+            if (!ano) return;
+            if (!anosGuiasPorPeg.has(guia.peg)) anosGuiasPorPeg.set(guia.peg, new Set());
+            anosGuiasPorPeg.get(guia.peg).add(Number(ano));
+        });
+
         // Preserva a lista completa do processo, mesmo quando o parecer técnico filtra os eventos exibidos.
         const beneficiariosProcesso = guiasObjetos.map(guia => {
             const c = guia.cabecalho.split("\t");
+            const anoGuia = Number(String(c[3] || '').match(/(\d{4})$/)?.[1] || 0);
+            const anosPeg = [...(anosGuiasPorPeg.get(guia.peg) || [])];
+            const exercicioDiferenteNoPeg = anosPeg.length > 1 && anoGuia !== Math.max(...anosPeg);
+            const atendimento = parseData(c[3]);
+            const recebimento = parseData(c[33]);
             return {
                 peg: guia.peg,
                 guia: String(c[1] || '').trim(),
@@ -1492,12 +1511,13 @@ function render(preservarPeg = false) {
                 data: String(c[3] || '').trim(),
                 regime: String(c[29] || '').trim(),
                 eps: /^(05|06)/.test(String(c[2] || '').trim()),
-                exercicioDistinto: guia.linhasEventos.some(linha => {
+                exercicioDistinto: exercicioDiferenteNoPeg || guia.linhasEventos.some(linha => {
                     const evento = linha.split("\t");
-                    const anoGuia = String(c[3] || '').match(/(\d{4})$/)?.[1];
+                    const anoCabecalho = String(c[3] || '').match(/(\d{4})$/)?.[1];
                     const anoEvento = String(evento[7] || '').match(/(\d{4})$/)?.[1];
-                    return evento[39] === '1' && anoGuia && anoEvento && anoGuia !== anoEvento;
+                    return evento[39] === '1' && anoCabecalho && anoEvento && anoCabecalho !== anoEvento;
                 }),
+                maisDeUmAno: Boolean(atendimento && recebimento && recebimento > limiteRecebimentoAtendimento(atendimento)),
                 valor: guia.linhasEventos.reduce((soma, linha) => {
                     const evento = linha.split("\t");
                     return soma + (evento[39] === '1' ? moeda(evento[9]) : 0);
@@ -1505,7 +1525,10 @@ function render(preservarPeg = false) {
             };
         });
 
-        guiasObjetos.forEach(guia => { guia.alertaZeroXml = temCodigoRepetidoComZero(guia.linhasEventos); });
+        guiasObjetos.forEach(guia => {
+            guia.alertaZeroXml = temCodigoRepetidoComZero(guia.linhasEventos);
+            guia.alertaCooperativaAnestesia = alertaCooperativaAnestesiaGuia(guia);
+        });
 
         const normalizarBuscaEvento = texto => String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
         const termosEventos = [...new Set(document.getElementById("palavrasEventos").value.split(/[\r\n;]+/).map(normalizarBuscaEvento).filter(Boolean))];
@@ -1681,6 +1704,10 @@ function render(preservarPeg = false) {
             
             let dataHtml = data;
             let alertaPrazo = false, detalhePrazo = '';
+            const condicao = c[31] || 'N/A';
+            const condicaoHtml = /URGEN|EMERGEN/.test(normalizarAuditoria(condicao))
+                ? `${escAuditoria(condicao)} <span class="condicao-urgencia-acrescimo">(+30%)</span>`
+                : escAuditoria(condicao);
             
             // REGRA: DESTACAR DATA COM TARJA VERMELHA (MAIOR ANO) OU AZUL (MENORES)
             const infoAnos = anosInfoPorPeg[pegAtual];
@@ -1724,7 +1751,13 @@ function render(preservarPeg = false) {
             saida.appendChild(card);
 
             const tbl = document.createElement("table");
-            tbl.innerHTML = `<tr class="cab-guia"><th>Beneficiário</th><th>Data</th><th>Matrícula</th><th>Regime</th><th>Tratamento</th><th>Condição</th><th class="valor">Valor Apres.</th><th class="valor">Valor Glosa</th><th class="valor">Valor Pgto</th><th class="valor">Valor PF</th><th class="valor">PF Benner</th></tr><tr class="${trClass}" data-eps="${isEps}"><td>${infoGuiaBeneficiario}</td><td>${dataHtml}</td><td>${matricula}${isEps?'<span class="badge-eps">EPS</span>':''}</td><td>${c[29]}</td><td class="${tratClass}">${tratHtml}</td><td>${c[31]||'N/A'}</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor ${pfClass}">-</td></tr>${alertaPrazo ? `<tr class="linha-prazo-beneficiario"><td colspan="11"><span class="tag-prescricao">Glosar - Atendimento com mais de 1 ano - Edital 01/2022${detalhePrazo}</span></td></tr>` : ''}`;
+            tbl.innerHTML = `<tr class="cab-guia"><th>Beneficiário</th><th>Data</th><th>Matrícula</th><th>Regime</th><th>Tratamento</th><th>Condição</th><th class="valor">Valor Apres.</th><th class="valor">Valor Glosa</th><th class="valor">Valor Pgto</th><th class="valor">Valor PF</th><th class="valor">PF Benner</th></tr><tr class="${trClass}" data-eps="${isEps}"><td>${infoGuiaBeneficiario}</td><td>${dataHtml}</td><td>${matricula}${isEps?'<span class="badge-eps">EPS</span>':''}</td><td>${c[29]}</td><td class="${tratClass}">${tratHtml}</td><td>${condicaoHtml}</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor">-</td><td class="valor ${pfClass}">-</td></tr>${alertaPrazo ? `<tr class="linha-prazo-beneficiario"><td colspan="11"><span class="tag-prescricao">Glosar - Atendimento com mais de 1 ano - Edital 01/2022${detalhePrazo}</span></td></tr>` : ''}`;
+            if (obj.alertaCooperativaAnestesia) {
+                const alertaCooperativa = tbl.insertRow(2);
+                alertaCooperativa.className = 'alerta-cooperativa-anestesia';
+                const celulaCooperativa = alertaCooperativa.insertCell(); celulaCooperativa.colSpan = 11;
+                celulaCooperativa.textContent = obj.alertaCooperativaAnestesia;
+            }
             if (obj.alertaZeroXml) {
                 const avisoZero = tbl.insertRow(2);
                 avisoZero.className = 'alerta-zero-xml';
@@ -2722,10 +2755,24 @@ function avisoCalendarioGuia(guia) {
     const motivos=motivosCalendarioGuia(guia.data);
     if (!motivos.length) return '';
     const prefixo='Data da guia '+guia.data+': '+motivos.join(' / ')+'. ';
-    if (/URGEN|EMERGEN/.test(normalizarAuditoria(guia.condicao))) {
-        return prefixo+'Urgência/emergência já registrada na guia: confira o +30% existente nos eventos elegíveis; não some outro acréscimo pelo calendário.';
-    }
+    if (/URGEN|EMERGEN/.test(normalizarAuditoria(guia.condicao))) return '';
     return prefixo+'Sugestão: conferir +30% sobre porte/honorários dos eventos elegíveis, sem aumentar UCO ou filme. Confirme urgência/emergência e condições contratuais. O calendário não aplica acréscimo automaticamente.';
+}
+function alertaCooperativaAnestesiaGuia(guia) {
+    const cabecalho = guia.cabecalho.split('\t');
+    const prestador = normalizarAuditoria(cabecalho[37]).replace(/[^A-Z0-9]+/g, ' ').trim();
+    if (!prestador.includes('COOPERATIVA DOS MEDICOS ANESTESIOLOGISTAS DO DISTRITO FEDERAL')) return '';
+    let valorCalculadoNaoEncontrado = false;
+    let codigoEspecial = false;
+    guia.linhasEventos.forEach(linha => {
+        const campos = linha.split('\t');
+        if (normalizarAuditoria(linha).includes('VALOR CALCULADO NAO ENCONTRADO')) valorCalculadoNaoEncontrado = true;
+        if (campos[39] === '1' && codigoAuditoria(campos[6]) === '30602351') codigoEspecial = true;
+    });
+    const avisos = [];
+    if (valorCalculadoNaoEncontrado) avisos.push('NÃO RECONSIDERAR: há evento com “VALOR CALCULADO NÃO ENCONTRADO”. Ver com Lourival (chefe da seção).');
+    if (codigoEspecial) avisos.push('Código 3.06.02.351 identificado neste prestador: NÃO RECONSIDERAR sem verificar com Lourival (chefe da seção).');
+    return avisos.join(' ');
 }
 function mostrarCalendarioFeriados() {
     const campo=document.getElementById('anoCalendarioGuia');
@@ -3052,7 +3099,7 @@ function avaliarCirurgia(eventos) {
             contadores.set(chavePapel, ordinal + 1);
             item.chaveAto = `${item.evento.codigo}|${ordinal}`;
         });
-        const chavePrincipal = principal?.chaveAto;
+        const chavePrincipal = principal?.chaveAto || ordenados[0]?.chaveAto;
         const cirurgioes = items.filter(item => item.equipe.tipo === 'Cirurgião');
         const percentuaisPorAto = new Map();
         // A escolha na linha do cirurgião prevalece; uma escolha no auxiliar também
@@ -3065,19 +3112,25 @@ function avaliarCirurgia(eventos) {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
                 codigoSempreIntegral(item.evento.codigo) || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : 70);
         });
+        items.forEach(item => {
+            if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
+                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : 70);
+        });
         const portesCirurgiao = new Map(cirurgioes.map(item => [item.chaveAto,
             calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentuaisPorAto.get(item.chaveAto))]));
         items.forEach(item => {
             const percentual = percentuaisPorAto.get(item.chaveAto) || null;
             const auxiliar = item.equipe.numero > 0;
-            const calculo = auxiliar ? portesCirurgiao.get(item.chaveAto) : calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentual);
+            const calculo = auxiliar ? portesCirurgiao.get(item.chaveAto)
+                || calcularAtoCirurgico(item.evento, item.referencia, { tipo: 'Cirurgião', numero: 0, multiplicador: 1 }, percentual)
+                : calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentual);
             const porteMesmoCodigo = auxiliar ? calculo?.porte ?? null : null;
             const auxExcedido = item.equipe.numero > 0 && maxAuxiliares !== null && item.equipe.numero > maxAuxiliares;
             const video = /VIDEO/.test(normalizarAuditoria(item.evento.descricao));
             const observacoes = [item.equipe.tipo];
             if (!PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id) && percentual === 70) observacoes.push('70% aplicado automaticamente ao ato adicional; altere para 50% se a via de acesso for a mesma.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Cirurgião, 1º auxiliar e anestesista no mesmo código da guia: 100% automático para este conjunto, com ajuste manual disponível.');
-            if (!principal) observacoes.push('Sem linha do cirurgião nesta extração: confirme o ato principal e a equipe.');
+            if (!principal && auxiliar) observacoes.push('Porte do cirurgião obtido na tabela para calcular o auxiliar, mesmo sem linha do cirurgião na extração.');
             if (calculo?.urgencia) observacoes.push('Urgência/emergência registrada na guia: +30% no porte aplicado automaticamente.');
             if (video && numeroAuditoria(item.referencia.u) > 0) observacoes.push('Vídeo: confirmar titularidade do equipamento e UCO contratada.');
             if (auxExcedido) observacoes.push(`Auxiliar ${item.equipe.numero} excede os ${maxAuxiliares} previstos para o maior porte.`);
@@ -3091,8 +3144,8 @@ function avaliarCirurgia(eventos) {
             resultados.push(criarLinhaAuditoria(item.evento, 'Cirurgia', permitido, {
                 regra, observacao: observacoes.join(' — '), referencia: item.referencia,
                 limiteReferencia: permitido,
-                baseComparacao: !principal ? 'Equipe cirúrgica incompleta' : 'Limite técnico estimado',
-                alerta: auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : !principal ? 'Cirurgião não localizado neste grupo; confira a equipe antes de glosar.' : auxiliar && porteMesmoCodigo === null ? 'Linha do cirurgião deste código e ocorrência não localizada; confira a equipe.' : '',
+                baseComparacao: permitido === null ? 'Cálculo técnico indisponível' : 'Limite técnico estimado',
+                alerta: auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : porteMesmoCodigo === null && auxiliar ? 'Porte cirúrgico deste código não localizado na tabela; confira a referência.' : '',
                 percentual, funcaoCirurgica: item.equipe.tipo
             }));
         });
@@ -3722,25 +3775,34 @@ function linhasRegraBeneficiarioAuditoria(linhas) {
         && !/\bCONSULTA\b/.test(normalizarAuditoria(`${linha.evento.descricao || ''} ${linha.referencia.d || ''} ${linha.evento.grau || ''}`)));
 }
 
+function chaveGrupoPercentualAuditoria(linha) {
+    const base = chaveAtoBeneficiarioAuditoria(linha.evento);
+    if (linha.categoria === 'Cirurgia' || linha.categoria === 'Anestesia') return `${base}|${linha.categoria}`;
+    if (linha.categoria === 'Radiologia') return `${base}|RADIOLOGIA|${codigoAuditoria(linha.evento.codigo).slice(0, 3)}`;
+    if (linha.categoria === 'Oftalmologia') return `${linha.guia.id}|OFTALMO|${codigoAuditoria(linha.evento.codigo)}`;
+    if (linha.categoria === 'Tabela de honorários') return `${base}|HONORARIOS`;
+    return `${linha.guia.id}|${linha.categoria}`;
+}
+
+function linhasPopupAuditoriaPorGuia(linhas, guiaId) {
+    const elegiveis = linhasRegraBeneficiarioAuditoria(linhas);
+    const chaves = new Set(elegiveis.filter(linha => linha.guia.id === guiaId).map(chaveGrupoPercentualAuditoria));
+    return elegiveis.filter(linha => chaves.has(chaveGrupoPercentualAuditoria(linha)));
+}
+
 function rotuloPercentuaisBeneficiario(itens) {
     if (itens.some(item => item.categoria === 'Serviços hospitalares')) return '100–70–50–25';
     return itens.some(item => item.categoria === 'Cirurgia' || item.categoria === 'Anestesia' || item.categoria === 'Serviços hospitalares') ? '100–70–50' : '100–70';
 }
 
 function atualizarBotoesAuditoriaBeneficiarios(linhas) {
-    const grupos = new Map();
-    linhasRegraBeneficiarioAuditoria(linhas).forEach(linha => {
-        const chave = linha.guia.id;
-        if (!grupos.has(chave)) grupos.set(chave, []);
-        grupos.get(chave).push(linha);
-    });
     const pegAtivo = linhas[0]?.guia.peg || '';
     document.querySelectorAll('#saida .linha-beneficiario[data-auditoria-peg]').forEach(row => {
         let botao = row.querySelector('.botao-regra-beneficiario');
         const remover = () => { if (botao) { if (botao.previousElementSibling?.tagName === 'BR') botao.previousElementSibling.remove(); botao.remove(); } };
         if (!pegAtivo || row.dataset.auditoriaPeg !== pegAtivo) { remover(); return; }
         const chave = row.dataset.auditoriaGuiaId;
-        const itens = grupos.get(chave);
+        const itens = linhasPopupAuditoriaPorGuia(linhas, chave);
         if (!itens?.length || new Set(itens.map(item => codigoAuditoria(item.evento.codigo))).size < 2) { remover(); return; }
         if (!botao) {
             botao = document.createElement('button');
@@ -3751,13 +3813,12 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
         }
         botao.classList.toggle('com-glosa', itens.some(item => item.glosaTecnica > 0));
         botao.textContent = `Analisar ${rotuloPercentuaisBeneficiario(itens)} · ${itens.length} evento${itens.length === 1 ? '' : 's'}`;
-        botao.title = 'Abrir análise dos eventos desta guia no PEG em trabalho';
+        botao.title = 'Abrir análise dos eventos elegíveis deste beneficiário, no mesmo dia e grupo, inclusive em guias separadas';
     });
 }
 
 function abrirPopupAuditoriaBeneficiario(chave, botao) {
-    if (!linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).some(linha =>
-        linha.guia.id === chave)) return;
+    if (!linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA, chave).length) return;
     CHAVE_POPUP_AUDITORIA_BENEFICIARIO = chave;
     CODIGOS_SELECIONADOS_POPUP_AUDITORIA.clear();
     FOCO_RETORNO_POPUP_AUDITORIA = botao || document.activeElement;
@@ -3783,8 +3844,7 @@ function fecharPopupAuditoriaBeneficiario() {
 function renderizarPopupAuditoriaBeneficiario() {
     const modal = document.getElementById('modalAuditoriaBeneficiario');
     if (!modal || modal.style.display !== 'block' || !CHAVE_POPUP_AUDITORIA_BENEFICIARIO) return;
-    const todosItens = linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).filter(linha =>
-        linha.guia.id === CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
+    const todosItens = linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA, CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
     if (!todosItens.length) return fecharPopupAuditoriaBeneficiario();
     const codigos = [...new Set(todosItens.map(linha => codigoAuditoria(linha.evento.codigo)))].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
     for (const codigo of CODIGOS_SELECIONADOS_POPUP_AUDITORIA) if (!codigos.includes(codigo)) CODIGOS_SELECIONADOS_POPUP_AUDITORIA.delete(codigo);
@@ -3806,7 +3866,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const apenasPreco = itens.filter(item => item.excessoTabela > 0 && item.permitido === null);
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
-    conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria, restritos a esta guia e ao PEG em trabalho. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+    conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(codigo)} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
         <div class="auditoria-resumo"><div><span>Eventos com tabela</span><b>${itens.length}</b></div><div><span>Possíveis glosas pela regra</span><b>${possiveis.length}</b></div><div><span>Valor possível a glosar</span><b>${valorBRL(glosa)}</b></div><div><span>Alertas só de preço</span><b>${apenasPreco.length}</b></div><div><span>Pendências a conferir</span><b>${pendentes.length}</b></div></div>
         ${renderizarTabelaAuditoria(itens, GLOBAL_MODELO_AUDITORIA.internacoes, 'popup-')}`;
