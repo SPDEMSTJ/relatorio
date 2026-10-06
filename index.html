@@ -70,6 +70,16 @@
     .resumo-card .botao-copiar { flex:none; width:22px; height:22px; padding:0; border:1px solid #bfdbfe; background:#eff6ff; color:#1e40af; border-radius:5px; cursor:pointer; font-size:13px; line-height:20px; text-align:center; }
     .resumo-card .botao-copiar:hover { background:#dbeafe; }
     .resumo-card .titulo-dados { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+    .btn-lista-beneficiarios { margin-top:9px; height:32px; padding:6px 10px; background:#eaf2ff; border:1px solid #afc9ee; color:#174b88; }
+    #modalBeneficiariosProcesso { z-index:1002; }
+    #modalBeneficiariosProcesso .modal-content { width:min(1050px,96vw); max-width:1050px; max-height:90vh; overflow:auto; }
+    .beneficiarios-processo-controles { display:flex; align-items:end; gap:10px; margin:12px 0; flex-wrap:wrap; }
+    .beneficiarios-processo-controles label { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:#475569; }
+    .beneficiarios-processo-controles select { width:230px; }
+    .tabela-beneficiarios-processo { table-layout:auto; }
+    .tabela-beneficiarios-processo th,.tabela-beneficiarios-processo td { white-space:normal; }
+    .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
+    .observacao-pacote-correspondente { display:block; margin-top:5px; padding:5px 7px; border-left:4px solid #7c3aed; background:#f3e8ff; color:#581c87; font-weight:700; font-size:11px; }
     .faixa-parecer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 0 10px; padding:13px 16px; border:1px solid #afc9ee; border-left:5px solid #2563b7; border-radius:12px; background:#eef5ff; }
     .faixa-parecer strong { display:block; color:#163c72; font-size:13px; }
     .faixa-parecer span { display:block; margin-top:2px; color:#506680; font-size:11px; }
@@ -876,7 +886,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.50</p>
+    <p class="versao-relatorio">Versão 4.51</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -975,9 +985,21 @@
     </div>
 </div>
 
+<div id="modalBeneficiariosProcesso" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloBeneficiariosProcesso" aria-hidden="true">
+    <div class="modal-content">
+        <div class="popup-auditoria-cabecalho">
+            <div><h2 id="tituloBeneficiariosProcesso">Beneficiários do processo</h2><p id="subtituloBeneficiariosProcesso"></p></div>
+            <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button>
+        </div>
+        <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Ordem alfabética</option><option value="matricula">Número da matrícula</option><option value="valor">Valor</option><option value="regime">Regime de atendimento</option></select></label></div>
+        <div id="conteudoBeneficiariosProcesso"></div>
+    </div>
+</div>
+
 <script>
 // VARIAVEL GLOBAL PARA ARMAZENAR DADOS DE RESUMO POR PEG
 let GLOBAL_DADOS_RESUMO = {};
+let PEG_BENEFICIARIOS_POPUP = '';
 let RELATORIO_GERADO = false;
 let FILTRO_EVENTOS_TIMER = null;
 
@@ -986,6 +1008,54 @@ function limparResumosComplementares() {
     secao.innerHTML = '';
     secao.hidden = true;
 }
+
+function abrirPopupBeneficiariosProcesso(peg) {
+    PEG_BENEFICIARIOS_POPUP = peg;
+    const modal = document.getElementById('modalBeneficiariosProcesso');
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    renderizarPopupBeneficiariosProcesso();
+    modal.querySelector('.popup-auditoria-fechar')?.focus();
+}
+
+function fecharPopupBeneficiariosProcesso() {
+    const modal = document.getElementById('modalBeneficiariosProcesso');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    PEG_BENEFICIARIOS_POPUP = '';
+}
+
+function renderizarPopupBeneficiariosProcesso() {
+    const dados = GLOBAL_DADOS_RESUMO[PEG_BENEFICIARIOS_POPUP];
+    const destino = document.getElementById('conteudoBeneficiariosProcesso');
+    if (!dados || !destino) return;
+    const criterio = document.getElementById('ordemBeneficiariosProcesso')?.value || 'guia';
+    const lista = [...(dados.beneficiarios || [])];
+    const texto = valor => String(valor || '');
+    const dataNumero = valor => {
+        const data = parseData(valor);
+        return data ? data.getTime() : Number.MAX_SAFE_INTEGER;
+    };
+    const comparadores = {
+        guia: (a,b) => Number(a.guia) - Number(b.guia) || texto(a.guia).localeCompare(texto(b.guia), 'pt-BR', { numeric:true }),
+        data: (a,b) => dataNumero(a.data) - dataNumero(b.data) || Number(a.guia) - Number(b.guia),
+        nome: (a,b) => texto(a.nome).localeCompare(texto(b.nome), 'pt-BR', { sensitivity:'base' }),
+        matricula: (a,b) => texto(a.matricula).localeCompare(texto(b.matricula), 'pt-BR', { numeric:true }),
+        valor: (a,b) => b.valor - a.valor || Number(a.guia) - Number(b.guia),
+        regime: (a,b) => texto(a.regime).localeCompare(texto(b.regime), 'pt-BR', { sensitivity:'base' }) || Number(a.guia) - Number(b.guia)
+    };
+    lista.sort(comparadores[criterio] || comparadores.guia);
+    document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
+    document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s) · valor apresentado total ${fmt(lista.reduce((soma,item) => soma + item.valor, 0))}`;
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click', event => {
+    if (event.target.id === 'modalBeneficiariosProcesso') fecharPopupBeneficiariosProcesso();
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.getElementById('modalBeneficiariosProcesso')?.style.display === 'block') fecharPopupBeneficiariosProcesso();
+});
 
 function invalidarRelatorioAnterior() {
     limparResumosComplementares();
@@ -1257,7 +1327,8 @@ function renderizarConteudoResumo(chavePeg) {
              <div class="linha"><b>Prestador:</b> ${info.prestador || '-'}</div>
              <div class="linha${classeObservacao ? ' observacao-destaque ' + classeObservacao : ''}"><b>Observação:</b> ${escAuditoria(observacao || '-')}</div>
              <div class="linha linha-copiavel"><b>Valor Informado:</b> <span class="valor-copiavel">${fmt(dados.totalInformado)}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Valor Informado" title="Copiar Valor Informado" onclick="copiarValorProcesso(this)">📋</button></div>
-             <div class="linha linha-copiavel"><b>Valor Pago:</b> <span class="valor-copiavel">${fmt(dados.totalPago)}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Valor Pago" title="Copiar Valor Pago" onclick="copiarValorProcesso(this)">📋</button></div></div>`;
+             <div class="linha linha-copiavel"><b>Valor Pago:</b> <span class="valor-copiavel">${fmt(dados.totalPago)}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Valor Pago" title="Copiar Valor Pago" onclick="copiarValorProcesso(this)">📋</button></div>
+             <button type="button" class="btn-lista-beneficiarios no-print" data-peg="${escAuditoria(chavePeg)}" onclick="abrirPopupBeneficiariosProcesso(this.dataset.peg)">👥 Ver beneficiários e valores</button></div>`;
 
     divResumo.innerHTML = html + `</div>`;
     html = "";
@@ -1336,7 +1407,7 @@ function render(preservarPeg = false) {
         statusFiltroEventos.textContent = "";
         
         GLOBAL_DADOS_RESUMO = { 
-            'todos': { totalPago: 0, totalInformado: 0, anos: {}, eps: new Set(), info: {} } 
+            'todos': { totalPago: 0, totalInformado: 0, anos: {}, eps: new Set(), info: {}, beneficiarios: [] }
         };
 
         if (rawLines.length <= 1) { RELATORIO_GERADO = false; aplicarPesquisaRelatorio(); alert("Cole o resultado."); return; }
@@ -1404,6 +1475,23 @@ function render(preservarPeg = false) {
                     }
                 }
             }
+        });
+
+        // Preserva a lista completa do processo, mesmo quando o parecer técnico filtra os eventos exibidos.
+        const beneficiariosProcesso = guiasObjetos.map(guia => {
+            const c = guia.cabecalho.split("\t");
+            return {
+                peg: guia.peg,
+                guia: String(c[1] || '').trim(),
+                nome: String(c[0] || '').trim(),
+                matricula: String(c[2] || '').trim(),
+                data: String(c[3] || '').trim(),
+                regime: String(c[29] || '').trim(),
+                valor: guia.linhasEventos.reduce((soma, linha) => {
+                    const evento = linha.split("\t");
+                    return soma + (evento[39] === '1' ? moeda(evento[9]) : 0);
+                }, 0)
+            };
         });
 
         guiasObjetos.forEach(guia => { guia.alertaZeroXml = temCodigoRepetidoComZero(guia.linhasEventos); });
@@ -1480,8 +1568,10 @@ function render(preservarPeg = false) {
 
         function addOption(val) {
             const opt = document.createElement("option"); opt.value = val; opt.text = "PEG " + val; selectFiltro.appendChild(opt);
-            GLOBAL_DADOS_RESUMO[val] = { totalPago: 0, totalInformado: 0, anos: {}, eps: new Set(), info: {} };
+            GLOBAL_DADOS_RESUMO[val] = { totalPago: 0, totalInformado: 0, anos: {}, eps: new Set(), info: {}, beneficiarios: beneficiariosProcesso.filter(item => item.peg === val) };
         }
+
+        GLOBAL_DADOS_RESUMO.todos.beneficiarios = beneficiariosProcesso;
 
         if (listaPegs.size > 1) {
             painelFiltro.style.display = "flex";
@@ -1679,6 +1769,7 @@ function render(preservarPeg = false) {
                     const evtLower = evtHtml.toLowerCase();
                     
                     if (evtLower.match(/internado|visita hospitalar/)) evtHtml += ' <span class="tag-internacao">INTERNAÇÃO</span>';
+                    if (ehCodigoPacoteCorrespondente(cEvt[6])) evtHtml += ' <span class="observacao-pacote-correspondente">Verifique o valor nas tabelas dos pacotes correspondentes</span>';
                     
                     const cols = [cEvt[7], cEvt[5], cEvt[6], evtHtml, cEvt[8], cEvt[9], cEvt[10], cEvt[11], cEvt[12], cEvt[13], cEvt[15], cEvt[16]];
                     cols.forEach((v, i) => {
@@ -1711,7 +1802,7 @@ function render(preservarPeg = false) {
                         const avisoParecer = tabelaEvento.insertRow();
                         avisoParecer.className = 'alerta-parecer-sei';
                         const celula = avisoParecer.insertCell(); celula.colSpan = 12;
-                        celula.textContent = 'Evento sem glosa no Benner — verifique o parecer técnico no SEI.';
+                        celula.textContent = 'Evento sem glosa no Benner — verifique o parecer no SEI.';
                     }
                 } else if (tipo === "2") {
                     const tr = tabelaEvento.insertRow(); tr.className = "glosa"; 
@@ -2379,6 +2470,7 @@ function calcularPercentuaisManuais() {
     let calculados = 0;
     let pendencias = 0;
     const registrosDoPeg = registros.filter(item => /^\d{8}$/.test(item.codigo)
+        && !ehCodigoPacoteCorrespondente(item.codigo)
         && obterReferencia('honoraria', ano, item.codigo)
         && (!pegAtivo || indicesSql.has(item.codigo)));
     const linhas = registrosDoPeg.map(item => {
@@ -3142,6 +3234,7 @@ function avaliarHonorariosGerais(eventos, linhasAnteriores) {
     repetidos.forEach(items => items.sort((a, b) => numeroAuditoria(b.valorApresentado) - numeroAuditoria(a.valorApresentado))
         .forEach((item, indice) => posicoes.set(item.id, indice)));
     return eventos.filter(evento => !analisados.has(evento.id)).map(evento => {
+        if (ehCodigoPacoteCorrespondente(evento.codigo)) return null;
         if (/ANESTES/.test(normalizarAuditoria(evento.grau)) || equipeCirurgica(evento.grau)) return null;
         const ano = anoAuditoria(evento.data || evento.guia.data);
         const referencia = obterReferencia('honoraria', ano, evento.codigo, evento.data || evento.guia.data);
@@ -3186,7 +3279,7 @@ function incluirEventosSemReferencia(eventos, linhas) {
     const analisados = new Set(linhas.map(linha => linha.evento.id));
     return [
         ...linhas,
-        ...eventos.filter(evento => !analisados.has(evento.id)).map(evento => {
+        ...eventos.filter(evento => !analisados.has(evento.id) && !ehCodigoPacoteCorrespondente(evento.codigo)).map(evento => {
             const ano = anoAuditoria(evento.data || evento.guia.data);
             const anoAplicavel = anoTabelaAplicavel(evento.data || evento.guia.data, ano);
             const anoDisponivel = Object.hasOwn(BASES_REFERENCIA.honoraria || {}, anoAplicavel);
@@ -3593,8 +3686,18 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
 
 function codigoSempreIntegral(codigo) { return /^(101|201)/.test(codigoAuditoria(codigo)); }
 
+const CODIGOS_PACOTES_CORRESPONDENTES = new Set([
+    '90031199','90031202','90031210','90031229','90031237','90031253','90031261','90031270','90031288','90031296','90031300','90031318','90031326','90031334','90031342','90031350','90031369','90031377','90031385','90031393','90031407','90031415','90031423','90031431','90031440','90031458','90031466','90031474','90031482','90031490','90031504','90031512','90031520','90031539','90031547','90031555','90031571','90031580','90031598','90031601','90031610','90031628','90031636','90031644',
+    '90030058','90030060','90030079','90030702','90031105','90031682','90031693','90040384','90040611','90040624','90030761','90031671','90030044','90031815','90031821','90031833','90031847',
+    '90036008','90036015','90036021','90036127','90036131','90036143',
+    '91006051','91006125',
+    '91005010','91005020','91005040','91005050','91005060','91005070','91005080','91005090','91005100'
+]);
+function ehCodigoPacoteCorrespondente(codigo) { return CODIGOS_PACOTES_CORRESPONDENTES.has(codigoAuditoria(codigo)); }
+
 function ehEventoPacoteAuditoria(evento, referencia = null) {
-    return /\bPACOTE\b/.test(normalizarAuditoria(`${evento.grau || ''} ${evento.descricao || ''} ${referencia?.d || ''}`));
+    return ehCodigoPacoteCorrespondente(evento.codigo)
+        || /\bPACOTE\b/.test(normalizarAuditoria(`${evento.grau || ''} ${evento.descricao || ''} ${referencia?.d || ''}`));
 }
 
 function linhasRegraBeneficiarioAuditoria(linhas) {
