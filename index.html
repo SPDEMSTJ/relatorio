@@ -810,7 +810,7 @@
         <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% usam arredondamento padrão para duas casas decimais (ex.: 5,044 → 5,04; 5,045 → 5,05). Somente os códigos 4.13.xx.xxx são arredondados para cima no centavo (ex.: 5,044 → 5,05). Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
     <div class="rule-highlights">
         <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Os prefixos 1.01, 2.01, 2.02, 3.01, 4.01 a 4.07 e 4.12 ficam sempre em 100%, sem análise 100–70–50.</p></div>
-        <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>As observações 4.08.99.004/12, 4.09.99.009/5, 4.10.99.001/4 e 4.11.99.006/3 aplicam 100% da UCO ao exame principal e 70% aos adicionais de regiões diferentes. Porte e filme ficam integrais. O relatório sugere a região pelo nome do exame; quando não consegue identificá-la, mantém 100% e pede conferência. Dois RX de tórax com códigos distintos permanecem em 100%, sem atestar que a cobrança conjunta seja válida. O maior porte é sugerido como principal, e você pode ajustar manualmente 100% ou 70%. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
+        <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>Regra universal por família de imagem no mesmo atendimento: 100% da UCO para o exame de maior porte e 70% para os demais. Em empate de porte, fica a 100% o evento com maior valor apresentado. Porte/honorários e filme permanecem integrais. Quando a linha principal tem mais de uma unidade, uma fica a 100% e as demais a 70%. O percentual pode ser ajustado manualmente. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
         <div class="rule-note"><strong>Exames oftalmológicos</strong><p>Nos exames monoculares realizados nos dois olhos, somente a UCO do segundo olho cai para 70%; os portes continuam integrais. Quando o nome traz “monocular”, duas unidades do mesmo código na guia fazem o relatório presumir dois olhos; uma unidade fica a 100%, e mais de duas exigem conferência. Sem essa identificação no nome, a bilateralidade pode ser informada manualmente. Cirurgias de olhos seguem as regras dos atos cirúrgicos.</p></div>
         <div class="rule-note"><strong>Anestesiologia</strong><p>O primeiro ato usa 100% do porte e os seguintes, provisoriamente, 70%. A mesma via pode exigir 50%; internação e urgência podem alterar o limite. O porte 0 exige justificativa.</p></div>
         <div class="rule-note"><strong>Internação e urgência</strong><p>“Internação Hospitalar” dobra o porte, sem dobrar a UCO. Quando a guia informa urgência ou emergência, o cálculo aplica automaticamente +30% ao porte, com ajuste manual disponível. Vídeo/UCO e acomodações devem ser conferidos.</p></div>
@@ -926,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.61</p>
+    <p class="versao-relatorio">Versão 4.62</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -996,7 +996,7 @@
                 <li><b>Cirurgia:</b> o principal fica em 100%; atos adicionais recebem 70% automaticamente e podem ser alterados para 50% pela mesma via ou 100% por equipe/ato distinto. Quando a mesma guia traz cirurgião, 1º auxiliar e anestesista para um mesmo código, o percentual inicial de cada função é 100%. O auxiliar usa somente o porte do cirurgião daquele código e ocorrência (30% para o primeiro; 20% para os seguintes), sem somar outros códigos; a anestesia usa o porte anestésico. Urgência/emergência cadastrada na guia aplica +30% ao porte automaticamente; o ajuste manual continua disponível. Os percentuais e acréscimos incidem sobre o porte; UCO/outros componentes não são reduzidos por 50% ou 70%.</li>
                 <li><b>Internação:</b> na auditoria automática, o regime que contém “Internação” dobra o porte dos atos cirúrgicos do capítulo III, não a UCO. Os atos do capítulo IV não recebem esse dobro pela regra geral. Esse gatilho é operacional e não identifica a acomodação; confira contrato, apartamento/quarto privativo, hospital-dia ou UTI antes de concluir.</li>
                 <li><b>Oftalmologia:</b> em evento chamado “monocular”, uma unidade fica a 100%; duas unidades do mesmo código na guia presumem dois olhos e calculam UCO 100% + 70%, com portes integrais. Mais de duas ficam pendentes. A inferência de dois olhos deve ser conferida se houver dúvida. Não há opção de 50% para esses eventos.</li>
-                <li><b>Radiologia:</b> nas famílias 4.08, 4.09, 4.10 e 4.11, a UCO do exame principal fica a 100% e a dos adicionais somente cai a 70% quando o nome indica região anatômica diferente e a observação consta da tabela anual. Região igual ou desconhecida fica a 100% para conferência; código repetido ou quantidade maior não comprova outra região. Honorários/porte e filme permanecem integrais. Confira na guia se os exames da mesma região podem ser cobrados em conjunto. Contratos específicos, como Vilas Boas, podem ter fator próprio.</li>
+                <li><b>Radiologia:</b> nas famílias 4.08, 4.09, 4.10 e 4.11, aplica-se a regra universal por atendimento: o maior porte recebe 100% da UCO e todos os demais recebem 70%. Se houver empate de porte, o maior valor apresentado define o principal a 100%. Na linha principal com várias unidades, uma recebe 100% e as demais 70%. Honorários/porte e filme permanecem integrais. Contratos específicos, como Vilas Boas, podem ter fator próprio.</li>
                 <li><b>Medicina laboratorial:</b> exames como hemograma, vitamina D e dosagem de cálcio são comparados a 100% do valor da tabela por ocorrência. Duas linhas do mesmo código não geram automaticamente 100%–70%; confira eventual duplicidade, indicação e regra contratual separadamente.</li>
                 <li><b>Anestesia:</b> a auditoria lê “Porte Anest” no código da tabela de honorários e busca o valor do porte na escala anestésica vigente na data. Em internação, dobra esse valor; depois aplica o percentual do ato e os demais ajustes cabíveis. O principal fica a 100%; demais atos podem receber 70% por acesso diferente ou 50% pela mesma via, com ajuste manual. Se a escala anual não estiver incorporada, o percentual é mostrado, mas não há limite monetário nem glosa técnica calculada. Porte 0 e condições especiais exigem conferência.</li>
             </ul>
@@ -3174,8 +3174,10 @@ function avaliarRadiologia(eventos) {
     });
     grupos.forEach(items => {
         items.sort((a, b) => porteNumerico(b.ref.p) - porteNumerico(a.ref.p)
-            || numeroAuditoria(b.evento.valorApresentado) / Math.max(b.quantidade, 1)
-                - numeroAuditoria(a.evento.valorApresentado) / Math.max(a.quantidade, 1)
+            || (items[0]?.tipo === 'Radiologia'
+                ? numeroAuditoria(b.evento.valorApresentado) - numeroAuditoria(a.evento.valorApresentado)
+                : numeroAuditoria(b.evento.valorApresentado) / Math.max(b.quantidade, 1)
+                    - numeroAuditoria(a.evento.valorApresentado) / Math.max(a.quantidade, 1))
             || b.tarifa100 - a.tarifa100
             || a.ordemOriginal - b.ordemOriginal);
         if (items[0].tipo === 'Oftalmologia') {
@@ -3223,34 +3225,13 @@ function avaliarRadiologia(eventos) {
             });
             return;
         }
-        const regiaoPrincipal = regiaoImagemEventoAuditoria(items[0]);
         items.forEach((item, posicao) => {
             const qtd = item.quantidade;
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
             const confirmado = [100, 70, 170].includes(manual) && (manual !== 170 || qtd > 1);
             const familia = item.evento.codigo.slice(0, 3);
             const observacao = { '408': '4.08.99.004/12', '409': '4.09.99.009/5', '410': '4.10.99.001/4', '411': '4.11.99.006/3' }[familia] || '';
-            const regraNaTabela = Boolean(METADADOS_TABELAS.get(item.ref.anoFonte)?.regrasRegioes?.[familia]);
-            const regiao = regiaoImagemEventoAuditoria(item);
-            // Sinaliza ambos os RX do par, mesmo se houver ajuste manual da UCO.
-            const rxSobrepostos = familia === '408' && regiao ? items.filter(outro => {
-                if (outro === item || outro.evento.codigo === item.evento.codigo) return false;
-                const outraRegiao = regiaoImagemEventoAuditoria(outro);
-                return outraRegiao && !regioesImagemDistintas(regiao, outraRegiao);
-            }) : [];
-            const alertaRxSobrepostos = rxSobrepostos.length
-                ? `Conferir RX com regiões iguais ou sobrepostas: ${item.evento.codigo} e ${[...new Set(rxSobrepostos.map(outro => outro.evento.codigo))].join(', ')}. Verifique a guia física e a regra contratual ou encaminhe à AUDITORIA MÉDICA para definir 100%/70% da UCO e se a cobrança conjunta é devida. O percentual exibido não confirma a validade da cobrança.`
-                : '';
-            // O código do Doppler de órgão isolado não revela a região no nome.
-            // Nesta combinação, a conferência solicitou tratá-lo como região
-            // diferente do US de abdome superior, mantendo ajuste manual.
-            const parUsRegioesDiferentes = familia === '409'
-                && new Set([items[0].evento.codigo, item.evento.codigo]).size === 2
-                && [items[0].evento.codigo, item.evento.codigo].includes('40901130')
-                && [items[0].evento.codigo, item.evento.codigo].includes('40901386');
-            const regioesDiferentes = Boolean(regraNaTabela && posicao > 0
-                && (parUsRegioesDiferentes || regioesImagemDistintas(regiaoPrincipal, regiao)));
-            const sugestao = regioesDiferentes ? 70 : 100;
+            const sugestao = posicao === 0 ? (qtd > 1 ? 170 : 100) : 70;
             const percentual = confirmado ? manual : sugestao;
             const reduzidoDisponivel = item.tarifa70 !== null && item.tarifa70 > 0;
             const previsto = percentual === 100 ? item.tarifa100 * qtd
@@ -3258,22 +3239,17 @@ function avaliarRadiologia(eventos) {
                 : percentual === 170 && qtd > 1 && reduzidoDisponivel ? item.tarifa100 + (qtd - 1) * item.tarifa70 : null;
             const permitido = previsto;
             const us = familia === '409';
-            const empatePorte = items.length > 1 && porteNumerico(items[0].ref.p) === porteNumerico(items[1].ref.p);
-            const orientacao = `${observacao ? `Observação ${observacao}: ` : ''}${regioesDiferentes
-                ? `${parUsRegioesDiferentes ? 'Abdome superior e Doppler de órgão isolado tratados como regiões diferentes conforme orientação; confirme o órgão na guia' : `regiões diferentes identificadas (${regiaoPrincipal} e ${regiao}); confirme as regiões na guia`}; somente a UCO deste exame fica a 70%.`
-                : posicao === 0 ? `exame principal por maior porte${us ? ` (${item.ref.p || 'não informado'})` : ''}: 100%.`
-                : regiaoPrincipal && regiao && !regioesImagemDistintas(regiaoPrincipal, regiao)
-                    ? `regiões iguais ou sobrepostas (${regiaoPrincipal} / ${regiao}); preço-base a 100%, sem redução automática da UCO. Confira se os exames são cumulativos.`
-                    : 'região não identificada com segurança; preço-base a 100%, sem presumir redução. Confira a guia e ajuste manualmente se forem regiões diferentes.'}`;
+            const empatePorte = items.slice(1).some(outro => porteNumerico(outro.ref.p) === porteNumerico(items[0].ref.p));
+            const orientacao = `${observacao ? `Referência ${observacao}. ` : ''}${posicao === 0
+                ? `Exame principal por maior porte${us ? ` (${item.ref.p || 'não informado'})` : ''}${empatePorte ? ' e, no empate, por maior valor apresentado' : ''}: ${sugestao === 170 ? 'uma unidade a 100% e as demais a 70%' : '100%'}.`
+                : 'Exame adicional: 70% da UCO pela regra universal, independentemente da região anatômica.'}`;
             resultados.push(criarLinhaAuditoria(item.evento, item.tipo, permitido, {
-                regra: `${item.villasBoas ? 'Vilas Boas — ' : ''}${percentual === 170 ? 'UCO: 1 unidade a 100% e demais a 70%' : `UCO ${percentual}%`}${confirmado ? ' (ajuste manual)' : ' (sugestão automática; conferir região)'}${us ? `; porte ${item.ref.p || '—'}` : ''}`,
-                observacao: `${item.ref.d} — grupo ${item.categoria}, guia ${item.evento.guia.ordem || 'não informada'}. ${orientacao} Honorários/porte e filme permanecem integrais; apenas a UCO do exame adicional em outra região pode receber 70%.${empatePorte ? ' Há empate de porte: o relatório prioriza o maior valor apresentado por unidade como principal; esse desempate é operacional, confirme o principal na guia e ajuste o percentual se necessário.' : ''}${qtd > 1 ? ' Várias unidades na mesma linha não comprovam regiões diferentes.' : ''}${!regraNaTabela ? ' A observação de regiões diferentes não foi encontrada nesta tabela anual; confirme a fonte antes de reduzir.' : ''}`,
+                regra: `${item.villasBoas ? 'Vilas Boas — ' : ''}${percentual === 170 ? 'UCO: 1 unidade a 100% e demais a 70%' : `UCO ${percentual}%`}${confirmado ? ' (ajuste manual)' : ' (regra automática universal)'}${us ? `; porte ${item.ref.p || '—'}` : ''}`,
+                observacao: `${item.ref.d} — grupo ${item.categoria}, guia ${item.evento.guia.ordem || 'não informada'}. ${orientacao} Honorários/porte e filme permanecem integrais; a redução atinge somente a UCO.${empatePorte ? ' Há empate de porte neste grupo; o maior valor apresentado foi priorizado como principal.' : ''}`,
                 referencia: item.ref,
                 limiteReferencia: previsto ?? item.tarifa100 * qtd,
                 baseComparacao: item.villasBoas ? 'Vilas Boas 51% e UCO' : 'UCO pela tabela/regra',
-                alerta: [alertaRxSobrepostos, (percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
-                    items.length > 1 && (!regiaoPrincipal || !regiao) && !parUsRegioesDiferentes && !confirmado
-                        ? 'Região não identificada com segurança: mantidos 100%. Confira a região na guia antes de aplicar 70% da UCO.' : ''].filter(Boolean).join(' '),
+                alerta: (percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
                 percentual, sugestaoPercentual: sugestao
             }));
         });
