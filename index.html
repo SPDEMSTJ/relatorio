@@ -600,6 +600,10 @@
     #modalAuditoriaBeneficiario .modal-content { max-width:1600px; width:min(1600px,98vw); height:96vh; max-height:96vh; margin:1vh auto; padding:14px 16px; display:flex; flex-direction:column; overflow:hidden; }
     #conteudoPopupAuditoriaBeneficiario { display:flex; flex:1; min-height:0; flex-direction:column; }
     .popup-auditoria-cabecalho { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; margin-bottom:12px; }
+    .popup-auditoria-cabecalho[data-drag-handle] { cursor:move; touch-action:none; user-select:none; padding:3px 4px; border-radius:10px; }
+    .popup-auditoria-cabecalho[data-drag-handle]:hover { background:#f3f7fd; }
+    .popup-auditoria-cabecalho[data-drag-handle] button { cursor:pointer; }
+    .modal-content.popup-arrastando { transition:none !important; box-shadow:0 30px 75px rgba(5,17,43,.42); }
     .popup-auditoria-cabecalho h2 { margin:0 0 4px; }
     .popup-auditoria-cabecalho p { margin:0; color:var(--muted); font-size:12px; }
     .popup-auditoria-fechar { border:1px solid #cbd8e9; border-radius:9px; background:#fff; color:var(--blue-deep); padding:8px 11px; font-weight:700; cursor:pointer; }
@@ -618,6 +622,10 @@
     .auditoria-filtro-codigo { flex:none; border:1px solid #cbd8e9; border-radius:7px; padding:6px 10px; background:#fff; color:#284269; cursor:pointer; font-size:12px; font-weight:600; }
     .auditoria-filtro-codigo small { margin-left:4px; opacity:.8; }
     .auditoria-filtro-codigo.ativo { background:#1f5ca8; border-color:#1f5ca8; color:#fff; }
+    .auditoria-guia-destaque { display:inline-flex; align-items:center; padding:4px 9px; border:2px solid #2563eb; border-radius:999px; background:#dbeafe; color:#1e3a8a; font-size:12px; font-weight:900; letter-spacing:.02em; white-space:nowrap; }
+    .auditoria-guia-destaque.guia-cor-1 { border-color:#7c3aed; background:#ede9fe; color:#5b21b6; }
+    .auditoria-guia-destaque.guia-cor-2 { border-color:#d97706; background:#fef3c7; color:#92400e; }
+    .auditoria-guia-destaque.guia-cor-3 { border-color:#059669; background:#d1fae5; color:#065f46; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-inicio-codigo td { border-top:3px solid #aec6e5; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-legenda { margin:0 0 7px; padding:6px 9px; line-height:1.3; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-filtros-codigos { margin:0 0 7px; padding:7px 9px; gap:3px; }
@@ -628,7 +636,7 @@
     #conteudoPopupAuditoriaBeneficiario .auditoria-tabela-wrap { flex:1; min-height:0; max-height:none; overflow:auto; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-evento.pendencia-destacada > td { animation:destaque-pendencia-auditoria 2.2s ease; }
     @keyframes destaque-pendencia-auditoria { 0%,45% { background:#fef3c7 !important; box-shadow:inset 0 0 0 3px #f59e0b; } 100% { box-shadow:inset 0 0 0 0 transparent; } }
-    @media (max-width:720px) { #modalAuditoriaBeneficiario { padding:8px; } #modalAuditoriaBeneficiario .modal-content { width:100%; height:97vh; max-height:97vh; margin:1vh auto; padding:10px; } }
+    @media (max-width:720px) { #modalAuditoriaBeneficiario { padding:8px; } #modalAuditoriaBeneficiario .modal-content { width:100%; height:97vh; max-height:97vh; margin:1vh auto; padding:10px; transform:none !important; } .popup-auditoria-cabecalho[data-drag-handle] { cursor:default; touch-action:auto; } }
     .btn-topo { bottom:22px; right:22px; min-height:42px; border-radius:999px; box-shadow:0 9px 24px rgba(21,54,111,.22); }
     @media (min-width:1240px) { #saida .card { overflow:visible; } }
     @media (max-width:1080px) { .rule-highlights { grid-template-columns:1fr; } .cards-areas { grid-template-columns:repeat(2,minmax(0,1fr)); } .auditoria-controles { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -902,7 +910,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.56</p>
+    <p class="versao-relatorio">Versão 4.57</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -993,7 +1001,7 @@
 
 <div id="modalAuditoriaBeneficiario" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloPopupAuditoriaBeneficiario" aria-hidden="true">
     <div class="modal-content">
-        <div class="popup-auditoria-cabecalho">
+        <div class="popup-auditoria-cabecalho" data-drag-handle title="Arraste este cabeçalho para mover o popup. Clique duas vezes para centralizar.">
             <div><h2 id="tituloPopupAuditoriaBeneficiario">Análise 100–70–50</h2><p id="subtituloPopupAuditoriaBeneficiario"></p></div>
             <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupAuditoriaBeneficiario()" aria-label="Fechar análise 100–70–50">Fechar ✕</button>
         </div>
@@ -1003,7 +1011,7 @@
 
 <div id="modalBeneficiariosProcesso" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloBeneficiariosProcesso" aria-hidden="true">
     <div class="modal-content">
-        <div class="popup-auditoria-cabecalho">
+        <div class="popup-auditoria-cabecalho" data-drag-handle title="Arraste este cabeçalho para mover o popup. Clique duas vezes para centralizar.">
             <div><h2 id="tituloBeneficiariosProcesso">Beneficiários do processo</h2><p id="subtituloBeneficiariosProcesso"></p></div>
             <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button>
         </div>
@@ -1096,6 +1104,59 @@ document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click',
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && document.getElementById('modalBeneficiariosProcesso')?.style.display === 'block') fecharPopupBeneficiariosProcesso();
 });
+
+function habilitarPopupArrastavel(modal) {
+    const painel = modal?.querySelector('.modal-content');
+    const alca = painel?.querySelector('[data-drag-handle]');
+    if (!painel || !alca) return;
+    let arraste = null;
+    const finalizar = evento => {
+        if (!arraste) return;
+        if (alca.hasPointerCapture?.(arraste.pointerId)) alca.releasePointerCapture(arraste.pointerId);
+        painel.classList.remove('popup-arrastando');
+        arraste = null;
+        evento?.preventDefault();
+    };
+    alca.addEventListener('pointerdown', evento => {
+        if (window.matchMedia('(max-width:720px)').matches || evento.button !== 0
+            || evento.target.closest('button,input,select,textarea,a')) return;
+        const retangulo = painel.getBoundingClientRect();
+        arraste = {
+            pointerId: evento.pointerId,
+            inicioX: evento.clientX,
+            inicioY: evento.clientY,
+            baseX: Number(painel.dataset.arrasteX || 0),
+            baseY: Number(painel.dataset.arrasteY || 0),
+            retangulo
+        };
+        alca.setPointerCapture?.(evento.pointerId);
+        painel.classList.add('popup-arrastando');
+        evento.preventDefault();
+    });
+    alca.addEventListener('pointermove', evento => {
+        if (!arraste || evento.pointerId !== arraste.pointerId) return;
+        const { retangulo } = arraste;
+        const deslocamentoX = Math.min(window.innerWidth - 90 - retangulo.left,
+            Math.max(90 - retangulo.right, evento.clientX - arraste.inicioX));
+        const deslocamentoY = Math.min(window.innerHeight - 60 - retangulo.top,
+            Math.max(8 - retangulo.top, evento.clientY - arraste.inicioY));
+        const x = arraste.baseX + deslocamentoX;
+        const y = arraste.baseY + deslocamentoY;
+        painel.dataset.arrasteX = String(x);
+        painel.dataset.arrasteY = String(y);
+        painel.style.transform = `translate3d(${x}px,${y}px,0)`;
+    });
+    alca.addEventListener('pointerup', finalizar);
+    alca.addEventListener('pointercancel', finalizar);
+    alca.addEventListener('dblclick', evento => {
+        if (evento.target.closest('button,input,select,textarea,a')) return;
+        painel.dataset.arrasteX = '0';
+        painel.dataset.arrasteY = '0';
+        painel.style.transform = '';
+    });
+}
+
+document.querySelectorAll('#modalAuditoriaBeneficiario, #modalBeneficiariosProcesso').forEach(habilitarPopupArrastavel);
 
 function invalidarRelatorioAnterior() {
     limparResumosComplementares();
@@ -2099,6 +2160,10 @@ function codigoAuditoria(value) {
 function formatarCodigoAuditoria(value) {
     const codigo = codigoAuditoria(value);
     return codigo.length === 8 ? `${codigo.slice(0, 1)}.${codigo.slice(1, 3)}.${codigo.slice(3, 5)}.${codigo.slice(5)}` : String(value ?? '').trim();
+}
+
+function corGuiaAuditoria(value) {
+    return [...String(value ?? '')].reduce((soma, caractere) => soma + caractere.charCodeAt(0), 0) % 4;
 }
 
 function dataAuditoria(value) {
@@ -3673,6 +3738,8 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const porteProcedimento = String(linha.referencia?.p ?? '').trim();
         const porteAnestesico = linha.categoria === 'Anestesia' ? numeroOuNulo(linha.referencia?.an) : null;
         const porteBadges = `${porteProcedimento ? `<span class="auditoria-porte" title="Porte do procedimento na tabela vigente">Porte ${escAuditoria(porteProcedimento)}</span>` : ''}${porteAnestesico !== null ? `<span class="auditoria-porte auditoria-porte-anestesico" title="Porte anestésico na tabela vigente">Anest. ${escAuditoria(porteAnestesico)}</span>` : ''}`;
+        const guiaDestaque = prefixoId === 'popup-'
+            ? `<span class="auditoria-guia-destaque guia-cor-${corGuiaAuditoria(linha.guia.ordem)}" title="Este evento pertence à guia ${escAuditoria(linha.guia.ordem || 'não informada')}">Guia ${escAuditoria(linha.guia.ordem || '—')}</span>` : '';
         const situacao = acima && calculado ? 'Possível glosa pela regra' : acima ? 'Preço acima da tabela' : calculado ? 'Dentro do limite' : 'Regra pendente';
         const explicacao = acima && !calculado ? 'Não concluir glosa sem confirmar a regra.' : !calculado ? 'Faltam dados para calcular a possível glosa.' : '';
         const chaveBilateral = oftalmologia ? chaveBilateralOftalmo(linha.evento) : '';
@@ -3689,7 +3756,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             </select>` : '';
         const novoGrupoCodigo = prefixoId === 'popup-' && (indice === 0 || codigoAuditoria(linhas[indice - 1].evento.codigo) !== codigoAuditoria(linha.evento.codigo));
         return `<tr class="auditoria-evento ${[50, 70, 100].includes(linha.percentual) ? `percentual-aplicado-${linha.percentual}` : ''} ${novoGrupoCodigo ? 'auditoria-inicio-codigo' : ''} ${acima && calculado ? 'linha-acima-tabela' : acima ? 'linha-conferencia-preco' : ''}" data-evento-id="${escAuditoria(linha.evento.id)}" data-auditoria-pendente="${pendente}">
-            <td class="auditoria-evento-resumo"><div class="auditoria-identificacao"><span class="auditoria-codigo">Código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}</span><span class="auditoria-grau">Grau: ${escAuditoria(linha.evento.grau || 'não informado')}</span>${porteBadges}${percentualBadge}${cirurgia ? `<span class="auditoria-funcao">${escAuditoria(linha.funcaoCirurgica || equipeCirurgica(linha.evento.grau)?.tipo || 'Função a conferir')}</span>` : ''}</div><strong>${escAuditoria(linha.evento.descricao || linha.referencia?.d || 'Evento sem descrição')}</strong>
+            <td class="auditoria-evento-resumo"><div class="auditoria-identificacao"><span class="auditoria-codigo">Código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}</span>${guiaDestaque}<span class="auditoria-grau">Grau: ${escAuditoria(linha.evento.grau || 'não informado')}</span>${porteBadges}${percentualBadge}${cirurgia ? `<span class="auditoria-funcao">${escAuditoria(linha.funcaoCirurgica || equipeCirurgica(linha.evento.grau)?.tipo || 'Função a conferir')}</span>` : ''}</div><strong>${escAuditoria(linha.evento.descricao || linha.referencia?.d || 'Evento sem descrição')}</strong>
                 <small>${escAuditoria(linha.categoria)} · guia ${escAuditoria(linha.guia.ordem || '—')} / item ${escAuditoria(linha.evento.ordem || '—')} · ${escAuditoria(linha.evento.data || linha.guia.data || 'sem data')}${linha.sugestaoPercentual ? ` · ${linha.sugestaoPercentual}% aplicado` : ''}</small></td>
             <td class="valor">${escAuditoria(linha.evento.quantidade)}</td>
             <td class="valor">${valorBRL(linha.solicitado)}</td>
