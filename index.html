@@ -79,6 +79,11 @@
     .tabela-beneficiarios-processo { table-layout:auto; }
     .tabela-beneficiarios-processo th,.tabela-beneficiarios-processo td { white-space:normal; }
     .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
+    .tabela-beneficiarios-processo tbody tr { cursor:pointer; transition:background .15s ease,box-shadow .15s ease; }
+    .tabela-beneficiarios-processo tbody tr:hover td,.tabela-beneficiarios-processo tbody tr:focus-visible td { background:#f0f7ff; }
+    .tabela-beneficiarios-processo tbody tr:focus-visible { outline:3px solid #2563eb; outline-offset:-3px; }
+    .tabela-beneficiarios-processo tbody tr.beneficiario-conferido td { background:#dcfce7; color:#14532d; border-bottom-color:#bbf7d0; }
+    .tabela-beneficiarios-processo .check-beneficiario { display:inline-grid; place-items:center; width:19px; height:19px; margin-right:6px; border-radius:50%; background:#16a34a; color:#fff; font-size:12px; font-weight:900; vertical-align:middle; }
     .marcador-beneficiario-popup { display:inline-block; margin-left:5px; padding:2px 5px; border-radius:4px; background:#dbeafe; color:#1e3a8a; font-size:10px; font-weight:800; }
     .marcador-beneficiario-popup.exercicio { background:#ffedd5; color:#9a3412; }
     .marcador-beneficiario-popup.prazo { background:#fee2e2; color:#991b1b; }
@@ -320,6 +325,10 @@
     .auditoria-aviso-valor { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
     .auditoria-resumo { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px; padding:14px 0; }
     .auditoria-resumo div { background:#f8fafc; border:1px solid #e2e8f0; border-radius:9px; padding:10px; }
+    .auditoria-resumo button { width:100%; min-height:0; padding:10px; border:1px solid #e2e8f0; border-radius:9px; background:#f8fafc; color:inherit; text-align:left; font:inherit; box-shadow:none; }
+    .auditoria-resumo button.auditoria-resumo-atalho:not(:disabled) { cursor:pointer; border-color:#d8b36a; background:#fff8e8; }
+    .auditoria-resumo button.auditoria-resumo-atalho:not(:disabled):hover,.auditoria-resumo button.auditoria-resumo-atalho:not(:disabled):focus-visible { background:#ffefc7; border-color:#c58a24; outline:2px solid #f0b54a; outline-offset:1px; }
+    .auditoria-resumo button:disabled { opacity:.65; cursor:default; }
     .auditoria-resumo span { display:block; color:#64748b; font-size:10px; margin-bottom:4px; }
     .auditoria-resumo b { color:#0f172a; font-size:13px; }
     .auditoria-tabela-wrap { max-height:540px; overflow:auto; border:1px solid #e2e8f0; border-radius:8px; }
@@ -617,6 +626,8 @@
     #conteudoPopupAuditoriaBeneficiario .auditoria-resumo { padding:0 0 7px; gap:6px; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-resumo div { padding:6px 9px; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-tabela-wrap { flex:1; min-height:0; max-height:none; overflow:auto; }
+    #conteudoPopupAuditoriaBeneficiario .auditoria-evento.pendencia-destacada > td { animation:destaque-pendencia-auditoria 2.2s ease; }
+    @keyframes destaque-pendencia-auditoria { 0%,45% { background:#fef3c7 !important; box-shadow:inset 0 0 0 3px #f59e0b; } 100% { box-shadow:inset 0 0 0 0 transparent; } }
     @media (max-width:720px) { #modalAuditoriaBeneficiario { padding:8px; } #modalAuditoriaBeneficiario .modal-content { width:100%; height:97vh; max-height:97vh; margin:1vh auto; padding:10px; } }
     .btn-topo { bottom:22px; right:22px; min-height:42px; border-radius:999px; box-shadow:0 9px 24px rgba(21,54,111,.22); }
     @media (min-width:1240px) { #saida .card { overflow:visible; } }
@@ -891,7 +902,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.55</p>
+    <p class="versao-relatorio">Versão 4.56</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1005,6 +1016,7 @@
 // VARIAVEL GLOBAL PARA ARMAZENAR DADOS DE RESUMO POR PEG
 let GLOBAL_DADOS_RESUMO = {};
 let PEG_BENEFICIARIOS_POPUP = '';
+const BENEFICIARIOS_CONFERIDOS_POPUP = new Set();
 let RELATORIO_GERADO = false;
 let FILTRO_EVENTOS_TIMER = null;
 
@@ -1028,6 +1040,23 @@ function fecharPopupBeneficiariosProcesso() {
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
     PEG_BENEFICIARIOS_POPUP = '';
+}
+
+function chaveConferenciaBeneficiario(item) {
+    return [item.peg, item.guia, item.matricula, item.data, normalizarAuditoria(item.nome)].join('|');
+}
+
+function alternarConferenciaBeneficiario(chave) {
+    if (BENEFICIARIOS_CONFERIDOS_POPUP.has(chave)) BENEFICIARIOS_CONFERIDOS_POPUP.delete(chave);
+    else BENEFICIARIOS_CONFERIDOS_POPUP.add(chave);
+    renderizarPopupBeneficiariosProcesso();
+    document.querySelector(`#conteudoBeneficiariosProcesso tr[data-chave-conferencia="${CSS.escape(chave)}"]`)?.focus();
+}
+
+function teclaConferenciaBeneficiario(evento, chave) {
+    if (evento.key !== 'Enter' && evento.key !== ' ') return;
+    evento.preventDefault();
+    alternarConferenciaBeneficiario(chave);
 }
 
 function renderizarPopupBeneficiariosProcesso() {
@@ -1054,7 +1083,11 @@ function renderizarPopupBeneficiariosProcesso() {
     lista.sort((a,b) => direcao * comparador(a,b));
     document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
     document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s) · valor apresentado total ${fmt(lista.reduce((soma,item) => soma + item.valor, 0))}`;
-    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => `<tr><td>${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Guia com exercício distinto</span>' : ''}${item.maisDeUmAno ? '<span class="marcador-beneficiario-popup prazo">Mais de 1 ano do atendimento</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`).join('')}</tbody></table>`;
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => {
+        const chave = chaveConferenciaBeneficiario(item);
+        const conferido = BENEFICIARIOS_CONFERIDOS_POPUP.has(chave);
+        return `<tr class="${conferido ? 'beneficiario-conferido' : ''}" data-chave-conferencia="${escAuditoria(chave)}" role="checkbox" aria-checked="${conferido}" tabindex="0" onclick="alternarConferenciaBeneficiario(this.dataset.chaveConferencia)" onkeydown="teclaConferenciaBeneficiario(event,this.dataset.chaveConferencia)"><td>${conferido ? '<span class="check-beneficiario" aria-hidden="true">✓</span>' : ''}${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Guia com exercício distinto</span>' : ''}${item.maisDeUmAno ? '<span class="marcador-beneficiario-popup prazo">Mais de 1 ano do atendimento</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click', event => {
@@ -1276,6 +1309,7 @@ function atualizarFiltroVisual() {
         document.getElementById('pesquisaRelatorio').value = '';
         const pesquisaBeneficiario = document.getElementById('buscarBeneficiarioAuditoria');
         if (pesquisaBeneficiario) pesquisaBeneficiario.value = '';
+        BENEFICIARIOS_CONFERIDOS_POPUP.clear();
         seletorPeg.dataset.pegPesquisa = seletorPeg.value;
     }
     limparResumosComplementares();
@@ -2060,6 +2094,11 @@ function numeroOuNulo(value) {
 function codigoAuditoria(value) {
     const code = String(value ?? '').replace(/\D/g, '');
     return code.length >= 5 ? code : '';
+}
+
+function formatarCodigoAuditoria(value) {
+    const codigo = codigoAuditoria(value);
+    return codigo.length === 8 ? `${codigo.slice(0, 1)}.${codigo.slice(1, 3)}.${codigo.slice(3, 5)}.${codigo.slice(5)}` : String(value ?? '').trim();
 }
 
 function dataAuditoria(value) {
@@ -3628,6 +3667,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const condicoes = condicoesEventoAuditoria(linha.evento);
         const calculado = linha.permitido !== null;
         const acima = linha.excessoTabela > 0;
+        const pendente = linha.permitido === null || Boolean(linha.alerta);
         const percentualBadge = [25, 50, 70, 100, 170].includes(linha.percentual)
             ? `<span class="auditoria-percentual-badge percentual-${linha.percentual}" title="${calculado ? 'Percentual aplicado no cálculo' : 'Percentual sugerido; cálculo pendente'}">${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`}</span>` : '';
         const porteProcedimento = String(linha.referencia?.p ?? '').trim();
@@ -3638,7 +3678,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const chaveBilateral = oftalmologia ? chaveBilateralOftalmo(linha.evento) : '';
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
         const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : codigoSempreIntegral(linha.evento.codigo) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
-                <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(linha.evento.codigo)}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
+                <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
                     <option value="" ${!informado ? 'selected' : ''}>${linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
         const controleOftalmo = oftalmologia ? `<label class="percentual-label-auditoria" for="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}">Exame monocular em dois olhos?</label>
@@ -3648,8 +3688,8 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
                 <option value="nao" ${bilateralidade === 'nao' ? 'selected' : ''}>Não — sem redução</option>
             </select>` : '';
         const novoGrupoCodigo = prefixoId === 'popup-' && (indice === 0 || codigoAuditoria(linhas[indice - 1].evento.codigo) !== codigoAuditoria(linha.evento.codigo));
-        return `<tr class="auditoria-evento ${[50, 70, 100].includes(linha.percentual) ? `percentual-aplicado-${linha.percentual}` : ''} ${novoGrupoCodigo ? 'auditoria-inicio-codigo' : ''} ${acima && calculado ? 'linha-acima-tabela' : acima ? 'linha-conferencia-preco' : ''}" data-evento-id="${escAuditoria(linha.evento.id)}">
-            <td class="auditoria-evento-resumo"><div class="auditoria-identificacao"><span class="auditoria-codigo">Código ${escAuditoria(linha.evento.codigo)}</span><span class="auditoria-grau">Grau: ${escAuditoria(linha.evento.grau || 'não informado')}</span>${porteBadges}${percentualBadge}${cirurgia ? `<span class="auditoria-funcao">${escAuditoria(linha.funcaoCirurgica || equipeCirurgica(linha.evento.grau)?.tipo || 'Função a conferir')}</span>` : ''}</div><strong>${escAuditoria(linha.evento.descricao || linha.referencia?.d || 'Evento sem descrição')}</strong>
+        return `<tr class="auditoria-evento ${[50, 70, 100].includes(linha.percentual) ? `percentual-aplicado-${linha.percentual}` : ''} ${novoGrupoCodigo ? 'auditoria-inicio-codigo' : ''} ${acima && calculado ? 'linha-acima-tabela' : acima ? 'linha-conferencia-preco' : ''}" data-evento-id="${escAuditoria(linha.evento.id)}" data-auditoria-pendente="${pendente}">
+            <td class="auditoria-evento-resumo"><div class="auditoria-identificacao"><span class="auditoria-codigo">Código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}</span><span class="auditoria-grau">Grau: ${escAuditoria(linha.evento.grau || 'não informado')}</span>${porteBadges}${percentualBadge}${cirurgia ? `<span class="auditoria-funcao">${escAuditoria(linha.funcaoCirurgica || equipeCirurgica(linha.evento.grau)?.tipo || 'Função a conferir')}</span>` : ''}</div><strong>${escAuditoria(linha.evento.descricao || linha.referencia?.d || 'Evento sem descrição')}</strong>
                 <small>${escAuditoria(linha.categoria)} · guia ${escAuditoria(linha.guia.ordem || '—')} / item ${escAuditoria(linha.evento.ordem || '—')} · ${escAuditoria(linha.evento.data || linha.guia.data || 'sem data')}${linha.sugestaoPercentual ? ` · ${linha.sugestaoPercentual}% aplicado` : ''}</small></td>
             <td class="valor">${escAuditoria(linha.evento.quantidade)}</td>
             <td class="valor">${valorBRL(linha.solicitado)}</td>
@@ -3867,12 +3907,24 @@ function renderizarPopupAuditoriaBeneficiario() {
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
-        <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(codigo)} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
-        <div class="auditoria-resumo"><div><span>Eventos com tabela</span><b>${itens.length}</b></div><div><span>Possíveis glosas pela regra</span><b>${possiveis.length}</b></div><div><span>Valor possível a glosar</span><b>${valorBRL(glosa)}</b></div><div><span>Alertas só de preço</span><b>${apenasPreco.length}</b></div><div><span>Pendências a conferir</span><b>${pendentes.length}</b></div></div>
+        <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
+        <div class="auditoria-resumo"><div><span>Eventos com tabela</span><b>${itens.length}</b></div><div><span>Possíveis glosas pela regra</span><b>${possiveis.length}</b></div><div><span>Valor possível a glosar</span><b>${valorBRL(glosa)}</b></div><div><span>Alertas só de preço</span><b>${apenasPreco.length}</b></div><button type="button" class="auditoria-resumo-atalho" onclick="irParaPrimeiraPendenciaAuditoria()" ${pendentes.length ? '' : 'disabled'} title="${pendentes.length ? 'Ir para a primeira pendência exibida' : 'Não há pendências exibidas'}"><span>Pendências a conferir · clicar para ir</span><b>${pendentes.length}</b></button></div>
         ${renderizarTabelaAuditoria(itens, GLOBAL_MODELO_AUDITORIA.internacoes, 'popup-')}`;
     const tabela = conteudo.querySelector('.auditoria-tabela-wrap');
     if (tabela) tabela.scrollTop = posicao;
     if (indiceFoco >= 0) conteudo.querySelectorAll('input, select, summary')[indiceFoco]?.focus({ preventScroll: true });
+}
+
+function irParaPrimeiraPendenciaAuditoria() {
+    const linha = document.querySelector('#conteudoPopupAuditoriaBeneficiario .auditoria-evento[data-auditoria-pendente="true"]');
+    if (!linha) return;
+    linha.classList.remove('pendencia-destacada');
+    void linha.offsetWidth;
+    linha.classList.add('pendencia-destacada');
+    linha.setAttribute('tabindex', '-1');
+    linha.scrollIntoView({ behavior:'smooth', block:'center' });
+    linha.focus({ preventScroll:true });
+    setTimeout(() => linha.classList.remove('pendencia-destacada'), 2400);
 }
 
 document.getElementById('modalAuditoriaBeneficiario')?.addEventListener('click', event => {
