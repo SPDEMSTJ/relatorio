@@ -76,6 +76,7 @@
     .total-beneficiarios-processo { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:12px 0 0; padding:11px 14px; border:1px solid #93c5fd; border-left:5px solid #2563eb; border-radius:9px; background:#eff6ff; color:#1e3a8a; }
     .total-beneficiarios-processo span { font-size:12px; font-weight:750; }
     .total-beneficiarios-processo strong { font-size:19px; color:#0f3d82; white-space:nowrap; }
+    #subtituloBeneficiariosProcesso .prestador-popup-beneficiarios { display:block; margin-top:3px; font-size:10px; line-height:1.35; color:#64748b; }
     .beneficiarios-processo-controles { display:flex; align-items:end; gap:10px; margin:12px 0; flex-wrap:wrap; }
     .beneficiarios-processo-controles label { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:#475569; }
     .beneficiarios-processo-controles select { width:230px; }
@@ -84,6 +85,8 @@
     .tabela-beneficiarios-processo th,.tabela-beneficiarios-processo td { white-space:normal; }
     .tabela-beneficiarios-processo thead th { top:0; z-index:5; background:#dbeafe; color:#183b6b; border-bottom:2px solid #93b4dd; box-shadow:0 2px 5px rgba(15,47,87,.18); }
     .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
+    .btn-ver-glosa-beneficiario { min-height:30px; height:auto; padding:5px 9px; border:1px solid #dc2626; border-radius:7px; background:#fff1f2; color:#991b1b; font-size:11px; font-weight:800; white-space:nowrap; }
+    .btn-ver-glosa-beneficiario:hover,.btn-ver-glosa-beneficiario:focus-visible { background:#fee2e2; outline:2px solid #fca5a5; outline-offset:1px; }
     .tabela-beneficiarios-processo tbody tr { cursor:pointer; transition:background .15s ease,box-shadow .15s ease; }
     .tabela-beneficiarios-processo tbody tr:hover td,.tabela-beneficiarios-processo tbody tr:focus-visible td { background:#f0f7ff; }
     .tabela-beneficiarios-processo tbody tr:focus-visible { outline:3px solid #2563eb; outline-offset:-3px; }
@@ -92,6 +95,13 @@
     .marcador-beneficiario-popup { display:inline-block; margin-left:5px; padding:2px 5px; border-radius:4px; background:#dbeafe; color:#1e3a8a; font-size:10px; font-weight:800; }
     .marcador-beneficiario-popup.exercicio { background:#ffedd5; color:#9a3412; }
     .marcador-beneficiario-popup.prazo { background:#fee2e2; color:#991b1b; }
+    #modalGlosasBeneficiario { z-index:1005; }
+    #modalGlosasBeneficiario .modal-content { width:min(980px,94vw); max-width:980px; max-height:86vh; overflow:auto; }
+    .resumo-glosa-beneficiario { margin:0 0 12px; padding:10px 12px; border-left:4px solid #dc2626; border-radius:7px; background:#fff1f2; color:#7f1d1d; line-height:1.5; }
+    .tabela-glosas-beneficiario { table-layout:auto; min-width:850px; }
+    .tabela-glosas-beneficiario th { background:#fee2e2; color:#7f1d1d; }
+    .tabela-glosas-beneficiario th,.tabela-glosas-beneficiario td { white-space:normal; vertical-align:top; }
+    .tabela-glosas-beneficiario td.valor { white-space:nowrap; }
     .observacao-pacote-correspondente { display:block; margin-top:5px; padding:5px 7px; border-left:4px solid #7c3aed; background:#f3e8ff; color:#581c87; font-weight:700; font-size:11px; }
     .faixa-parecer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 0 10px; padding:13px 16px; border:1px solid #afc9ee; border-left:5px solid #2563b7; border-radius:12px; background:#eef5ff; }
     .faixa-parecer strong { display:block; color:#163c72; font-size:13px; }
@@ -916,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.59</p>
+    <p class="versao-relatorio">Versão 4.60</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1027,6 +1037,16 @@
     </div>
 </div>
 
+<div id="modalGlosasBeneficiario" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloGlosasBeneficiario" aria-hidden="true">
+    <div class="modal-content">
+        <div class="popup-auditoria-cabecalho">
+            <div><h2 id="tituloGlosasBeneficiario">Glosas da guia</h2><p id="subtituloGlosasBeneficiario"></p></div>
+            <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupGlosasBeneficiario()">Fechar ✕</button>
+        </div>
+        <div id="conteudoGlosasBeneficiario"></div>
+    </div>
+</div>
+
 <script>
 // VARIAVEL GLOBAL PARA ARMAZENAR DADOS DE RESUMO POR PEG
 let GLOBAL_DADOS_RESUMO = {};
@@ -1052,6 +1072,7 @@ function abrirPopupBeneficiariosProcesso(peg) {
 }
 
 function fecharPopupBeneficiariosProcesso(origemJanelaSeparada = false) {
+    fecharPopupGlosasBeneficiario();
     const janela = JANELAS_POPUP_SEPARADAS.beneficiarios;
     if (!origemJanelaSeparada && janela && !janela.closed) {
         JANELAS_POPUP_SEPARADAS.beneficiarios = null;
@@ -1069,10 +1090,14 @@ function chaveConferenciaBeneficiario(item) {
 }
 
 function alternarConferenciaBeneficiario(chave) {
+    const areaRolagem = document.getElementById('conteudoBeneficiariosProcesso');
+    const scrollTop = areaRolagem?.scrollTop || 0;
+    const scrollLeft = areaRolagem?.scrollLeft || 0;
     if (BENEFICIARIOS_CONFERIDOS_POPUP.has(chave)) BENEFICIARIOS_CONFERIDOS_POPUP.delete(chave);
     else BENEFICIARIOS_CONFERIDOS_POPUP.add(chave);
     renderizarPopupBeneficiariosProcesso();
-    document.querySelector(`#conteudoBeneficiariosProcesso tr[data-chave-conferencia="${CSS.escape(chave)}"]`)?.focus();
+    if (areaRolagem) { areaRolagem.scrollTop = scrollTop; areaRolagem.scrollLeft = scrollLeft; }
+    document.querySelector(`#conteudoBeneficiariosProcesso tr[data-chave-conferencia="${CSS.escape(chave)}"]`)?.focus({ preventScroll:true });
 }
 
 function teclaConferenciaBeneficiario(evento, chave) {
@@ -1103,22 +1128,50 @@ function renderizarPopupBeneficiariosProcesso() {
     };
     const comparador = comparadores[criterio] || comparadores.guia;
     lista.sort((a,b) => direcao * comparador(a,b));
-    document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
+    const processo = dados.info?.processo || '—';
+    const prestador = dados.info?.prestador || '—';
+    document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP} · Processo ${processo}`;
     const valorTotalApresentado = lista.reduce((soma,item) => soma + item.valor, 0);
-    document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s)`;
+    document.getElementById('subtituloBeneficiariosProcesso').innerHTML = `${lista.length} guia(s)<small class="prestador-popup-beneficiarios">Prestador: ${escAuditoria(prestador)}</small>`;
     document.getElementById('valorTotalBeneficiariosProcesso').textContent = `R$ ${fmt(valorTotalApresentado)}`;
-    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => {
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th><th class="valor">Valor pago</th><th>Glosa</th></tr></thead><tbody>${lista.map(item => {
         const chave = chaveConferenciaBeneficiario(item);
         const conferido = BENEFICIARIOS_CONFERIDOS_POPUP.has(chave);
-        return `<tr class="${conferido ? 'beneficiario-conferido' : ''}" data-chave-conferencia="${escAuditoria(chave)}" role="checkbox" aria-checked="${conferido}" tabindex="0" onclick="alternarConferenciaBeneficiario(this.dataset.chaveConferencia)" onkeydown="teclaConferenciaBeneficiario(event,this.dataset.chaveConferencia)"><td>${conferido ? '<span class="check-beneficiario" aria-hidden="true">✓</span>' : ''}${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Guia com exercício distinto</span>' : ''}${item.maisDeUmAno ? '<span class="marcador-beneficiario-popup prazo">Mais de 1 ano do atendimento</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td></tr>`;
+        const botaoGlosa = item.glosas?.length ? `<button type="button" class="btn-ver-glosa-beneficiario" data-chave-glosa="${escAuditoria(chave)}" onclick="event.stopPropagation();abrirPopupGlosasBeneficiario(this.dataset.chaveGlosa)" onkeydown="event.stopPropagation()">Ver glosa (${item.glosas.length})</button>` : '—';
+        return `<tr class="${conferido ? 'beneficiario-conferido' : ''}" data-chave-conferencia="${escAuditoria(chave)}" role="checkbox" aria-checked="${conferido}" tabindex="0" onclick="alternarConferenciaBeneficiario(this.dataset.chaveConferencia)" onkeydown="teclaConferenciaBeneficiario(event,this.dataset.chaveConferencia)"><td>${conferido ? '<span class="check-beneficiario" aria-hidden="true">✓</span>' : ''}${escAuditoria(item.guia || '—')}</td><td>${escAuditoria(item.data || '—')}</td><td>${escAuditoria(item.nome || '—')}${item.eps ? '<span class="marcador-beneficiario-popup">EPS</span>' : ''}${item.exercicioDistinto ? '<span class="marcador-beneficiario-popup exercicio">Guia com exercício distinto</span>' : ''}${item.maisDeUmAno ? '<span class="marcador-beneficiario-popup prazo">Mais de 1 ano do atendimento</span>' : ''}</td><td>${escAuditoria(item.matricula || '—')}</td><td>${escAuditoria(item.regime || '—')}</td><td class="valor">${fmt(item.valor)}</td><td class="valor">${fmt(item.valorPago)}</td><td>${botaoGlosa}</td></tr>`;
     }).join('')}</tbody></table>`;
+}
+
+function abrirPopupGlosasBeneficiario(chave) {
+    const dados = GLOBAL_DADOS_RESUMO[PEG_BENEFICIARIOS_POPUP];
+    const item = dados?.beneficiarios?.find(beneficiario => chaveConferenciaBeneficiario(beneficiario) === chave);
+    if (!item?.glosas?.length) return;
+    document.getElementById('tituloGlosasBeneficiario').textContent = `Glosas da guia ${item.guia || '—'}`;
+    document.getElementById('subtituloGlosasBeneficiario').textContent = `${item.nome || 'Beneficiário'} · Matrícula ${item.matricula || '—'} · PEG ${item.peg || '—'}`;
+    const totalGlosado = item.glosas.reduce((soma, glosa) => soma + glosa.valor, 0);
+    document.getElementById('conteudoGlosasBeneficiario').innerHTML = `<div class="resumo-glosa-beneficiario"><strong>Valor glosado detalhado: R$ ${fmt(totalGlosado)}</strong><br>Processo ${escAuditoria(item.processo || '—')} · ${item.glosas.length} registro(s) de glosa</div><div class="auditoria-tabela-wrap"><table class="tabela-glosas-beneficiario"><thead><tr><th>Código</th><th>Evento</th><th>Motivo da glosa</th><th>Complemento</th><th class="valor">Valor glosado</th><th class="valor">Valor reconsiderado</th></tr></thead><tbody>${item.glosas.map(glosa => `<tr><td>${escAuditoria(formatarCodigoAuditoria(glosa.codigo) || '—')}</td><td>${escAuditoria(glosa.evento || '—')}</td><td>${escAuditoria(glosa.motivo || 'Não informado na extração')}</td><td>${escAuditoria(glosa.complemento || 'Não informado na extração')}</td><td class="valor">${fmt(glosa.valor)}</td><td class="valor">${fmt(glosa.valorReconsiderado)}</td></tr>`).join('')}</tbody></table></div>`;
+    const modal = document.getElementById('modalGlosasBeneficiario');
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    modal.querySelector('.popup-auditoria-fechar')?.focus();
+}
+
+function fecharPopupGlosasBeneficiario() {
+    const modal = document.getElementById('modalGlosasBeneficiario');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
 }
 
 document.getElementById('modalBeneficiariosProcesso')?.addEventListener('click', event => {
     if (event.target.id === 'modalBeneficiariosProcesso') fecharPopupBeneficiariosProcesso();
 });
+document.getElementById('modalGlosasBeneficiario')?.addEventListener('click', event => {
+    if (event.target.id === 'modalGlosasBeneficiario') fecharPopupGlosasBeneficiario();
+});
 document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && document.getElementById('modalBeneficiariosProcesso')?.style.display === 'block') fecharPopupBeneficiariosProcesso();
+    if (event.key !== 'Escape') return;
+    if (document.getElementById('modalGlosasBeneficiario')?.style.display === 'block') fecharPopupGlosasBeneficiario();
+    else if (document.getElementById('modalBeneficiariosProcesso')?.style.display === 'block') fecharPopupBeneficiariosProcesso();
 });
 
 function dadosPopupSeparado(tipo) {
@@ -1134,12 +1187,15 @@ function atualizarConteudoJanelaSeparada(tipo) {
     const origem = modal.querySelector('.modal-content');
     const destino = janela.document.getElementById('conteudoJanelaPopup');
     if (!origem || !destino) return;
-    const scroll = janela.document.querySelector('.auditoria-tabela-wrap')?.scrollTop || 0;
+    const seletorRolagem = tipo === 'beneficiarios' ? '#conteudoBeneficiariosProcesso' : '.auditoria-tabela-wrap';
+    const areaRolagemAtual = janela.document.querySelector(seletorRolagem);
+    const scrollTop = areaRolagemAtual?.scrollTop || 0;
+    const scrollLeft = areaRolagemAtual?.scrollLeft || 0;
     destino.innerHTML = origem.innerHTML;
     destino.querySelectorAll('.abrir-janela-separada').forEach(botao => botao.remove());
     destino.querySelector('.popup-auditoria-fechar')?.setAttribute('title', 'Fechar esta janela');
-    const tabela = destino.querySelector('.auditoria-tabela-wrap');
-    if (tabela) tabela.scrollTop = scroll;
+    const novaAreaRolagem = destino.querySelector(seletorRolagem);
+    if (novaAreaRolagem) { novaAreaRolagem.scrollTop = scrollTop; novaAreaRolagem.scrollLeft = scrollLeft; }
 }
 
 function elementoCorrespondenteNoPopupPrincipal(tipo, elemento) {
@@ -1208,6 +1264,7 @@ function abrirPopupEmJanelaSeparada(tipo) {
         atualizarConteudoJanelaSeparada(tipo);
     };
     janela.alternarConferenciaBeneficiario = chave => { alternarConferenciaBeneficiario(chave, false); atualizarConteudoJanelaSeparada(tipo); };
+    janela.abrirPopupGlosasBeneficiario = chave => { abrirPopupGlosasBeneficiario(chave); window.focus(); };
     janela.teclaConferenciaBeneficiario = (evento, chave) => {
         if (evento.key !== 'Enter' && evento.key !== ' ') return;
         evento.preventDefault();
@@ -1556,6 +1613,48 @@ function temCodigoRepetidoComZero(linhas) {
     return [...grupos.values()].some(grupo => grupo.quantidade >= 2 && grupo.zerado);
 }
 
+function obterGlosasBeneficiario(linhas) {
+    const eventos = [];
+    const eventosPorChave = new Map();
+    let ultimoEvento = null;
+    linhas.forEach(linha => {
+        const c = linha.split('\t');
+        const tipo = String(c[39] || '').trim();
+        const chave = c[4] ? `${String(c[4]).trim()}|${codigoAuditoria(c[6])}` : '';
+        if (tipo === '1') {
+            ultimoEvento = {
+                codigo: String(c[6] || '').trim(),
+                evento: String(c[19] || '').trim(),
+                valorGlosado: moeda(c[11]),
+                detalhes: []
+            };
+            eventos.push(ultimoEvento);
+            if (chave) eventosPorChave.set(chave, ultimoEvento);
+        } else if (tipo === '2') {
+            const evento = (chave && eventosPorChave.get(chave)) || (!chave ? ultimoEvento : null);
+            if (!evento) return;
+            evento.detalhes.push({
+                motivo: String(c[21] || '').trim(),
+                complemento: String(c[22] || '').trim(),
+                valor: moeda(c[24]),
+                valorReconsiderado: moeda(c[26])
+            });
+        }
+    });
+    return eventos.flatMap(evento => {
+        if (!evento.detalhes.length) return evento.valorGlosado > 0 ? [{ ...evento, motivo:'', complemento:'', valor:evento.valorGlosado, valorReconsiderado:0, detalhes:undefined }] : [];
+        const totalDetalhado = evento.detalhes.reduce((soma, detalhe) => soma + detalhe.valor, 0);
+        return evento.detalhes.map((detalhe, indice) => ({
+            codigo:evento.codigo,
+            evento:evento.evento,
+            motivo:detalhe.motivo,
+            complemento:detalhe.complemento,
+            valor:totalDetalhado === 0 && indice === 0 ? evento.valorGlosado : detalhe.valor,
+            valorReconsiderado:detalhe.valorReconsiderado
+        }));
+    });
+}
+
 function render(preservarPeg = false) {
     limparResumosComplementares();
     try {
@@ -1667,6 +1766,8 @@ function render(preservarPeg = false) {
                 matricula: String(c[2] || '').trim(),
                 data: String(c[3] || '').trim(),
                 regime: String(c[29] || '').trim(),
+                processo: String(c[35] || '').trim(),
+                prestador: String(c[37] || '').trim(),
                 eps: /^(05|06)/.test(String(c[2] || '').trim()),
                 exercicioDistinto: exercicioDiferenteNoPeg || guia.linhasEventos.some(linha => {
                     const evento = linha.split("\t");
@@ -1678,7 +1779,12 @@ function render(preservarPeg = false) {
                 valor: guia.linhasEventos.reduce((soma, linha) => {
                     const evento = linha.split("\t");
                     return soma + (evento[39] === '1' ? moeda(evento[9]) : 0);
-                }, 0)
+                }, 0),
+                valorPago: guia.linhasEventos.reduce((soma, linha) => {
+                    const evento = linha.split("\t");
+                    return soma + (evento[39] === '1' ? moeda(evento[13]) : 0);
+                }, 0),
+                glosas: obterGlosasBeneficiario(guia.linhasEventos)
             };
         });
 
