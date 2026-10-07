@@ -72,12 +72,17 @@
     .resumo-card .titulo-dados { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
     .btn-lista-beneficiarios { margin-top:9px; height:32px; padding:6px 10px; background:#eaf2ff; border:1px solid #afc9ee; color:#174b88; }
     #modalBeneficiariosProcesso { z-index:1002; }
-    #modalBeneficiariosProcesso .modal-content { width:min(1050px,96vw); max-width:1050px; max-height:90vh; overflow:auto; }
+    #modalBeneficiariosProcesso .modal-content { width:min(1050px,96vw); max-width:1050px; height:min(90vh,760px); max-height:90vh; overflow:hidden; display:flex; flex-direction:column; }
+    .total-beneficiarios-processo { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:12px 0 0; padding:11px 14px; border:1px solid #93c5fd; border-left:5px solid #2563eb; border-radius:9px; background:#eff6ff; color:#1e3a8a; }
+    .total-beneficiarios-processo span { font-size:12px; font-weight:750; }
+    .total-beneficiarios-processo strong { font-size:19px; color:#0f3d82; white-space:nowrap; }
     .beneficiarios-processo-controles { display:flex; align-items:end; gap:10px; margin:12px 0; flex-wrap:wrap; }
     .beneficiarios-processo-controles label { display:flex; flex-direction:column; gap:4px; font-size:11px; font-weight:700; color:#475569; }
     .beneficiarios-processo-controles select { width:230px; }
-    .tabela-beneficiarios-processo { table-layout:auto; }
+    #conteudoBeneficiariosProcesso { flex:1 1 auto; min-height:0; overflow:auto; border:1px solid #d5dfec; border-radius:9px; background:#fff; }
+    .tabela-beneficiarios-processo { table-layout:auto; border-collapse:separate; border-spacing:0; }
     .tabela-beneficiarios-processo th,.tabela-beneficiarios-processo td { white-space:normal; }
+    .tabela-beneficiarios-processo thead th { top:0; z-index:5; background:#dbeafe; color:#183b6b; border-bottom:2px solid #93b4dd; box-shadow:0 2px 5px rgba(15,47,87,.18); }
     .tabela-beneficiarios-processo td.valor { white-space:nowrap; text-align:right; }
     .tabela-beneficiarios-processo tbody tr { cursor:pointer; transition:background .15s ease,box-shadow .15s ease; }
     .tabela-beneficiarios-processo tbody tr:hover td,.tabela-beneficiarios-processo tbody tr:focus-visible td { background:#f0f7ff; }
@@ -911,7 +916,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.58</p>
+    <p class="versao-relatorio">Versão 4.59</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1016,6 +1021,7 @@
             <div><h2 id="tituloBeneficiariosProcesso">Beneficiários do processo</h2><p id="subtituloBeneficiariosProcesso"></p></div>
             <div class="popup-auditoria-acoes"><button type="button" class="abrir-janela-separada" onclick="abrirPopupEmJanelaSeparada('beneficiarios')">↗ Abrir em janela separada</button><button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button></div>
         </div>
+        <div class="total-beneficiarios-processo"><span>Valor total apresentado</span><strong id="valorTotalBeneficiariosProcesso">R$ 0,00</strong></div>
         <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Nome do beneficiário</option><option value="matricula">Número da matrícula</option><option value="valor">Valor apresentado</option><option value="regime">Regime de atendimento</option></select></label><label>Direção<select id="direcaoBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="asc">Menor para maior / A–Z</option><option value="desc">Maior para menor / Z–A</option></select></label></div>
         <div id="conteudoBeneficiariosProcesso"></div>
     </div>
@@ -1098,7 +1104,9 @@ function renderizarPopupBeneficiariosProcesso() {
     const comparador = comparadores[criterio] || comparadores.guia;
     lista.sort((a,b) => direcao * comparador(a,b));
     document.getElementById('tituloBeneficiariosProcesso').textContent = `Beneficiários do processo · PEG ${PEG_BENEFICIARIOS_POPUP}`;
-    document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s) · valor apresentado total ${fmt(lista.reduce((soma,item) => soma + item.valor, 0))}`;
+    const valorTotalApresentado = lista.reduce((soma,item) => soma + item.valor, 0);
+    document.getElementById('subtituloBeneficiariosProcesso').textContent = `${lista.length} guia(s)`;
+    document.getElementById('valorTotalBeneficiariosProcesso').textContent = `R$ ${fmt(valorTotalApresentado)}`;
     destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th></tr></thead><tbody>${lista.map(item => {
         const chave = chaveConferenciaBeneficiario(item);
         const conferido = BENEFICIARIOS_CONFERIDOS_POPUP.has(chave);
@@ -1176,7 +1184,7 @@ function abrirPopupEmJanelaSeparada(tipo) {
     configuracao.modal?.classList.add('popup-em-janela-separada');
     const estilos = [...document.querySelectorAll('style')].map(estilo => estilo.textContent).join('\n');
     janela.document.open();
-    janela.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${configuracao.titulo}</title><style>${estilos}</style><style>body{padding:12px;background:#eaf0f8;overflow:auto}.janela-popup-separada{width:100%;min-height:calc(100vh - 24px);max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;overflow:visible!important}.janela-popup-separada .abrir-janela-separada{display:none!important}#conteudoJanelaPopup>#conteudoPopupAuditoriaBeneficiario{min-height:calc(100vh - 105px)}#conteudoJanelaPopup .auditoria-tabela-wrap{max-height:none;height:auto}</style></head><body><main id="conteudoJanelaPopup" class="modal-content janela-popup-separada"></main></body></html>`);
+    janela.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${configuracao.titulo}</title><style>${estilos}</style><style>body{padding:12px;background:#eaf0f8;overflow:auto}.janela-popup-separada{width:100%;min-height:calc(100vh - 24px);max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;overflow:visible!important}.janela-popup-separada.janela-popup-beneficiarios{height:calc(100vh - 24px)!important;min-height:0;overflow:hidden!important;display:flex;flex-direction:column}.janela-popup-separada .abrir-janela-separada{display:none!important}#conteudoJanelaPopup>#conteudoPopupAuditoriaBeneficiario{min-height:calc(100vh - 105px)}#conteudoJanelaPopup .auditoria-tabela-wrap{max-height:none;height:auto}</style></head><body><main id="conteudoJanelaPopup" class="modal-content janela-popup-separada janela-popup-${tipo}"></main></body></html>`);
     janela.document.close();
     janela.selecionarCodigoPopupAuditoria = codigo => { selecionarCodigoPopupAuditoria(codigo); atualizarConteudoJanelaSeparada(tipo); };
     janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
