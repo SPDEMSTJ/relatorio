@@ -600,10 +600,11 @@
     #modalAuditoriaBeneficiario .modal-content { max-width:1600px; width:min(1600px,98vw); height:96vh; max-height:96vh; margin:1vh auto; padding:14px 16px; display:flex; flex-direction:column; overflow:hidden; }
     #conteudoPopupAuditoriaBeneficiario { display:flex; flex:1; min-height:0; flex-direction:column; }
     .popup-auditoria-cabecalho { display:flex; align-items:flex-start; justify-content:space-between; gap:15px; margin-bottom:12px; }
-    .popup-auditoria-cabecalho[data-drag-handle] { cursor:move; touch-action:none; user-select:none; padding:3px 4px; border-radius:10px; }
-    .popup-auditoria-cabecalho[data-drag-handle]:hover { background:#f3f7fd; }
-    .popup-auditoria-cabecalho[data-drag-handle] button { cursor:pointer; }
-    .modal-content.popup-arrastando { transition:none !important; box-shadow:0 30px 75px rgba(5,17,43,.42); }
+    .popup-auditoria-acoes { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .abrir-janela-separada { border:1px solid #2563eb; border-radius:9px; background:#eff6ff; color:#1e40af; padding:8px 11px; font-weight:750; cursor:pointer; }
+    .abrir-janela-separada:hover,.abrir-janela-separada:focus-visible { background:#dbeafe; outline:2px solid #93c5fd; outline-offset:1px; }
+    .modal.popup-em-janela-separada { pointer-events:none; background:transparent; }
+    .modal.popup-em-janela-separada > .modal-content { visibility:hidden; }
     .popup-auditoria-cabecalho h2 { margin:0 0 4px; }
     .popup-auditoria-cabecalho p { margin:0; color:var(--muted); font-size:12px; }
     .popup-auditoria-fechar { border:1px solid #cbd8e9; border-radius:9px; background:#fff; color:var(--blue-deep); padding:8px 11px; font-weight:700; cursor:pointer; }
@@ -636,7 +637,7 @@
     #conteudoPopupAuditoriaBeneficiario .auditoria-tabela-wrap { flex:1; min-height:0; max-height:none; overflow:auto; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-evento.pendencia-destacada > td { animation:destaque-pendencia-auditoria 2.2s ease; }
     @keyframes destaque-pendencia-auditoria { 0%,45% { background:#fef3c7 !important; box-shadow:inset 0 0 0 3px #f59e0b; } 100% { box-shadow:inset 0 0 0 0 transparent; } }
-    @media (max-width:720px) { #modalAuditoriaBeneficiario { padding:8px; } #modalAuditoriaBeneficiario .modal-content { width:100%; height:97vh; max-height:97vh; margin:1vh auto; padding:10px; transform:none !important; } .popup-auditoria-cabecalho[data-drag-handle] { cursor:default; touch-action:auto; } }
+    @media (max-width:720px) { #modalAuditoriaBeneficiario { padding:8px; } #modalAuditoriaBeneficiario .modal-content { width:100%; height:97vh; max-height:97vh; margin:1vh auto; padding:10px; } }
     .btn-topo { bottom:22px; right:22px; min-height:42px; border-radius:999px; box-shadow:0 9px 24px rgba(21,54,111,.22); }
     @media (min-width:1240px) { #saida .card { overflow:visible; } }
     @media (max-width:1080px) { .rule-highlights { grid-template-columns:1fr; } .cards-areas { grid-template-columns:repeat(2,minmax(0,1fr)); } .auditoria-controles { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -910,7 +911,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.57</p>
+    <p class="versao-relatorio">Versão 4.58</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1001,9 +1002,9 @@
 
 <div id="modalAuditoriaBeneficiario" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloPopupAuditoriaBeneficiario" aria-hidden="true">
     <div class="modal-content">
-        <div class="popup-auditoria-cabecalho" data-drag-handle title="Arraste este cabeçalho para mover o popup. Clique duas vezes para centralizar.">
+        <div class="popup-auditoria-cabecalho">
             <div><h2 id="tituloPopupAuditoriaBeneficiario">Análise 100–70–50</h2><p id="subtituloPopupAuditoriaBeneficiario"></p></div>
-            <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupAuditoriaBeneficiario()" aria-label="Fechar análise 100–70–50">Fechar ✕</button>
+            <div class="popup-auditoria-acoes"><button type="button" class="abrir-janela-separada" onclick="abrirPopupEmJanelaSeparada('auditoria')">↗ Abrir em janela separada</button><button type="button" class="popup-auditoria-fechar" onclick="fecharPopupAuditoriaBeneficiario()" aria-label="Fechar análise 100–70–50">Fechar ✕</button></div>
         </div>
         <div id="conteudoPopupAuditoriaBeneficiario"></div>
     </div>
@@ -1011,9 +1012,9 @@
 
 <div id="modalBeneficiariosProcesso" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloBeneficiariosProcesso" aria-hidden="true">
     <div class="modal-content">
-        <div class="popup-auditoria-cabecalho" data-drag-handle title="Arraste este cabeçalho para mover o popup. Clique duas vezes para centralizar.">
+        <div class="popup-auditoria-cabecalho">
             <div><h2 id="tituloBeneficiariosProcesso">Beneficiários do processo</h2><p id="subtituloBeneficiariosProcesso"></p></div>
-            <button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button>
+            <div class="popup-auditoria-acoes"><button type="button" class="abrir-janela-separada" onclick="abrirPopupEmJanelaSeparada('beneficiarios')">↗ Abrir em janela separada</button><button type="button" class="popup-auditoria-fechar" onclick="fecharPopupBeneficiariosProcesso()">Fechar ✕</button></div>
         </div>
         <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Nome do beneficiário</option><option value="matricula">Número da matrícula</option><option value="valor">Valor apresentado</option><option value="regime">Regime de atendimento</option></select></label><label>Direção<select id="direcaoBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="asc">Menor para maior / A–Z</option><option value="desc">Maior para menor / Z–A</option></select></label></div>
         <div id="conteudoBeneficiariosProcesso"></div>
@@ -1025,6 +1026,7 @@
 let GLOBAL_DADOS_RESUMO = {};
 let PEG_BENEFICIARIOS_POPUP = '';
 const BENEFICIARIOS_CONFERIDOS_POPUP = new Set();
+const JANELAS_POPUP_SEPARADAS = { auditoria:null, beneficiarios:null };
 let RELATORIO_GERADO = false;
 let FILTRO_EVENTOS_TIMER = null;
 
@@ -1043,8 +1045,14 @@ function abrirPopupBeneficiariosProcesso(peg) {
     modal.querySelector('.popup-auditoria-fechar')?.focus();
 }
 
-function fecharPopupBeneficiariosProcesso() {
+function fecharPopupBeneficiariosProcesso(origemJanelaSeparada = false) {
+    const janela = JANELAS_POPUP_SEPARADAS.beneficiarios;
+    if (!origemJanelaSeparada && janela && !janela.closed) {
+        JANELAS_POPUP_SEPARADAS.beneficiarios = null;
+        janela.close();
+    }
     const modal = document.getElementById('modalBeneficiariosProcesso');
+    modal.classList.remove('popup-em-janela-separada');
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
     PEG_BENEFICIARIOS_POPUP = '';
@@ -1105,58 +1113,104 @@ document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && document.getElementById('modalBeneficiariosProcesso')?.style.display === 'block') fecharPopupBeneficiariosProcesso();
 });
 
-function habilitarPopupArrastavel(modal) {
-    const painel = modal?.querySelector('.modal-content');
-    const alca = painel?.querySelector('[data-drag-handle]');
-    if (!painel || !alca) return;
-    let arraste = null;
-    const finalizar = evento => {
-        if (!arraste) return;
-        if (alca.hasPointerCapture?.(arraste.pointerId)) alca.releasePointerCapture(arraste.pointerId);
-        painel.classList.remove('popup-arrastando');
-        arraste = null;
-        evento?.preventDefault();
-    };
-    alca.addEventListener('pointerdown', evento => {
-        if (window.matchMedia('(max-width:720px)').matches || evento.button !== 0
-            || evento.target.closest('button,input,select,textarea,a')) return;
-        const retangulo = painel.getBoundingClientRect();
-        arraste = {
-            pointerId: evento.pointerId,
-            inicioX: evento.clientX,
-            inicioY: evento.clientY,
-            baseX: Number(painel.dataset.arrasteX || 0),
-            baseY: Number(painel.dataset.arrasteY || 0),
-            retangulo
-        };
-        alca.setPointerCapture?.(evento.pointerId);
-        painel.classList.add('popup-arrastando');
-        evento.preventDefault();
-    });
-    alca.addEventListener('pointermove', evento => {
-        if (!arraste || evento.pointerId !== arraste.pointerId) return;
-        const { retangulo } = arraste;
-        const deslocamentoX = Math.min(window.innerWidth - 90 - retangulo.left,
-            Math.max(90 - retangulo.right, evento.clientX - arraste.inicioX));
-        const deslocamentoY = Math.min(window.innerHeight - 60 - retangulo.top,
-            Math.max(8 - retangulo.top, evento.clientY - arraste.inicioY));
-        const x = arraste.baseX + deslocamentoX;
-        const y = arraste.baseY + deslocamentoY;
-        painel.dataset.arrasteX = String(x);
-        painel.dataset.arrasteY = String(y);
-        painel.style.transform = `translate3d(${x}px,${y}px,0)`;
-    });
-    alca.addEventListener('pointerup', finalizar);
-    alca.addEventListener('pointercancel', finalizar);
-    alca.addEventListener('dblclick', evento => {
-        if (evento.target.closest('button,input,select,textarea,a')) return;
-        painel.dataset.arrasteX = '0';
-        painel.dataset.arrasteY = '0';
-        painel.style.transform = '';
-    });
+function dadosPopupSeparado(tipo) {
+    return tipo === 'auditoria'
+        ? { modal:document.getElementById('modalAuditoriaBeneficiario'), titulo:'Análise de vias — PEG', largura:1500, altura:900 }
+        : { modal:document.getElementById('modalBeneficiariosProcesso'), titulo:'Beneficiários do processo — PEG', largura:1100, altura:760 };
 }
 
-document.querySelectorAll('#modalAuditoriaBeneficiario, #modalBeneficiariosProcesso').forEach(habilitarPopupArrastavel);
+function atualizarConteudoJanelaSeparada(tipo) {
+    const janela = JANELAS_POPUP_SEPARADAS[tipo];
+    const { modal } = dadosPopupSeparado(tipo);
+    if (!janela || janela.closed || !modal) return;
+    const origem = modal.querySelector('.modal-content');
+    const destino = janela.document.getElementById('conteudoJanelaPopup');
+    if (!origem || !destino) return;
+    const scroll = janela.document.querySelector('.auditoria-tabela-wrap')?.scrollTop || 0;
+    destino.innerHTML = origem.innerHTML;
+    destino.querySelectorAll('.abrir-janela-separada').forEach(botao => botao.remove());
+    destino.querySelector('.popup-auditoria-fechar')?.setAttribute('title', 'Fechar esta janela');
+    const tabela = destino.querySelector('.auditoria-tabela-wrap');
+    if (tabela) tabela.scrollTop = scroll;
+}
+
+function elementoCorrespondenteNoPopupPrincipal(tipo, elemento) {
+    const { modal } = dadosPopupSeparado(tipo);
+    if (!modal || !elemento) return null;
+    if (elemento.id) return modal.querySelector(`#${CSS.escape(elemento.id)}`);
+    if (elemento.dataset.eventoId) return modal.querySelector(`[data-evento-id="${CSS.escape(elemento.dataset.eventoId)}"]`);
+    if (elemento.dataset.chaveBilateral) return modal.querySelector(`[data-chave-bilateral="${CSS.escape(elemento.dataset.chaveBilateral)}"]`);
+    return null;
+}
+
+function sincronizarControleJanelaSeparada(tipo, elemento, acao) {
+    const original = elementoCorrespondenteNoPopupPrincipal(tipo, elemento);
+    if (!original || typeof window[acao] !== 'function') return;
+    if ('value' in original && 'value' in elemento) original.value = elemento.value;
+    window[acao](original);
+    atualizarConteudoJanelaSeparada(tipo);
+}
+
+function finalizarPopupEmJanelaSeparada(tipo, fecharPopup = true, fecharJanela = true) {
+    const janela = JANELAS_POPUP_SEPARADAS[tipo];
+    JANELAS_POPUP_SEPARADAS[tipo] = null;
+    const { modal } = dadosPopupSeparado(tipo);
+    modal?.classList.remove('popup-em-janela-separada');
+    if (fecharJanela && janela && !janela.closed) janela.close();
+    if (!fecharPopup) return;
+    if (tipo === 'auditoria') fecharPopupAuditoriaBeneficiario(true);
+    else fecharPopupBeneficiariosProcesso(true);
+}
+
+function abrirPopupEmJanelaSeparada(tipo) {
+    const configuracao = dadosPopupSeparado(tipo);
+    const existente = JANELAS_POPUP_SEPARADAS[tipo];
+    if (existente && !existente.closed) {
+        atualizarConteudoJanelaSeparada(tipo);
+        existente.focus();
+        return;
+    }
+    const janela = window.open('', `peg_${tipo}`, `popup=yes,width=${configuracao.largura},height=${configuracao.altura},resizable=yes,scrollbars=yes`);
+    if (!janela) return void alert('O navegador bloqueou a nova janela. Permita popups para abrir a análise no outro monitor.');
+    JANELAS_POPUP_SEPARADAS[tipo] = janela;
+    configuracao.modal?.classList.add('popup-em-janela-separada');
+    const estilos = [...document.querySelectorAll('style')].map(estilo => estilo.textContent).join('\n');
+    janela.document.open();
+    janela.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${configuracao.titulo}</title><style>${estilos}</style><style>body{padding:12px;background:#eaf0f8;overflow:auto}.janela-popup-separada{width:100%;min-height:calc(100vh - 24px);max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;overflow:visible!important}.janela-popup-separada .abrir-janela-separada{display:none!important}#conteudoJanelaPopup>#conteudoPopupAuditoriaBeneficiario{min-height:calc(100vh - 105px)}#conteudoJanelaPopup .auditoria-tabela-wrap{max-height:none;height:auto}</style></head><body><main id="conteudoJanelaPopup" class="modal-content janela-popup-separada"></main></body></html>`);
+    janela.document.close();
+    janela.selecionarCodigoPopupAuditoria = codigo => { selecionarCodigoPopupAuditoria(codigo); atualizarConteudoJanelaSeparada(tipo); };
+    janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
+    janela.aplicarCondicaoEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarCondicaoEventoAuditoria');
+    janela.aplicarBilateralidadeOftalmo = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarBilateralidadeOftalmo');
+    janela.alterarViaHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarViaHospitalar');
+    janela.irParaPrimeiraPendenciaAuditoria = () => {
+        const linha = janela.document.querySelector('.auditoria-evento[data-auditoria-pendente="true"]');
+        linha?.scrollIntoView({ behavior:'smooth', block:'center' });
+        linha?.classList.add('pendencia-destacada');
+        setTimeout(() => linha?.classList.remove('pendencia-destacada'), 2400);
+    };
+    janela.renderizarPopupBeneficiariosProcesso = () => {
+        const ordem = janela.document.getElementById('ordemBeneficiariosProcesso');
+        const direcao = janela.document.getElementById('direcaoBeneficiariosProcesso');
+        const ordemOriginal = document.getElementById('ordemBeneficiariosProcesso');
+        const direcaoOriginal = document.getElementById('direcaoBeneficiariosProcesso');
+        if (ordem && ordemOriginal) ordemOriginal.value = ordem.value;
+        if (direcao && direcaoOriginal) direcaoOriginal.value = direcao.value;
+        renderizarPopupBeneficiariosProcesso();
+        atualizarConteudoJanelaSeparada(tipo);
+    };
+    janela.alternarConferenciaBeneficiario = chave => { alternarConferenciaBeneficiario(chave, false); atualizarConteudoJanelaSeparada(tipo); };
+    janela.teclaConferenciaBeneficiario = (evento, chave) => {
+        if (evento.key !== 'Enter' && evento.key !== ' ') return;
+        evento.preventDefault();
+        janela.alternarConferenciaBeneficiario(chave);
+    };
+    janela.fecharPopupAuditoriaBeneficiario = () => janela.close();
+    janela.fecharPopupBeneficiariosProcesso = () => janela.close();
+    janela.addEventListener('beforeunload', () => finalizarPopupEmJanelaSeparada(tipo, true, false));
+    atualizarConteudoJanelaSeparada(tipo);
+    janela.focus();
+}
 
 function invalidarRelatorioAnterior() {
     limparResumosComplementares();
@@ -3936,9 +3990,15 @@ function abrirPopupAuditoriaBeneficiario(chave, botao) {
     modal.querySelector('.popup-auditoria-fechar')?.focus();
 }
 
-function fecharPopupAuditoriaBeneficiario() {
+function fecharPopupAuditoriaBeneficiario(origemJanelaSeparada = false) {
+    const janela = JANELAS_POPUP_SEPARADAS.auditoria;
+    if (!origemJanelaSeparada && janela && !janela.closed) {
+        JANELAS_POPUP_SEPARADAS.auditoria = null;
+        janela.close();
+    }
     const modal = document.getElementById('modalAuditoriaBeneficiario');
     if (!modal) return;
+    modal.classList.remove('popup-em-janela-separada');
     const aberto = modal.style.display === 'block';
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
