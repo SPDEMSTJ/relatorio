@@ -733,7 +733,6 @@
     #resumosComplementares[hidden] { display:none; }
     #saida .alerta-zero-xml td { white-space:normal; background:#fff1f2; color:#9f1239; padding:9px 12px; font-size:13px; font-weight:700; border-left:4px solid #e11d48; line-height:1.5; }
     #saida .linha-calendario-guia td { white-space:normal; padding:8px 12px; background:#fff7ed; color:#9a3412; border-left:3px solid #ea580c; font-size:11px; line-height:1.5; }
-    #saida .condicao-urgencia-acrescimo { display:inline-block; margin-left:4px; color:#166534; font-weight:800; }
     #saida .alerta-cooperativa-anestesia td { white-space:normal; padding:12px 14px; background:#fee2e2; color:#7f1d1d; border:2px solid #dc2626; border-left-width:6px; font-size:14px; font-weight:850; line-height:1.55; }
     #calendarioGuia label { margin-left:13px; }
     #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
@@ -932,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.64</p>
+    <p class="versao-relatorio">Versão 4.66</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2020,13 +2019,7 @@ function render(preservarPeg = false) {
             let dataHtml = data;
             let alertaPrazo = false, detalhePrazo = '';
             const condicao = c[31] || 'N/A';
-            const periodoAcrescimoGuia = periodoAcrescimoPorte(c[3]).aplicavel || obj.linhasEventos.some(linha => {
-                const camposEvento = linha.split('\t');
-                return String(camposEvento[39] || '').trim() === '1' && periodoAcrescimoPorte(camposEvento[7]).aplicavel;
-            });
-            const condicaoHtml = /URGEN|EMERGEN/.test(normalizarAuditoria(condicao)) && periodoAcrescimoGuia
-                ? `${escAuditoria(condicao)} <span class="condicao-urgencia-acrescimo">(+30%)</span>`
-                : escAuditoria(condicao);
+            const condicaoHtml = escAuditoria(condicao);
             
             // REGRA: DESTACAR DATA COM TARJA VERMELHA (MAIOR ANO) OU AZUL (MENORES)
             const infoAnos = anosInfoPorPeg[pegAtual];
@@ -3294,19 +3287,20 @@ function avaliarRadiologia(eventos) {
             const previsto = percentual === 100 ? item.tarifa100 * qtd
                 : percentual === 70 && reduzidoDisponivel ? item.tarifa70 * qtd
                 : percentual === 170 && qtd > 1 && reduzidoDisponivel ? item.tarifa100 + (qtd - 1) * item.tarifa70 : null;
-            const permitido = previsto;
+            const ajusteUrgenciaUco = ajustarUrgenciaUcoRadiologia(item.evento, item.ref, percentual, previsto, item.villasBoas);
+            const permitido = ajusteUrgenciaUco.valor;
             const us = familia === '409';
             const empatePorte = items.slice(1).some(outro => porteNumerico(outro.ref.p) === porteNumerico(items[0].ref.p));
             const orientacao = `${observacao ? `Referência ${observacao}. ` : ''}${posicao === 0
                 ? `Exame principal por maior porte${us ? ` (${item.ref.p || 'não informado'})` : ''}${empatePorte ? ' e, no empate, por maior valor apresentado' : ''}: ${sugestao === 170 ? 'uma unidade a 100% e as demais a 70%' : '100%'}.`
                 : 'Exame adicional: 70% da UCO pela regra universal, independentemente da região anatômica.'}`;
             resultados.push(criarLinhaAuditoria(item.evento, item.tipo, permitido, {
-                regra: `${item.villasBoas ? 'Vilas Boas — ' : ''}${percentual === 170 ? 'UCO: 1 unidade a 100% e demais a 70%' : `UCO ${percentual}%`}${confirmado ? ' (ajuste manual)' : ' (regra automática universal)'}${us ? `; porte ${item.ref.p || '—'}` : ''}`,
+                regra: `${item.villasBoas ? 'Vilas Boas — ' : ''}${percentual === 170 ? 'UCO: 1 unidade a 100% e demais a 70%' : `UCO ${percentual}%`}${confirmado ? ' (ajuste manual)' : ' (regra automática universal)'}${us ? `; porte ${item.ref.p || '—'}` : ''}${ajusteUrgenciaUco.ativo ? '; urgência +30% na UCO (manual)' : ''}`,
                 observacao: `${item.ref.d} — grupo ${item.categoria}, guia ${item.evento.guia.ordem || 'não informada'}. ${orientacao} Honorários/porte e filme permanecem integrais; a redução atinge somente a UCO.${empatePorte ? ' Há empate de porte neste grupo; o maior valor apresentado foi priorizado como principal.' : ''}`,
                 referencia: item.ref,
-                limiteReferencia: previsto ?? item.tarifa100 * qtd,
+                limiteReferencia: ajusteUrgenciaUco.ativo ? permitido : previsto ?? item.tarifa100 * qtd,
                 baseComparacao: item.villasBoas ? 'Vilas Boas 51% e UCO' : 'UCO pela tabela/regra',
-                alerta: (percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
+                alerta: ajusteUrgenciaUco.pendente ? 'UCO não disponível para calcular o acréscimo manual de 30%; conferir a tabela.' : (percentual === 70 || percentual === 170) && !reduzidoDisponivel ? 'Tabela sem valor de UCO a 70%; confira a referência.' : '',
                 percentual, sugestaoPercentual: sugestao
             }));
         });
@@ -3374,6 +3368,19 @@ function classificarEquipe(eventos) {
 function condicoesEventoAuditoria(evento) {
     const { urgencia = '' } = CONDICOES_EVENTOS_AUDITORIA.get(evento.id) || {};
     return { urgencia };
+}
+
+function ajustarUrgenciaUcoRadiologia(evento, referencia, percentual, valor, villasBoas = false) {
+    const ativo = condicoesEventoAuditoria(evento).urgencia === 'sim';
+    if (!ativo) return { valor, ativo:false, pendente:false };
+    const ucoInformada = numeroOuNulo(referencia.u);
+    const total = numeroOuNulo(referencia.t);
+    const reduzido = numeroOuNulo(referencia.t70);
+    const uco = ucoInformada ?? (total !== null && reduzido !== null ? (total - reduzido) / 0.3 : null);
+    if (valor === null || uco === null || uco < 0) return { valor:null, ativo:true, pendente:true };
+    const quantidade = evento.quantidade;
+    const fator = Number(percentual) === 170 ? 1 + (quantidade - 1) * 0.7 : quantidade * Number(percentual) / 100;
+    return { valor:valor + uco * fator * 0.3 * (villasBoas ? 0.51 : 1), ativo:true, pendente:false };
 }
 
 function calcularAtoCirurgico(evento, referencia, equipe, percentual) {
@@ -3866,9 +3873,12 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const reduzido = villasBoas && honorarios !== null && uco !== null ? (honorarios + uco * 0.7) * 0.51 + filme : numeroOuNulo(referencia.t70);
         const unitario = Number(percentual) === 70 ? reduzido : base;
         if (unitario === null || (Number(percentual) === 170 && reduzido === null)) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Sem UCO/preço reduzido na tabela para confirmar 70%.' };
-        const valor = Number(percentual) === 170 ? base + (quantidade - 1) * reduzido : unitario * quantidade;
+        const valorBase = Number(percentual) === 170 ? base + (quantidade - 1) * reduzido : unitario * quantidade;
+        const ajusteUrgencia = ajustarUrgenciaUcoRadiologia(linha.evento, referencia, percentual, valorBase, villasBoas);
+        if (ajusteUrgencia.pendente) return { valor:null, tabela:anoSimulacao || '', simulacao:Boolean(anoSimulacao), texto:'UCO indisponível para calcular +30% manual.' };
+        const valor = ajusteUrgencia.valor;
         return { valor: arredondarTabela(valor, codigo), tabela: anoSimulacao || String(referencia.anoFonte || ano), simulacao: Boolean(anoSimulacao),
-            texto: `${anoSimulacao ? 'Simulação' : 'Limite confirmado'} · ${valorBRL(valor, codigo)} (${Number(percentual) === 170 ? 'UCO 100% em uma unidade + 70% nas demais' : `UCO ${percentual}%`}; honorários/porte e filme integrais)` };
+            texto: `${anoSimulacao ? 'Simulação' : 'Limite confirmado'} · ${valorBRL(valor, codigo)} (${Number(percentual) === 170 ? 'UCO 100% em uma unidade + 70% nas demais' : `UCO ${percentual}%`}${ajusteUrgencia.ativo ? '; urgência +30% na UCO, manual' : ''}; honorários/porte e filme integrais)` };
     }
     if (linha.categoria === 'Cirurgia' && equipeCirurgica(linha.evento.grau)?.numero > 0) {
         if (anoSimulacao) return { valor: null, tabela: anoSimulacao, simulacao: true,
@@ -3987,7 +3997,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleOftalmo}${percentualControle}
-                ${cirurgia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% no porte<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>Automático por condição e data/horário</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
+                ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
         </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="${popup ? 8 : 7}"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
