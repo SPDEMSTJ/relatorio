@@ -926,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.60</p>
+    <p class="versao-relatorio">Versão 4.61</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1586,8 +1586,25 @@ function renderizarConteudoResumo(chavePeg) {
     // Card EPS
     const listaEps = Array.from(dados.eps);
     if (listaEps.length > 0) {
+        const beneficiariosEpsAgrupados = new Map();
+        listaEps.forEach(item => {
+            const texto = String(item || '');
+            const separadorMatricula = texto.lastIndexOf(' — ');
+            const identificacao = separadorMatricula >= 0 ? texto.slice(0, separadorMatricula) : texto;
+            const matricula = separadorMatricula >= 0 ? texto.slice(separadorMatricula + 3).trim() : '';
+            const separadorGuia = identificacao.indexOf(' - ');
+            const guia = separadorGuia >= 0 ? identificacao.slice(0, separadorGuia).trim() : '';
+            const nome = separadorGuia >= 0 ? identificacao.slice(separadorGuia + 3).trim() : identificacao.trim();
+            const chave = `${normalizarAuditoria(nome)}|${matricula}`;
+            if (!beneficiariosEpsAgrupados.has(chave)) beneficiariosEpsAgrupados.set(chave, { nome, matricula, guias:new Set() });
+            if (guia) beneficiariosEpsAgrupados.get(chave).guias.add(guia);
+        });
         html += `<div class="resumo-card"><h3>🧾 Beneficiários EPS</h3><ul>`;
-        listaEps.forEach(b => html += `<li>${b}</li>`);
+        beneficiariosEpsAgrupados.forEach(item => {
+            const guias = [...item.guias].sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric:true }));
+            const rotuloGuia = guias.length === 1 ? 'Guia' : 'Guias';
+            html += `<li>${rotuloGuia} <b>${guias.map(escAuditoria).join(', ')}</b> - ${escAuditoria(item.nome)} — ${escAuditoria(item.matricula)}</li>`;
+        });
         html += `</ul></div>`;
     }
 
