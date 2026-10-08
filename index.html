@@ -905,11 +905,11 @@
         <p id="saudacaoTabelasPessoa" class="mensagem-personalizada no-print">Mantenha as tabelas aplicáveis ao ano do atendimento atualizadas.</p>
         <p id="statusTabelas" class="auditoria-info">Bases históricas 2018–2022, tabelas de honorários e escalas anestésicas de 2025 e 2026 incorporadas. CSVs anuais importados ficam salvos neste navegador.</p>
         <div class="tabelas-importacao">
-            <div class="campo-controle"><label for="arquivoTabelaCsv">Tabela de honorários STJ (.csv)</label><input id="arquivoTabelaCsv" type="file" accept=".csv,text/csv" onchange="importarTabelaCsv(this.files?.[0])"></div>
-            <div class="campo-controle"><label for="arquivoEscalaAnestesiaCsv">Escala de anestesiologia por porte (.csv)</label><input id="arquivoEscalaAnestesiaCsv" type="file" accept=".csv,text/csv" onchange="importarEscalaAnestesiaCsv(this.files?.[0])"></div>
-            <div class="campo-controle"><label for="arquivoHospitalarA">Serviços hospitalares — Tipo A (.csv)</label><input id="arquivoHospitalarA" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'A').finally(() => this.value = '')"></div>
-            <div class="campo-controle"><label for="arquivoHospitalarB">Serviços hospitalares — Tipo B (.csv)</label><input id="arquivoHospitalarB" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'B').finally(() => this.value = '')"></div>
-            <div class="campo-controle"><label for="arquivoHospitalarC">Serviços hospitalares — Tipo C (.csv)</label><input id="arquivoHospitalarC" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'C').finally(() => this.value = '')"></div>
+            <div class="campo-controle"><label for="arquivoTabelaCsv">Tabela de honorários STJ (.csv)</label><input id="arquivoTabelaCsv" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('honoraria',this.files?.[0])"><label for="vigenciaImportacaohonoraria">Vigência a partir de</label><input id="vigenciaImportacaohonoraria" type="date" required><button type="button" onclick="confirmarImportacaoTabela('honoraria')">Importar tabela</button><small id="statusImportacaohonoraria" role="status" aria-live="polite"></small></div>
+            <div class="campo-controle"><label for="arquivoEscalaAnestesiaCsv">Escala de anestesiologia por porte (.csv)</label><input id="arquivoEscalaAnestesiaCsv" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('anestesia',this.files?.[0])"><label for="vigenciaImportacaoanestesia">Vigência a partir de</label><input id="vigenciaImportacaoanestesia" type="date" required><button type="button" onclick="confirmarImportacaoTabela('anestesia')">Importar tabela</button><small id="statusImportacaoanestesia" role="status" aria-live="polite"></small></div>
+            <div class="campo-controle"><label for="arquivoHospitalarA">Serviços hospitalares — Tipo A (.csv)</label><input id="arquivoHospitalarA" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('A',this.files?.[0])"><label for="vigenciaImportacaoA">Vigência a partir de</label><input id="vigenciaImportacaoA" type="date" required><button type="button" onclick="confirmarImportacaoTabela('A')">Importar tabela</button><small id="statusImportacaoA" role="status" aria-live="polite"></small> this.value = '')"></div>
+            <div class="campo-controle"><label for="arquivoHospitalarB">Serviços hospitalares — Tipo B (.csv)</label><input id="arquivoHospitalarB" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('B',this.files?.[0])"><label for="vigenciaImportacaoB">Vigência a partir de</label><input id="vigenciaImportacaoB" type="date" required><button type="button" onclick="confirmarImportacaoTabela('B')">Importar tabela</button><small id="statusImportacaoB" role="status" aria-live="polite"></small> this.value = '')"></div>
+            <div class="campo-controle"><label for="arquivoHospitalarC">Serviços hospitalares — Tipo C (.csv)</label><input id="arquivoHospitalarC" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('C',this.files?.[0])"><label for="vigenciaImportacaoC">Vigência a partir de</label><input id="vigenciaImportacaoC" type="date" required><button type="button" onclick="confirmarImportacaoTabela('C')">Importar tabela</button><small id="statusImportacaoC" role="status" aria-live="polite"></small> this.value = '')"></div>
         </div>
         <p id="statusHospitalares" class="auditoria-info" aria-live="polite"></p>
         <p class="auditoria-info">Importe cada tabela hospitalar no campo do tipo correspondente (A, B ou C). O tipo identificado no arquivo será conferido antes da importação.</p>
@@ -946,7 +946,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.82</p>
+    <p class="versao-relatorio">Versão 4.83</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2693,8 +2693,8 @@ async function carregarTabelasSalvas() {
             if (salva.tabelaGerada) {
                 if (salva.tipo === 'anestesia') aplicarEscalaAnestesia(salva.tabelaGerada, salva.tabelaGerada.origem);
                 else aplicarTabelaCsv(salva.tabelaGerada, salva.tabelaGerada.origem);
-            } else if (salva.tipo === 'anestesia') aplicarEscalaAnestesia(lerEscalaAnestesiaCsv(salva.csv, salva.nome), 'salva neste navegador');
-            else aplicarTabelaCsv(lerTabelaCsv(salva.csv, salva.nome), 'salva neste navegador');
+            } else if (salva.tipo === 'anestesia') aplicarEscalaAnestesia(ajustarVigenciaImportacao(lerEscalaAnestesiaCsv(csvComVigenciaEscolhida(salva.csv,salva.vigenciaEscolhida), salva.nome),salva.vigenciaEscolhida), 'salva neste navegador');
+            else aplicarTabelaCsv(ajustarVigenciaImportacao(lerTabelaCsv(csvComVigenciaEscolhida(salva.csv,salva.vigenciaEscolhida), salva.nome),salva.vigenciaEscolhida), 'salva neste navegador');
         }
         db.close();
         atualizarCamposReajustes();
@@ -2703,19 +2703,55 @@ async function carregarTabelasSalvas() {
     }
 }
 
-async function importarTabelaCsv(file) {
+const ARQUIVOS_IMPORTACAO = new Map();
+async function prepararImportacaoTabela(tipo,file) {
+    ARQUIVOS_IMPORTACAO.delete(tipo);
+    const campo=document.getElementById('vigenciaImportacao'+tipo),status=document.getElementById('statusImportacao'+tipo);
+    campo.value='';status.textContent='';
+    if(!file)return;
+    try {
+        if(file.size>15*1024*1024)throw new Error('CSV acima do limite de 15 MB.');
+        const csv=await file.text();
+        const data=csv.match(/VIG[EÊ]NCIA[^\d\r\n]*(\d{2})\/(\d{2})\/(\d{4})/i);
+        if(data)campo.value=`${data[3]}-${data[2]}-${data[1]}`;
+        ARQUIVOS_IMPORTACAO.set(tipo,file);
+        status.textContent=campo.value?'Confira a vigência e clique em Importar tabela.':'Vigência não encontrada. Preencha a data antes de importar.';
+    }catch(e){status.textContent=e.message;}
+}
+function csvComVigenciaEscolhida(csv,data) {
+    if(!data || /VIG[EÊ]NCIA[^\d\r\n]*\d{2}\/\d{2}\/\d{4}/i.test(csv))return csv;
+    return 'VIGÊNCIA '+data.slice(8,10)+'/'+data.slice(5,7)+'/'+data.slice(0,4)+'\n'+csv;
+}
+function ajustarVigenciaImportacao(tabela,data) {
+    if(!data)return tabela;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(data))throw new Error('Informe uma data de vigência válida.');
+    const ano=data.slice(0,4),vigencia=data.slice(8,10)+'/'+data.slice(5,7)+'/'+ano;
+    tabela.ano=ano;tabela.vigencia=vigencia;
+    for(const tipo of ['honoraria','radiologia','oftalmologia'])for(const r of tabela[tipo]||[]){r.vigencia=vigencia;r.anoFonte=ano;}
+    return tabela;
+}
+async function confirmarImportacaoTabela(tipo) {
+    const file=ARQUIVOS_IMPORTACAO.get(tipo),campo=document.getElementById('vigenciaImportacao'+tipo),status=document.getElementById('statusImportacao'+tipo);
+    if(!file){status.textContent='Selecione um arquivo CSV.';return;}
+    if(!campo.value||!campo.checkValidity()){status.textContent='Preencha uma data de vigência válida.';campo.reportValidity();return;}
+    if(tipo==='honoraria')await importarTabelaCsv(file,campo.value);
+    else if(tipo==='anestesia')await importarEscalaAnestesiaCsv(file,campo.value);
+    else await importarTabelasHospitalares([file],tipo,campo.value);
+}
+
+async function importarTabelaCsv(file, vigenciaEscolhida = '') {
     if (!file) return;
     const input = document.getElementById('arquivoTabelaCsv');
     try {
         if (file.size > 15 * 1024 * 1024) throw new Error('CSV acima do limite de 15 MB.');
         const csv = await file.text();
-        const tabela = lerTabelaCsv(csv, file.name);
+        const tabela = ajustarVigenciaImportacao(lerTabelaCsv(csvComVigenciaEscolhida(csv,vigenciaEscolhida), file.name), vigenciaEscolhida);
         aplicarTabelaCsv(tabela, 'importada');
         try {
             const db = await abrirBancoTabelas();
             await new Promise((resolve, reject) => {
                 const transaction = db.transaction('tabelas', 'readwrite');
-                transaction.objectStore('tabelas').put({ ano: tabela.ano, nome: file.name, csv });
+                transaction.objectStore('tabelas').put({ ano: tabela.ano, nome: file.name, csv, vigenciaEscolhida });
                 transaction.oncomplete = resolve;
                 transaction.onerror = () => reject(transaction.error);
             });
@@ -2730,19 +2766,19 @@ async function importarTabelaCsv(file) {
     } finally { if (input) input.value = ''; }
 }
 
-async function importarEscalaAnestesiaCsv(file) {
+async function importarEscalaAnestesiaCsv(file, vigenciaEscolhida = '') {
     if (!file) return;
     const input = document.getElementById('arquivoEscalaAnestesiaCsv');
     try {
         if (file.size > 1024 * 1024) throw new Error('CSV da escala acima do limite de 1 MB.');
         const csv = await file.text();
-        const escala = lerEscalaAnestesiaCsv(csv, file.name);
+        const escala = ajustarVigenciaImportacao(lerEscalaAnestesiaCsv(csvComVigenciaEscolhida(csv,vigenciaEscolhida), file.name), vigenciaEscolhida);
         aplicarEscalaAnestesia(escala, 'importada');
         try {
             const db = await abrirBancoTabelas();
             await new Promise((resolve, reject) => {
                 const transaction = db.transaction('tabelas', 'readwrite');
-                transaction.objectStore('tabelas').put({ ano: `anestesia-${escala.ano}`, tipo: 'anestesia', nome: file.name, csv });
+                transaction.objectStore('tabelas').put({ ano: `anestesia-${escala.ano}`, tipo: 'anestesia', nome: file.name, csv, vigenciaEscolhida });
                 transaction.oncomplete = resolve;
                 transaction.onerror = () => reject(transaction.error);
             });
@@ -3732,11 +3768,11 @@ function salvarHospitalaresLocais() {
     try {localStorage.setItem('relatorio-tabelas-hospitalares',JSON.stringify([...TABELAS_HOSPITALARES_ANUAIS.values()].filter(t=>t.origem!=='incorporada')));}
     catch {throw new Error('Tabela aplicada nesta sessão, mas o navegador não permitiu salvar para próximas sessões.');}
 }
-async function importarTabelasHospitalares(files, tipoEsperado = '') {
+async function importarTabelasHospitalares(files, tipoEsperado = '', vigenciaEscolhida = '') {
     try {
         const tabelas=[];
         for(const file of files||[]) {
-            const tabela=lerTabelaHospitalarCsv(await file.text(),file.name);
+            const tabela=ajustarVigenciaImportacao(lerTabelaHospitalarCsv(csvComVigenciaEscolhida(await file.text(),vigenciaEscolhida),file.name),vigenciaEscolhida);
             if(tipoEsperado && tabela.tipo!==tipoEsperado)throw new Error(`Arquivo identificado como tipo ${tabela.tipo}. Use o campo Serviços hospitalares — Tipo ${tabela.tipo}.`);
             tabelas.push(tabela);
         }
