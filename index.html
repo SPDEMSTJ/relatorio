@@ -648,6 +648,13 @@
     .auditoria-guia-destaque { display:inline-block; padding:3px 7px; border:1px solid #d9e4f1; border-radius:6px; background:#f2f6fb; color:#37516f; font-size:11px; font-weight:600; line-height:1.2; white-space:nowrap; }
     .auditoria-diferenca-lancar { display:block; margin-top:4px; color:#9a3412; font-weight:600; }
     .auditoria-data-item { font-size:12px; font-weight:600; }
+    #btnAnotacoesPeg { position:fixed; right:30px; bottom:90px; z-index:2200; width:46px; height:46px; border-radius:50%; border:1px solid #93c5fd; background:#1e40af; color:white; font-size:22px; cursor:pointer; box-shadow:0 3px 12px #0003; }
+    #painelAnotacoesPeg { position:fixed; right:24px; bottom:145px; z-index:2201; width:min(360px,calc(100vw - 48px)); padding:14px; box-sizing:border-box; background:white; border:1px solid #bfdbfe; border-radius:12px; box-shadow:0 8px 30px #0004; }
+    #painelAnotacoesPeg[hidden] { display:none; }
+    #painelAnotacoesPeg header { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#1e3a8a; }
+    #painelAnotacoesPeg header button { padding:4px 8px; height:auto; }
+    #textoAnotacoesPeg { width:100%; box-sizing:border-box; min-height:180px; margin-top:10px; padding:9px; border:1px solid #cbd5e1; border-radius:7px; resize:vertical; font:14px sans-serif; }
+    #statusAnotacoesPeg { display:block; margin-top:5px; font-size:11px; color:#475569; }
     .auditoria-tabela th.limite-relatorio-popup { color:#facc15; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-inicio-codigo td { border-top:3px solid #aec6e5; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-legenda { margin:0 0 7px; padding:6px 9px; line-height:1.3; }
@@ -932,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.72</p>
+    <p class="versao-relatorio">Versão 4.73</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -955,6 +962,8 @@
     <div class="tour-acoes"><button class="btn-secondary" type="button" onclick="encerrarGuiaRapido()">Pular guia</button><div><button id="tourVoltar" class="btn-secondary" type="button" onclick="mudarPassoGuia(-1)">Voltar</button><button id="tourAvancar" class="btn-primary" type="button" onclick="mudarPassoGuia(1)">Próximo →</button></div></div>
 </div>
 
+<button id="btnAnotacoesPeg" class="no-print" type="button" onclick="alternarAnotacoesPeg()" aria-label="Abrir anotações do PEG" title="Anotações do PEG" aria-expanded="false">📝</button>
+<section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Fechar anotações">✕</button></header><textarea id="textoAnotacoesPeg" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
 <button id="btnTopo" class="btn-topo no-print" onclick="subirTopo()">
     ⬆ Voltar ao topo
 </button>
@@ -1277,6 +1286,12 @@ function abrirPopupEmJanelaSeparada(tipo) {
     janela.document.open();
     janela.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${configuracao.titulo}</title><style>${estilos}</style><style>body{padding:12px;background:#eaf0f8;overflow:auto}.janela-popup-separada{width:100%;min-height:calc(100vh - 24px);max-width:none!important;height:auto!important;max-height:none!important;margin:0!important;overflow:visible!important}.janela-popup-separada.janela-popup-beneficiarios{height:calc(100vh - 24px)!important;min-height:0;overflow:hidden!important;display:flex;flex-direction:column}.janela-popup-separada .abrir-janela-separada{display:none!important}#conteudoJanelaPopup>#conteudoPopupAuditoriaBeneficiario{min-height:calc(100vh - 105px)}#conteudoJanelaPopup .auditoria-tabela-wrap{max-height:none;height:auto}</style></head><body><main id="conteudoJanelaPopup" class="modal-content janela-popup-separada janela-popup-${tipo}"></main></body></html>`);
     janela.document.close();
+    for (const id of ['btnAnotacoesPeg', 'painelAnotacoesPeg']) janela.document.body.append(document.getElementById(id).cloneNode(true));
+    janela.document.getElementById('painelAnotacoesPeg').hidden = true;
+    janela.document.getElementById('btnAnotacoesPeg').setAttribute('aria-expanded', 'false');
+    janela.alternarAnotacoesPeg = () => alternarAnotacoesPeg(janela.document);
+    janela.salvarAnotacoesPeg = campo => salvarAnotacoesPeg(campo);
+    atualizarAnotacoesPeg(janela.document);
     janela.selecionarCodigoPopupAuditoria = codigo => { selecionarCodigoPopupAuditoria(codigo); atualizarConteudoJanelaSeparada(tipo); };
     janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
     janela.aplicarCondicaoEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarCondicaoEventoAuditoria');
@@ -1540,6 +1555,7 @@ async function copiarValorProcesso(botao) {
 
 // --- FUNÇÃO PARA ATUALIZAR VISUAL E RESUMO ---
 function atualizarFiltroVisual() {
+    atualizarAnotacoesPeg();
     const seletorPeg = document.getElementById('filtroPegSelect');
     if (seletorPeg.dataset.pegPesquisa !== seletorPeg.value) {
         document.getElementById('pesquisaRelatorio').value = '';
@@ -2235,6 +2251,45 @@ function render(preservarPeg = false) {
 
 window.onscroll = function() { const btn = document.getElementById("btnTopo"); if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) btn.classList.add("mostrar"); else btn.classList.remove("mostrar"); };
 function subirTopo() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+const ANOTACOES_PEG_SESSAO = new Map();
+function pegDasAnotacoes() {
+    const selecionado = document.getElementById('filtroPegSelect')?.value;
+    if (selecionado && selecionado !== 'todos') return selecionado;
+    const pegs = Object.keys(GLOBAL_DADOS_RESUMO).filter(peg => peg !== 'todos');
+    return pegs.length === 1 ? pegs[0] : '';
+}
+function atualizarAnotacoesPeg(contexto = document) {
+    const peg = pegDasAnotacoes();
+    const campo = contexto.getElementById('textoAnotacoesPeg');
+    if (!campo) return;
+    contexto.getElementById('tituloAnotacoesPeg').textContent = peg ? `Anotações · PEG ${peg}` : 'Anotações do PEG';
+    campo.disabled = !peg;
+    campo.dataset.peg = peg;
+    let anotacao = ANOTACOES_PEG_SESSAO.get(peg) || '';
+    try { anotacao = localStorage.getItem(`relatorio-peg-anotacoes:${peg}`) ?? anotacao; } catch {}
+    campo.value = peg ? anotacao : '';
+    contexto.getElementById('statusAnotacoesPeg').textContent = peg ? 'Salvamento automático neste navegador, por PEG.' : 'Selecione um PEG para fazer anotações.';
+}
+function alternarAnotacoesPeg(contexto = document) {
+    const painel = contexto.getElementById('painelAnotacoesPeg');
+    painel.hidden = !painel.hidden;
+    contexto.getElementById('btnAnotacoesPeg').setAttribute('aria-expanded', String(!painel.hidden));
+    if (!painel.hidden) { atualizarAnotacoesPeg(contexto); contexto.getElementById('textoAnotacoesPeg').focus(); }
+}
+function salvarAnotacoesPeg(campo) {
+    const peg = campo.dataset.peg;
+    if (!peg) return;
+    ANOTACOES_PEG_SESSAO.set(peg, campo.value);
+    let status = 'Anotação salva neste navegador.';
+    try { localStorage.setItem(`relatorio-peg-anotacoes:${peg}`, campo.value); }
+    catch { status = 'Armazenamento indisponível: anotação mantida apenas nesta sessão.'; }
+    campo.ownerDocument.getElementById('statusAnotacoesPeg').textContent = status;
+    for (const contexto of [document, ...Object.values(JANELAS_POPUP_SEPARADAS).filter(janela => janela && !janela.closed).map(janela => janela.document)]) {
+        const outro = contexto.getElementById('textoAnotacoesPeg');
+        if (outro && outro !== campo && outro.dataset.peg === peg) outro.value = campo.value;
+    }
+}
 
 const CHAVE_PERFIL_RELATORIO = 'peg-relatorio-perfil-v1';
 const PASSOS_GUIA_RAPIDO = [
