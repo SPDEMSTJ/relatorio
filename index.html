@@ -932,7 +932,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.70</p>
+    <p class="versao-relatorio">Versão 4.72</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1057,6 +1057,7 @@
 // VARIAVEL GLOBAL PARA ARMAZENAR DADOS DE RESUMO POR PEG
 let GLOBAL_DADOS_RESUMO = {};
 let PEG_BENEFICIARIOS_POPUP = '';
+let ULTIMO_PEG_LISTA_BENEFICIARIOS = '';
 const BENEFICIARIOS_CONFERIDOS_POPUP = new Set();
 const JANELAS_POPUP_SEPARADAS = { auditoria:null, beneficiarios:null };
 let RELATORIO_GERADO = false;
@@ -1069,11 +1070,19 @@ function limparResumosComplementares() {
 }
 
 function abrirPopupBeneficiariosProcesso(peg) {
+    const mudouPeg = ULTIMO_PEG_LISTA_BENEFICIARIOS !== peg;
+    ULTIMO_PEG_LISTA_BENEFICIARIOS = peg;
+    if (mudouPeg) document.getElementById('pesquisaBeneficiariosProcesso').value = '';
     PEG_BENEFICIARIOS_POPUP = peg;
     const modal = document.getElementById('modalBeneficiariosProcesso');
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
     renderizarPopupBeneficiariosProcesso();
+    if (mudouPeg) {
+        const lista = document.getElementById('conteudoBeneficiariosProcesso');
+        lista.scrollTop = 0;
+        lista.scrollLeft = 0;
+    }
     modal.querySelector('.popup-auditoria-fechar')?.focus();
 }
 
@@ -3452,11 +3461,11 @@ function avaliarCirurgia(eventos) {
         });
         cirurgioes.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? 50 : 70);
+                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal || (!ehEndoscopiaIntervencionista(item.evento.codigo) && equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? null : 70);
         });
         items.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? 50 : 70);
+                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? null : 70);
         });
         const portesCirurgiao = new Map(cirurgioes.map(item => [item.chaveAto,
             calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentuaisPorAto.get(item.chaveAto))]));
@@ -3479,7 +3488,7 @@ function avaliarCirurgia(eventos) {
             if (auxExcedido) observacoes.push(`Auxiliar ${item.equipe.numero} excede os ${maxAuxiliares} previstos para o maior porte.`);
             if (auxiliar) observacoes.push(`Cálculo individual: ${item.equipe.numero === 1 ? 30 : 20}% somente sobre o porte do cirurgião do código ${item.evento.codigo} nesta ocorrência; sem somar outros códigos ou UCO.${maxAuxiliares === null ? '' : ` Máximo previsto para o maior porte: ${maxAuxiliares} auxiliar(es).`}`);
             const regra = auxiliar ? `${item.equipe.numero === 1 ? 30 : 20}% do porte do cirurgião deste código${porteMesmoCodigo === null ? '; linha correspondente não localizada' : `: ${valorBRL(porteMesmoCodigo)} × ${item.equipe.numero === 1 ? 30 : 20}%`}`
-                : percentual === null ? 'Via de acesso indisponível'
+                : percentual === null ? 'Via de acesso pendente de confirmação: escolha 50%, 70% ou 100%'
                 : `${percentual}% ${percentual === 70 ? 'outra via' : percentual === 50 ? 'mesma via' : item.chaveAto === chavePrincipal ? 'procedimento principal' : 'ato/equipe distinto'}${calculo?.interna ? '; porte × 2 por internação' : ''}${calculo?.urgencia ? '; urgência +30% no porte' : ''}`;
             const permitido = auxiliar ? porteMesmoCodigo === null || auxExcedido ? null
                     : arredondarTabela(porteMesmoCodigo * item.equipe.multiplicador)
@@ -3488,7 +3497,7 @@ function avaliarCirurgia(eventos) {
                 regra, observacao: observacoes.join(' — '), referencia: item.referencia,
                 limiteReferencia: permitido,
                 baseComparacao: permitido === null ? 'Cálculo técnico indisponível' : 'Limite técnico estimado',
-                alerta: auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : porteMesmoCodigo === null && auxiliar ? 'Porte cirúrgico deste código não localizado na tabela; confira a referência.' : '',
+                alerta: percentual === null && ehEndoscopiaIntervencionista(item.evento.codigo) ? 'Confirme a via: 50% pela mesma via, 70% por vias diferentes ou 100% quando aplicável. Sem confirmação, não calcular possível glosa.' : auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : porteMesmoCodigo === null && auxiliar ? 'Porte cirúrgico deste código não localizado na tabela; confira a referência.' : '',
                 percentual, funcaoCirurgica: item.equipe.tipo
             }));
         });
@@ -4168,7 +4177,7 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
             row.cells[0]?.append(document.createElement('br'), botao);
         }
         botao.classList.toggle('com-glosa', itens.some(item => item.glosaTecnica > 0));
-        botao.textContent = `Analisar ${rotuloPercentuaisBeneficiario(itens)} · ${itens.length} evento${itens.length === 1 ? '' : 's'}`;
+        botao.textContent = `Analisar vias de acesso · ${itens.length} evento${itens.length === 1 ? '' : 's'}`;
         botao.title = 'Abrir análise dos eventos elegíveis deste beneficiário, no mesmo dia e grupo, inclusive em guias separadas';
     });
 }
@@ -4224,9 +4233,9 @@ function renderizarPopupAuditoriaBeneficiario() {
     const posicao = conteudo.querySelector('.auditoria-tabela-wrap')?.scrollTop || 0;
     const guia = todosItens[0].guia;
     const rotulo = rotuloPercentuaisBeneficiario(todosItens);
-    document.getElementById('tituloPopupAuditoriaBeneficiario').textContent = `Análise ${rotulo} · ${guia.beneficiario || 'Beneficiário'}`;
+    document.getElementById('tituloPopupAuditoriaBeneficiario').textContent = `Análise de vias de acesso · ${guia.beneficiario || 'Beneficiário'}`;
     modal.querySelector('.popup-auditoria-fechar')?.setAttribute('aria-label', `Fechar análise ${rotulo}`);
-    document.getElementById('subtituloPopupAuditoriaBeneficiario').textContent = `PEG ${guia.peg} · Matrícula ${guia.matricula || 'não informada'} · ${new Set(todosItens.map(item => item.guia.ordem)).size} guia(s)`;
+    document.getElementById('subtituloPopupAuditoriaBeneficiario').textContent = `PEG ${guia.peg} · Processo ${guia.processo || 'não informado'} · Matrícula ${guia.matricula || 'não informada'} · ${new Set(todosItens.map(item => item.guia.ordem)).size} guia(s)`;
     const possiveis = itens.filter(item => item.glosaTecnica > 0);
     const apenasPreco = itens.filter(item => item.excessoTabela > 0 && item.permitido === null);
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
