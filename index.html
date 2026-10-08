@@ -648,7 +648,7 @@
     .auditoria-guia-destaque { display:inline-block; padding:3px 7px; border:1px solid #d9e4f1; border-radius:6px; background:#f2f6fb; color:#37516f; font-size:11px; font-weight:600; line-height:1.2; white-space:nowrap; }
     .auditoria-diferenca-lancar { display:block; margin-top:4px; color:#9a3412; font-weight:600; }
     .auditoria-data-item { font-size:12px; font-weight:600; }
-    #btnAnotacoesPeg { position:fixed; right:30px; bottom:90px; z-index:2200; width:46px; height:46px; border-radius:50%; border:1px solid #93c5fd; background:#1e40af; color:white; font-size:22px; cursor:pointer; box-shadow:0 3px 12px #0003; }
+    #btnAnotacoesPeg { display:flex; align-items:center; justify-content:center; padding:0; line-height:1; box-sizing:border-box; position:fixed; right:30px; bottom:90px; z-index:2200; width:46px; height:46px; border-radius:50%; border:1px solid #93c5fd; background:#1e40af; color:white; font-size:22px; cursor:pointer; box-shadow:0 3px 12px #0003; }
     #painelAnotacoesPeg { position:fixed; right:24px; bottom:145px; z-index:2201; width:min(360px,calc(100vw - 48px)); padding:14px; box-sizing:border-box; background:white; border:1px solid #bfdbfe; border-radius:12px; box-shadow:0 8px 30px #0004; }
     #painelAnotacoesPeg[hidden] { display:none; }
     #painelAnotacoesPeg header { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#1e3a8a; }
@@ -748,7 +748,7 @@
     #saida .alerta-parecer-sei td { background:#fff3cd; color:#784500; border-left:4px solid #d97706; font-weight:700; font-size:13px; padding:10px 12px; white-space:normal; }
 .importacao-retorno{display:block;margin-top:8px;padding:8px 10px;border-radius:6px;font-size:13px;}
 .importacao-sucesso{color:#166534;background:#dcfce7;}.importacao-erro{color:#991b1b;background:#fee2e2;}.importacao-aviso{color:#92400e;background:#fef3c7;}
-.catalogo-tabelas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:14px 0;}.catalogo-grupo{padding:12px;border-radius:8px;border:1px solid;}.catalogo-grupo h3{margin:0 0 8px;font-size:15px;}.catalogo-grupo ul{padding-left:18px;margin:0;}.catalogo-grupo li{margin:6px 0;}.tabelas-incorporadas{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a;}.tabelas-importadas{background:#f0fdf4;border-color:#86efac;color:#166534;}.tabelas-reajustadas{background:#faf5ff;border-color:#d8b4fe;color:#6b21a8;}
+.catalogo-tabelas{display:flex;flex-direction:column;gap:6px;margin:10px 0;}.catalogo-grupo{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;padding:7px 9px;border-radius:7px;border:1px solid;}.catalogo-grupo h3{margin:0;font-size:12px;white-space:nowrap;}.catalogo-grupo ul{display:flex;flex-wrap:wrap;gap:4px;list-style:none;padding:0;margin:0;flex:1;min-width:180px;}.catalogo-grupo li{margin:0;padding:3px 6px;border:1px solid currentColor;border-radius:5px;font-size:11px;line-height:1.3;}.catalogo-grupo p{margin:0;font-size:11px;}.tabelas-incorporadas{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a;}.tabelas-importadas{background:#f0fdf4;border-color:#86efac;color:#166534;}.tabelas-reajustadas{background:#faf5ff;border-color:#d8b4fe;color:#6b21a8;}
 </style>
 </head>
 <body>
@@ -949,7 +949,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.86</p>
+    <p class="versao-relatorio">Versão 4.87</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2680,7 +2680,7 @@ function atualizarCatalogoTabelas() {
     for(const ano of Object.keys(BASES_REFERENCIA.honoraria).sort())adicionar('Honorários médicos',METADADOS_TABELAS.get(ano)||{ano});
     for(const ano of Object.keys(BASES_REFERENCIA.anestesia).sort())adicionar('Anestesiologia',METADADOS_ESCALAS_ANESTESIA.get(ano)||{ano});
     for(const t of [...TABELAS_HOSPITALARES_ANUAIS.values()].sort((a,b)=>a.ano.localeCompare(b.ano)||a.tipo.localeCompare(b.tipo)))adicionar('Serviços hospitalares — Tipo '+t.tipo,{...t,nome:'Serviços hospitalares — Tipo '+t.tipo});
-    painel.innerHTML=Object.entries(grupos).map(([grupo,tabelas])=>`<section class="catalogo-grupo tabelas-${grupo}"><h3>${grupo==='incorporadas'?'Incorporadas no relatório':grupo==='importadas'?'Importadas neste navegador':'Geradas por reajuste'}</h3>${tabelas.length?'<ul>'+tabelas.map(t=>`<li><strong>${escAuditoria(t.nome)} · ${escAuditoria(t.ano)}</strong>${t.vigencia?`<br>Vigência: ${escAuditoria(t.vigencia)}`:''}${grupo==='reajustadas'?`<br>${escAuditoria(t.origem)}`:''}</li>`).join('')+'</ul>':'<p>Nenhuma tabela nesta categoria.</p>'}</section>`).join('');
+    painel.innerHTML=Object.entries(grupos).map(([grupo,tabelas])=>`<section class="catalogo-grupo tabelas-${grupo}"><h3>${grupo==='incorporadas'?'Incorporadas no relatório':grupo==='importadas'?'Importadas neste navegador':'Geradas por reajuste'}</h3>${tabelas.length?'<ul>'+tabelas.map(t=>`<li><strong>${escAuditoria(t.nome.replace('Honorários médicos','Honorários').replace('Serviços hospitalares — Tipo ','Hosp. '))} ${escAuditoria(t.ano)}</strong>${t.vigencia?` · ${escAuditoria(t.vigencia)}`:''}${grupo==='reajustadas'?` · ${escAuditoria(t.origem)}`:''}</li>`).join('')+'</ul>':'<p>Nenhuma tabela nesta categoria.</p>'}</section>`).join('');
 }
 function mensagemImportacao(tipo,texto,estado='sucesso') {
     const status=document.getElementById('statusImportacao'+tipo);if(!status)return;
