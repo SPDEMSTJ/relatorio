@@ -646,6 +646,7 @@
     .auditoria-filtro-codigo small { margin-left:4px; opacity:.8; }
     .auditoria-filtro-codigo.ativo { background:#1f5ca8; border-color:#1f5ca8; color:#fff; }
     .auditoria-guia-destaque { display:inline-block; padding:3px 7px; border:1px solid #d9e4f1; border-radius:6px; background:#f2f6fb; color:#37516f; font-size:11px; font-weight:600; line-height:1.2; white-space:nowrap; }
+    .auditoria-diferenca-lancar { display:block; margin-top:4px; color:#9a3412; font-weight:600; }
     .auditoria-data-item { font-size:12px; font-weight:600; }
     .auditoria-tabela th.limite-relatorio-popup { color:#facc15; }
     #conteudoPopupAuditoriaBeneficiario .auditoria-inicio-codigo td { border-top:3px solid #aec6e5; }
@@ -931,7 +932,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.67</p>
+    <p class="versao-relatorio">Versão 4.70</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2139,7 +2140,7 @@ function render(preservarPeg = false) {
                     const evtLower = evtHtml.toLowerCase();
                     
                     if (evtLower.match(/internado|visita hospitalar/)) evtHtml += ' <span class="tag-internacao">INTERNAÇÃO</span>';
-                    if (ehCodigoPacoteCorrespondente(cEvt[6])) evtHtml += ' <span class="observacao-pacote-correspondente">Verifique o valor nas tabelas dos pacotes correspondentes</span>';
+                    if (ehEventoPacoteAuditoria({ codigo:cEvt[6], grau:`${cEvt[16] || ''} ${cEvt[17] || ''}`, descricao:cEvt[19] })) evtHtml += ' <span class="observacao-pacote-correspondente">Verifique o preço na tabela do pacote correspondente</span>';
                     
                     const cols = [cEvt[7], cEvt[5], cEvt[6], evtHtml, cEvt[8], cEvt[9], cEvt[10], cEvt[11], cEvt[12], cEvt[13], cEvt[15], cEvt[16]];
                     cols.forEach((v, i) => {
@@ -3369,7 +3370,8 @@ function classificarEquipe(eventos) {
         // Procedimentos invasivos do capítulo IV também podem trazer equipe
         // cirúrgica e porte próprio (por exemplo, 4.08.14.092).
         if (!/^[34]\d{7}$/.test(evento.codigo)) return null;
-        const equipe = equipeCirurgica(evento.grau);
+        const equipe = equipeCirurgica(evento.grau) || (ehEndoscopiaIntervencionista(evento.codigo) && !/ANESTES/.test(normalizarAuditoria(evento.grau))
+            ? { tipo:'Cirurgião', numero:0, multiplicador:1 } : null);
         const ano = anoAuditoria(evento.data || evento.guia.data);
         const referencia = equipe && obterReferencia('honoraria', ano, evento.codigo, evento.data || evento.guia.data);
         return equipe && referencia && numeroOuNulo(referencia.t) > 0 && numeroOuNulo(referencia.h) > 0
@@ -3402,7 +3404,7 @@ function calcularAtoCirurgico(evento, referencia, equipe, percentual) {
     const total = numeroOuNulo(referencia.t);
     if (honorarios === null || total === null) return null;
     // O capítulo IV não recebe o dobro por internação na regra geral 6.2.
-    const interna = !evento.codigo.startsWith('4') && /INTERNACAO/.test(normalizarAuditoria(evento.guia.regime));
+    const interna = (!evento.codigo.startsWith('4') || ehEndoscopiaIntervencionista(evento.codigo)) && /INTERNACAO/.test(normalizarAuditoria(evento.guia.regime));
     const urgencia = condicoes.urgencia === 'sim' || (condicoes.urgencia !== 'nao' && acrescimoPorteAutomatico(evento));
     const porte = honorarios * Number(percentual) / 100 * (interna ? 2 : 1)
         * (urgencia ? 1.3 : 1) * equipe.multiplicador * evento.quantidade;
@@ -3450,11 +3452,11 @@ function avaliarCirurgia(eventos) {
         });
         cirurgioes.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : 70);
+                codigoSempreIntegral(item.evento.codigo) || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? 50 : 70);
         });
         items.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : 70);
+                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? 50 : 70);
         });
         const portesCirurgiao = new Map(cirurgioes.map(item => [item.chaveAto,
             calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentuaisPorAto.get(item.chaveAto))]));
@@ -3468,6 +3470,7 @@ function avaliarCirurgia(eventos) {
             const auxExcedido = item.equipe.numero > 0 && maxAuxiliares !== null && item.equipe.numero > maxAuxiliares;
             const video = /VIDEO/.test(normalizarAuditoria(item.evento.descricao));
             const observacoes = [item.equipe.tipo];
+            if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia intervencionista: item 4.1, maior porte 100% e demais 50% pela mesma via; 70% por vias diferentes, com ajuste disponível. Internação e urgência incidem apenas no porte; custo operacional integral. Atos integrantes e código específico para o conjunto devem ser conferidos.');
             if (!PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id) && percentual === 70) observacoes.push('70% aplicado automaticamente ao ato adicional; altere para 50% se a via de acesso for a mesma.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Cirurgião, 1º auxiliar e anestesista no mesmo código da guia: 100% automático para este conjunto, com ajuste manual disponível.');
             if (!principal && auxiliar) observacoes.push('Porte do cirurgião obtido na tabela para calcular o auxiliar, mesmo sem linha do cirurgião na extração.');
@@ -3899,7 +3902,8 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
             texto: linha.permitido === null ? 'Auxiliar: confira o cirurgião correspondente a este código e ocorrência.'
                 : `${valorBRL(linha.permitido)} (${linha.funcaoCirurgica}; percentual somente sobre o porte do cirurgião deste código, sem UCO)` };
     }
-    const cirurgia = linha.categoria === 'Cirurgia' ? calcularAtoCirurgico(linha.evento, referencia, equipeCirurgica(linha.evento.grau), percentual) : null;
+    const cirurgia = linha.categoria === 'Cirurgia' ? calcularAtoCirurgico(linha.evento, referencia, equipeCirurgica(linha.evento.grau)
+        || (ehEndoscopiaIntervencionista(linha.evento.codigo) ? { tipo:'Cirurgião', numero:0, multiplicador:1 } : null), percentual) : null;
     if (linha.categoria === 'Cirurgia' && !cirurgia) return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao), texto: 'Dados insuficientes para calcular o ato cirúrgico.' };
     const valor = cirurgia ? cirurgia.permitido : arredondarTabela(Number(referencia.t) * quantidade * Number(percentual) / 100, codigo);
     const tabela = anoSimulacao || String(referencia.anoFonte || ano);
@@ -4006,7 +4010,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             ${popup ? `<td class="valor">${valorBRL(numeroAuditoria(linha.evento.valorPago))}</td>` : ''}
             <td class="valor ${popup ? 'limite-relatorio-popup' : ''}">${linha.limiteReferencia === null ? 'A confirmar' : valorBRL(linha.limiteReferencia)}${!calculado && linha.limiteReferencia !== null ? '<small>Preço-base; regra pendente</small>' : ''}</td>
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
-            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}</td>
+            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleOftalmo}${percentualControle}
                 ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
@@ -4016,7 +4020,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
     }).join('');
     return `<div class="auditoria-tabela-wrap"><table class="auditoria-tabela"><thead><tr>
         <th>Evento</th><th class="valor">Qtd.</th><th class="valor">Valor cobrado</th>${popup ? '<th class="valor" title="Valor pago informado na extração do Benner">Liberado pelo Benner</th>' : ''}<th class="valor ${popup ? 'limite-relatorio-popup' : ''}">${popup ? 'Limite do relatório' : 'Limite da tabela/regra'}</th>
-        <th class="valor">Acima do limite</th><th>Situação</th><th>Regra e conferência</th>
+        <th class="valor ${popup ? 'limite-relatorio-popup' : ''}">Acima do limite</th><th>Situação</th><th>Regra e conferência</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -4102,7 +4106,8 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
     return `${normalizarAuditoria(beneficiario)}|${normalizarAuditoria(matricula)}`;
 }
 
-function codigoSempreIntegral(codigo) { return /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
+function ehEndoscopiaIntervencionista(codigo) { return /^40202\d{3}$/.test(codigoAuditoria(codigo)); }
+function codigoSempreIntegral(codigo) { return !ehEndoscopiaIntervencionista(codigo) && /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
 
 const CODIGOS_PACOTES_CORRESPONDENTES = new Set([
     '90031199','90031202','90031210','90031229','90031237','90031253','90031261','90031270','90031288','90031296','90031300','90031318','90031326','90031334','90031342','90031350','90031369','90031377','90031385','90031393','90031407','90031415','90031423','90031431','90031440','90031458','90031466','90031474','90031482','90031490','90031504','90031512','90031520','90031539','90031547','90031555','90031571','90031580','90031598','90031601','90031610','90031628','90031636','90031644',
@@ -4154,7 +4159,7 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
         if (!pegAtivo || row.dataset.auditoriaPeg !== pegAtivo) { remover(); return; }
         const chave = row.dataset.auditoriaGuiaId;
         const itens = linhasPopupAuditoriaPorGuia(linhas, chave);
-        if (!itens?.length || new Set(itens.map(item => codigoAuditoria(item.evento.codigo))).size < 2) { remover(); return; }
+        if (!itens?.length || itens.reduce((total, item) => total + Math.max(numeroAuditoria(item.evento.quantidade), 1), 0) < 2) { remover(); return; }
         if (!botao) {
             botao = document.createElement('button');
             botao.type = 'button';
@@ -4208,6 +4213,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const multiplasGuias = new Set(todosItens.map(linha => String(linha.guia.ordem || ''))).size > 1;
     const itens = todosItens.filter(linha => !CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size || CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigoAuditoria(linha.evento.codigo)))
         .sort((a, b) => (multiplasGuias ? String(a.guia.ordem || '').localeCompare(String(b.guia.ordem || ''), 'pt-BR', { numeric:true }) : 0)
+            || String(a.evento.ordem || '').localeCompare(String(b.evento.ordem || ''), 'pt-BR', { numeric:true })
             || codigoAuditoria(a.evento.codigo).localeCompare(codigoAuditoria(b.evento.codigo), 'pt-BR', { numeric: true })
             || ordemGrauPopupAuditoria(a.evento.grau) - ordemGrauPopupAuditoria(b.evento.grau)
             || numeroAuditoria(a.guia.ordem) - numeroAuditoria(b.guia.ordem)
