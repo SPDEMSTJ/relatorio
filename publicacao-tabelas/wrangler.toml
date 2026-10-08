@@ -1,0 +1,16 @@
+name = "peg-publicacao-tabelas-teste"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+SITE_ORIGIN = "https://samuelcnovaes.github.io"
+TEST_PAGE = "https://samuelcnovaes.github.io/Relatorio_PEG/Teste-publicacao.html"
+REPOSITORY = "samuelcnovaes/Relatorio_PEG"
+BRANCH = "main"
+ALLOWED_LOGIN = "samuelcnovaes"
+# Preencha com o Client ID da GitHub App (não é segredo).
+GITHUB_CLIENT_ID = "PREENCHER"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "PREENCHER"
