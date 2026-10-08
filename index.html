@@ -900,14 +900,19 @@
 <details class="painel-tabelas" ontoggle="if(this.open)mostrarTabelaHospitalar()"><summary><strong>Serviços hospitalares A, B e C — tabelas por ano</strong></summary><p>Taxas de sala: maior taxa a 100%; segunda a 50% pela mesma via ou 70% por vias diferentes; demais a 25%. Outros serviços são comparados pelo preço e quantidade. O tipo é reconhecido pelo nome do prestador. A referência respeita a vigência da tabela; tabelas reajustadas são identificadas na análise.</p><label>Ano para visualizar<select id="anoVisualizacaoHospitalar" onchange="mostrarTabelaHospitalar()"></select></label><div id="visualizacaoTabelaHospitalar"></div></details>
     <div class="painel-tabelas">
         <h2>Importar tabelas por ano</h2>
-<details class="help-details"><summary>Importar serviços hospitalares A, B ou C</summary><label>Selecionar tabelas (.csv)<input type="file" accept=".csv,text/csv" multiple onchange="importarTabelasHospitalares(this.files)"></label><p id="statusHospitalares" class="auditoria-info"></p></details>
+
 <details class="help-details"><summary><strong>Gerar tabelas por reajuste anual</strong></summary><p>Sem a tabela do novo ano? Escolha a tabela-base, informe o reajuste e a data a partir da qual os novos valores devem valer. Exemplo: 4,5% aumenta R$ 100,00 para R$ 104,50. Gere cada tabela separadamente.</p><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Honorários médicos</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajustehonoraria"></select></label><label>Reajuste (%)<input id="percentualReajustehonoraria" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajustehonoraria" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('honoraria')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Anestesiologia</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteanestesia"></select></label><label>Reajuste (%)<input id="percentualReajusteanestesia" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteanestesia" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('anestesia')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo A</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteA"></select></label><label>Reajuste (%)<input id="percentualReajusteA" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteA" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('A')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo B</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteB"></select></label><label>Reajuste (%)<input id="percentualReajusteB" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteB" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('B')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo C</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteC"></select></label><label>Reajuste (%)<input id="percentualReajusteC" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteC" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('C')">Gerar tabela reajustada</button></fieldset><p id="statusReajustes" class="auditoria-info" role="status" aria-live="polite"></p><p>Os novos valores serão usados conforme a data do atendimento. As tabelas geradas são identificadas como reajustadas e ficam salvas neste navegador. Códigos, portes e serviços sem preço fixo são preservados.</p></details>
         <p id="saudacaoTabelasPessoa" class="mensagem-personalizada no-print">Mantenha as tabelas aplicáveis ao ano do atendimento atualizadas.</p>
         <p id="statusTabelas" class="auditoria-info">Bases históricas 2018–2022, tabelas de honorários e escalas anestésicas de 2025 e 2026 incorporadas. CSVs anuais importados ficam salvos neste navegador.</p>
         <div class="tabelas-importacao">
             <div class="campo-controle"><label for="arquivoTabelaCsv">Tabela de honorários STJ (.csv)</label><input id="arquivoTabelaCsv" type="file" accept=".csv,text/csv" onchange="importarTabelaCsv(this.files?.[0])"></div>
             <div class="campo-controle"><label for="arquivoEscalaAnestesiaCsv">Escala de anestesiologia por porte (.csv)</label><input id="arquivoEscalaAnestesiaCsv" type="file" accept=".csv,text/csv" onchange="importarEscalaAnestesiaCsv(this.files?.[0])"></div>
+            <div class="campo-controle"><label for="arquivoHospitalarA">Serviços hospitalares — Tipo A (.csv)</label><input id="arquivoHospitalarA" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'A').finally(() => this.value = '')"></div>
+            <div class="campo-controle"><label for="arquivoHospitalarB">Serviços hospitalares — Tipo B (.csv)</label><input id="arquivoHospitalarB" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'B').finally(() => this.value = '')"></div>
+            <div class="campo-controle"><label for="arquivoHospitalarC">Serviços hospitalares — Tipo C (.csv)</label><input id="arquivoHospitalarC" type="file" accept=".csv,text/csv" onchange="importarTabelasHospitalares(this.files, 'C').finally(() => this.value = '')"></div>
         </div>
+        <p id="statusHospitalares" class="auditoria-info" aria-live="polite"></p>
+        <p class="auditoria-info">Importe cada tabela hospitalar no campo do tipo correspondente (A, B ou C). O tipo identificado no arquivo será conferido antes da importação.</p>
         <p class="auditoria-info">Ao receber a tabela de um novo ano, importe o CSV de honorários e, separadamente, a escala anestésica. Para a escala, converta a planilha em CSV com “VIGÊNCIA DD/MM/AAAA”, “Portes Anestésicos” e “Valor R$”, incluindo os portes 0 a 8.</p>
     </div>
 </section>
@@ -941,7 +946,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.81</p>
+    <p class="versao-relatorio">Versão 4.82</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3727,10 +3732,14 @@ function salvarHospitalaresLocais() {
     try {localStorage.setItem('relatorio-tabelas-hospitalares',JSON.stringify([...TABELAS_HOSPITALARES_ANUAIS.values()].filter(t=>t.origem!=='incorporada')));}
     catch {throw new Error('Tabela aplicada nesta sessão, mas o navegador não permitiu salvar para próximas sessões.');}
 }
-async function importarTabelasHospitalares(files) {
+async function importarTabelasHospitalares(files, tipoEsperado = '') {
     try {
         const tabelas=[];
-        for(const file of files||[]) tabelas.push(lerTabelaHospitalarCsv(await file.text(),file.name));
+        for(const file of files||[]) {
+            const tabela=lerTabelaHospitalarCsv(await file.text(),file.name);
+            if(tipoEsperado && tabela.tipo!==tipoEsperado)throw new Error(`Arquivo identificado como tipo ${tabela.tipo}. Use o campo Serviços hospitalares — Tipo ${tabela.tipo}.`);
+            tabelas.push(tabela);
+        }
         if(!tabelas.length)return;
         for(const t of tabelas) {if(TABELAS_HOSPITALARES_ANUAIS.has(t.ano+'|'+t.tipo)&&!confirm(`Substituir tabela hospitalar ${t.ano} tipo ${t.tipo}?`))continue;cadastrarTabelaHospitalar(t);}
         atualizarStatusHospitalares();atualizarAuditoria();salvarHospitalaresLocais();
