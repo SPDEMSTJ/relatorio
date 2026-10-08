@@ -939,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.75</p>
+    <p class="versao-relatorio">Versão 4.76</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3482,7 +3482,7 @@ function calcularAtoCirurgico(evento, referencia, equipe, percentual) {
     if (honorarios === null || total === null) return null;
     // O capítulo IV não recebe o dobro por internação na regra geral 6.2.
     const interna = (!evento.codigo.startsWith('4') || ehEndoscopiaIntervencionista(evento.codigo)) && /INTERNACAO/.test(normalizarAuditoria(evento.guia.regime));
-    const urgencia = condicoes.urgencia === 'sim' || (condicoes.urgencia !== 'nao' && acrescimoPorteAutomatico(evento));
+    const urgencia = condicoes.urgencia === 'sim' || (!ehEndoscopiaIntervencionista(evento.codigo) && condicoes.urgencia !== 'nao' && acrescimoPorteAutomatico(evento));
     const porte = honorarios * Number(percentual) / 100 * (interna ? 2 : 1)
         * (urgencia ? 1.3 : 1) * equipe.multiplicador * evento.quantidade;
     // A redução por via e os acréscimos incidem no porte, não na UCO/filme.
@@ -4090,7 +4090,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleOftalmo}${percentualControle}
-                ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
+                ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
         </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="${popup ? 8 : 7}"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
@@ -4201,7 +4201,7 @@ function ehEventoPacoteAuditoria(evento, referencia = null) {
 }
 
 function linhasRegraBeneficiarioAuditoria(linhas) {
-    return linhas.filter(linha => !codigoSempreIntegral(linha.evento.codigo) && linha.referencia && CATEGORIAS_REGRA_BENEFICIARIO.has(linha.categoria)
+    return linhas.filter(linha => (!codigoSempreIntegral(linha.evento.codigo) || ehEndoscopiaIntervencionista(linha.evento.codigo)) && linha.referencia && CATEGORIAS_REGRA_BENEFICIARIO.has(linha.categoria)
         && !/MEDICINA LABORATORIAL/.test(normalizarAuditoria(linha.referencia.r))
         && (!linha.referencia.hospitalar || ehPorteHospitalar(linha.evento.codigo))
         && !ehEventoPacoteAuditoria(linha.evento, linha.referencia)
@@ -4236,7 +4236,7 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
         if (!pegAtivo || row.dataset.auditoriaPeg !== pegAtivo) { remover(); return; }
         const chave = row.dataset.auditoriaGuiaId;
         const itens = linhasPopupAuditoriaPorGuia(linhas, chave);
-        if (!itens?.length || itens.reduce((total, item) => total + Math.max(numeroAuditoria(item.evento.quantidade), 1), 0) < 2) { remover(); return; }
+        if (!itens?.length || (!itens.some(item => ehEndoscopiaIntervencionista(item.evento.codigo)) && itens.reduce((total, item) => total + Math.max(numeroAuditoria(item.evento.quantidade), 1), 0) < 2)) { remover(); return; }
         if (!botao) {
             botao = document.createElement('button');
             botao.type = 'button';
