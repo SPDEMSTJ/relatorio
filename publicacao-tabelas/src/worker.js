@@ -10,12 +10,16 @@ export function validateUpload(tipo, vigencia, csv) {
   if (!validDate(vigencia)) throw new Error('Vigência inválida.');
   if (!csv.trim() || new TextEncoder().encode(csv).length > 15*1024*1024) throw new Error('CSV vazio ou acima de 15 MB.');
   if (csv.includes('\0') || !/[;,\t]/.test(csv)) throw new Error('Arquivo CSV inválido.');
+  const normalizado=csv.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  const linhas=normalizado.split(/\r?\n/);
   if (tipo === 'anestesia') {
     if (!/PORTES?\s+ANEST[EÉ]SICOS?/i.test(csv) || !/VALOR/i.test(csv)) throw new Error('Cabeçalho da anestesiologia não encontrado.');
-  } else if (!/C[ÓO]DIGO/i.test(csv) || !/DESCRI[ÇC][ÃA]O/i.test(csv)) throw new Error('Cabeçalho de códigos/descrição não encontrado.');
+  } else if(tipo==='honoraria') {
+    if(!linhas.some(l=>/CODIGO;PROCEDIMENTOS;/.test(l)&&/VALOR TOTAL EM R\$/.test(l)))throw new Error('Cabeçalho da Tabela de Honorários STJ não encontrado: Código, Procedimentos e Valor total em R$.');
+  } else if(!linhas.some(l=>/CODIGO/.test(l)&&/DESCRICAO/.test(l)&&/VALOR/.test(l)))throw new Error('Cabeçalho hospitalar não encontrado: Código, Descrição e Valor.');
   if (['A','B','C'].includes(tipo)) {
-    const matches=[...csv.matchAll(/TIPO\s*[“"']?\s*([ABC])\b/gi)];
-    if (!matches.length || matches.some(m=>m[1].toUpperCase()!==tipo)) throw new Error('O tipo hospitalar do conteúdo não corresponde ao campo selecionado.');
+    const matches=[...linhas.slice(0,15).join(' ').matchAll(/TIPO\s*[“"']?\s*([ABC])\b/g)];
+    if (!matches.length || matches[0][1]!==tipo) throw new Error('O tipo hospitalar do conteúdo não corresponde ao campo selecionado.');
   }
   return {tipo,ano:vigencia.slice(0,4),vigencia};
 }

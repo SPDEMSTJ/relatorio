@@ -35,3 +35,9 @@ test('existing type and year requires explicit replacement',async()=>{
  const original=globalThis.fetch;let writes=0;globalThis.fetch=async(url,options={})=>{if(options.method)writes++;return new Response(JSON.stringify(url.includes('/git/ref/')?{object:{sha:'base'}}:url.includes('/git/commits/')?{tree:{sha:'tree'}}:{versao:1,tabelas:[{tipo:'A',ano:'2027'}]}));};
  try{assert.deepEqual(await publish(environment(),'token',{tipo:'A',ano:'2027',vigencia:'2027-03-01'},'CSV'),{conflict:true});assert.equal(writes,0);}finally{globalThis.fetch=original;}
 });
+
+test('accepts STJ Procedimentos header and hospital descriptions mentioning another type',()=>{
+ assert.equal(validateUpload('honoraria','2027-03-01',';CÓDIGO;PROCEDIMENTOS;VALOR TOTAL EM R$;\n;1.01.01.012;Consulta;121,34;').tipo,'honoraria');
+ assert.equal(validateUpload('A','2027-03-01','SERVIÇOS HOSPITALARES TIPO A;\nCÓDIGO;DESCRIÇÃO;VALOR\n98101003;DIÁRIA DE APTO TIPO B;100,00').tipo,'A');
+ assert.throws(()=>validateUpload('honoraria','2027-03-01','CÓDIGO;DESCRIÇÃO;VALOR'));
+});
