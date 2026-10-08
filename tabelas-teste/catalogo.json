@@ -1,1 +1,12 @@
-{"versao":1,"tabelas":[]}
+{
+  "versao": 1,
+  "tabelas": [
+    {
+      "tipo": "honoraria",
+      "ano": "2026",
+      "vigencia": "2026-03-01",
+      "arquivo": "tabelas-teste/honoraria-2026.csv",
+      "publicadoEm": "2026-10-08T20:28:56.034Z"
+    }
+  ]
+}
