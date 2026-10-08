@@ -746,6 +746,9 @@
     #listaFeriadosGuia { font-size:12px; line-height:1.7; padding:0 28px 12px; }
     .auditoria-alerta-linha.alerta-regiao-conferencia > td { background:#fff0cf; color:#783d00; border-left:5px solid #d97706; font-size:14px; font-weight:700; padding:14px; line-height:1.6; }
     #saida .alerta-parecer-sei td { background:#fff3cd; color:#784500; border-left:4px solid #d97706; font-weight:700; font-size:13px; padding:10px 12px; white-space:normal; }
+.importacao-retorno{display:block;margin-top:8px;padding:8px 10px;border-radius:6px;font-size:13px;}
+.importacao-sucesso{color:#166534;background:#dcfce7;}.importacao-erro{color:#991b1b;background:#fee2e2;}.importacao-aviso{color:#92400e;background:#fef3c7;}
+.catalogo-tabelas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:14px 0;}.catalogo-grupo{padding:12px;border-radius:8px;border:1px solid;}.catalogo-grupo h3{margin:0 0 8px;font-size:15px;}.catalogo-grupo ul{padding-left:18px;margin:0;}.catalogo-grupo li{margin:6px 0;}.tabelas-incorporadas{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a;}.tabelas-importadas{background:#f0fdf4;border-color:#86efac;color:#166534;}.tabelas-reajustadas{background:#faf5ff;border-color:#d8b4fe;color:#6b21a8;}
 </style>
 </head>
 <body>
@@ -897,13 +900,13 @@
 </section>
 
 <section id="abaTabelas" class="aba-conteudo" role="tabpanel" aria-labelledby="tabTabelas" hidden>
-<details class="painel-tabelas" ontoggle="if(this.open)mostrarTabelaHospitalar()"><summary><strong>Serviços hospitalares A, B e C — tabelas por ano</strong></summary><p>Taxas de sala: maior taxa a 100%; segunda a 50% pela mesma via ou 70% por vias diferentes; demais a 25%. Outros serviços são comparados pelo preço e quantidade. O tipo é reconhecido pelo nome do prestador. A referência respeita a vigência da tabela; tabelas reajustadas são identificadas na análise.</p><label>Ano para visualizar<select id="anoVisualizacaoHospitalar" onchange="mostrarTabelaHospitalar()"></select></label><div id="visualizacaoTabelaHospitalar"></div></details>
+<details class="painel-tabelas" id="instrucoesHospitalares"><summary><strong>Serviços hospitalares A, B e C — hospitais e instruções</strong></summary><div class="tabelas-importacao"><div><h3>Tipo A</h3><ul><li>Hospital DF Star</li><li>Hospital Sírio Libanês</li><li>Hospital Brasília</li><li>Hospital Santa Luzia</li><li>Hospital Santa Lúcia</li><li>Hospital Santa Helena</li><li>Hospital do Coração do Brasil</li><li>Hospital Anchieta</li><li>Hospital Águas Claras</li><li>Hospital Home</li></ul></div><div><h3>Tipo B</h3><ul><li>Hospital Daher Lago Sul</li><li>Hospital Prontonorte</li><li>Hospital Santa Marta</li><li>Hospital Alvorada Brasília</li><li>Hospital Mantevida</li><li>Hospital Maternidade Brasília</li><li>Hospital Anchieta Ceilândia (São Francisco)</li></ul></div><div><h3>Tipo C</h3><ul><li>Hospital Dia Jardim Botânico</li><li>Hospital Urológico de Brasília</li><li>Hospital Santa Lúcia de Taguatinga</li><li>Hospital das Clínicas e PS de Fraturas de Ceilândia</li><li>Hospital São Mateus</li><li>Hospital Maria Auxiliadora</li><li>Hospitais oftalmológicos: Pacini, HOB, HOG, HODF e HOBRASIL</li><li>Clínicas que realizam procedimentos ambulatoriais</li></ul></div></div><h3>Instruções aplicadas</h3><p>O tipo é reconhecido pelo nome do prestador, inclusive quando contém outras expressões, como filial ou unidade. Hospital Anchieta Ceilândia (São Francisco) é tipo B; Hospital Santa Lúcia de Taguatinga é tipo C.</p><p>Nas taxas de sala, a cirurgia de maior porte é considerada a 100%. A segunda cirurgia é considerada a 50% pela mesma via de acesso ou a 70% por vias diferentes. As demais cirurgias são consideradas a 25%. Confirme a via de acesso na guia física ou com a auditoria médica.</p><p>Os demais serviços hospitalares são comparados pelo preço e quantidade, conforme o fator da tabela. A análise respeita o tipo do prestador e a vigência; tabelas geradas por reajuste são identificadas no relatório. Serviços sem preço fixo exigem conferência manual.</p></details>
     <div class="painel-tabelas">
         <h2>Importar tabelas por ano</h2>
 
 <details class="help-details"><summary><strong>Gerar tabelas por reajuste anual</strong></summary><p>Sem a tabela do novo ano? Escolha a tabela-base, informe o reajuste e a data a partir da qual os novos valores devem valer. Exemplo: 4,5% aumenta R$ 100,00 para R$ 104,50. Gere cada tabela separadamente.</p><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Honorários médicos</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajustehonoraria"></select></label><label>Reajuste (%)<input id="percentualReajustehonoraria" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajustehonoraria" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('honoraria')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Anestesiologia</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteanestesia"></select></label><label>Reajuste (%)<input id="percentualReajusteanestesia" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteanestesia" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('anestesia')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo A</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteA"></select></label><label>Reajuste (%)<input id="percentualReajusteA" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteA" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('A')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo B</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteB"></select></label><label>Reajuste (%)<input id="percentualReajusteB" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteB" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('B')">Gerar tabela reajustada</button></fieldset><fieldset style="border:1px solid #cbd5e1;border-radius:10px;padding:12px;margin:12px 0"><legend><strong>Serviços hospitalares — Tipo C</strong></legend><div class="tabelas-importacao"><label>Tabela-base (ano)<select id="baseReajusteC"></select></label><label>Reajuste (%)<input id="percentualReajusteC" inputmode="decimal" placeholder="Ex.: 4,5"></label><label>Vigência a partir de<input id="dataReajusteC" type="date" value="2027-03-01"></label></div><button type="button" onclick="gerarTabelaReajustada('C')">Gerar tabela reajustada</button></fieldset><p id="statusReajustes" class="auditoria-info" role="status" aria-live="polite"></p><p>Os novos valores serão usados conforme a data do atendimento. As tabelas geradas são identificadas como reajustadas e ficam salvas neste navegador. Códigos, portes e serviços sem preço fixo são preservados.</p></details>
         <p id="saudacaoTabelasPessoa" class="mensagem-personalizada no-print">Mantenha as tabelas aplicáveis ao ano do atendimento atualizadas.</p>
-        <p id="statusTabelas" class="auditoria-info">Bases históricas 2018–2022, tabelas de honorários e escalas anestésicas de 2025 e 2026 incorporadas. CSVs anuais importados ficam salvos neste navegador.</p>
+        <p id="statusTabelas" class="auditoria-info" role="status" aria-live="polite"></p><p class="importacao-retorno importacao-aviso" role="note"><strong>⚠️ As tabelas importadas e geradas por reajuste estão salvas somente neste navegador.</strong> Elas não são enviadas ao GitHub e não aparecem automaticamente em outro navegador, dispositivo ou perfil. Ao limpar os dados deste site, essas tabelas serão apagadas. As tabelas incorporadas já fazem parte do relatório.</p><div id="catalogoTabelas" class="catalogo-tabelas" aria-label="Tabelas disponíveis por origem"></div>
         <div class="tabelas-importacao">
             <div class="campo-controle"><label for="arquivoTabelaCsv">Tabela de honorários STJ (.csv)</label><input id="arquivoTabelaCsv" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('honoraria',this.files?.[0])"><label for="vigenciaImportacaohonoraria">Vigência a partir de</label><input id="vigenciaImportacaohonoraria" type="date" required><button type="button" onclick="confirmarImportacaoTabela('honoraria')">Importar tabela</button><small id="statusImportacaohonoraria" role="status" aria-live="polite"></small></div>
             <div class="campo-controle"><label for="arquivoEscalaAnestesiaCsv">Escala de anestesiologia por porte (.csv)</label><input id="arquivoEscalaAnestesiaCsv" type="file" accept=".csv,text/csv" onchange="prepararImportacaoTabela('anestesia',this.files?.[0])"><label for="vigenciaImportacaoanestesia">Vigência a partir de</label><input id="vigenciaImportacaoanestesia" type="date" required><button type="button" onclick="confirmarImportacaoTabela('anestesia')">Importar tabela</button><small id="statusImportacaoanestesia" role="status" aria-live="polite"></small></div>
@@ -946,7 +949,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.84</p>
+    <p class="versao-relatorio">Versão 4.86</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2666,9 +2669,22 @@ function aplicarEscalaAnestesia(tabela, origem = 'importada') {
 function atualizarStatusTabelas(mensagem = '') {
     const status = document.getElementById('statusTabelas');
     if (!status) return;
-    const adicionais = [...METADADOS_TABELAS.values()].sort((a, b) => Number(a.ano) - Number(b.ano));
-    const escalas = [...METADADOS_ESCALAS_ANESTESIA.values()].sort((a, b) => Number(a.ano) - Number(b.ano));
-    status.textContent = `${mensagem ? mensagem + ' ' : ''}Honorários: 2018–2022; ${adicionais.length ? adicionais.map(item => `${item.ano} (${item.origem})`).join(', ') : 'nenhum CSV adicional'}. Anestesia: ${escalas.length ? escalas.map(item => `${item.ano} (${item.origem})`).join(', ') : 'sem escala adicional'}.`;
+    status.textContent = mensagem;
+    atualizarCatalogoTabelas();
+}
+
+function atualizarCatalogoTabelas() {
+    const painel=document.getElementById('catalogoTabelas');if(!painel)return;
+    const grupos={incorporadas:[],importadas:[],reajustadas:[]};
+    const adicionar=(nome,t)=>{const grupo=String(t.origem||'incorporada').startsWith('reajustada')?'reajustadas':t.origem==='incorporada'||!t.origem?'incorporadas':'importadas';grupos[grupo].push({...t,nome});};
+    for(const ano of Object.keys(BASES_REFERENCIA.honoraria).sort())adicionar('Honorários médicos',METADADOS_TABELAS.get(ano)||{ano});
+    for(const ano of Object.keys(BASES_REFERENCIA.anestesia).sort())adicionar('Anestesiologia',METADADOS_ESCALAS_ANESTESIA.get(ano)||{ano});
+    for(const t of [...TABELAS_HOSPITALARES_ANUAIS.values()].sort((a,b)=>a.ano.localeCompare(b.ano)||a.tipo.localeCompare(b.tipo)))adicionar('Serviços hospitalares — Tipo '+t.tipo,{...t,nome:'Serviços hospitalares — Tipo '+t.tipo});
+    painel.innerHTML=Object.entries(grupos).map(([grupo,tabelas])=>`<section class="catalogo-grupo tabelas-${grupo}"><h3>${grupo==='incorporadas'?'Incorporadas no relatório':grupo==='importadas'?'Importadas neste navegador':'Geradas por reajuste'}</h3>${tabelas.length?'<ul>'+tabelas.map(t=>`<li><strong>${escAuditoria(t.nome)} · ${escAuditoria(t.ano)}</strong>${t.vigencia?`<br>Vigência: ${escAuditoria(t.vigencia)}`:''}${grupo==='reajustadas'?`<br>${escAuditoria(t.origem)}`:''}</li>`).join('')+'</ul>':'<p>Nenhuma tabela nesta categoria.</p>'}</section>`).join('');
+}
+function mensagemImportacao(tipo,texto,estado='sucesso') {
+    const status=document.getElementById('statusImportacao'+tipo);if(!status)return;
+    status.className='importacao-retorno importacao-'+estado;status.textContent=texto;
 }
 
 function abrirBancoTabelas() {
@@ -2707,7 +2723,7 @@ const ARQUIVOS_IMPORTACAO = new Map();
 async function prepararImportacaoTabela(tipo,file) {
     ARQUIVOS_IMPORTACAO.delete(tipo);
     const campo=document.getElementById('vigenciaImportacao'+tipo),status=document.getElementById('statusImportacao'+tipo);
-    campo.value='';status.textContent='';
+    campo.value='';status.textContent='';status.className='';
     if(!file)return;
     try {
         if(file.size>15*1024*1024)throw new Error('CSV acima do limite de 15 MB.');
@@ -2757,11 +2773,14 @@ async function importarTabelaCsv(file, vigenciaEscolhida = '') {
             });
             db.close();
             METADADOS_TABELAS.get(tabela.ano).origem = 'salva neste navegador';
+            mensagemImportacao('honoraria',`Tabela ${tabela.ano} importada com sucesso. Vigência: ${tabela.vigencia}.`);
             atualizarStatusTabelas(`Tabela ${tabela.ano} importada: ${tabela.honoraria.length} códigos; ${tabela.ignoradas} linha(s) irregular(es) ignorada(s).`);
         } catch (error) {
+            mensagemImportacao('honoraria','Tabela ativa nesta sessão, mas não foi possível salvá-la para a próxima sessão.','aviso');
             atualizarStatusTabelas(`Tabela ${tabela.ano} ativa, mas não pôde ser salva para a próxima sessão: ${error.message}.`);
         }
     } catch (error) {
+        mensagemImportacao('honoraria',error.message,'erro');
         atualizarStatusTabelas(`Importação recusada: ${error.message}`);
     } finally { if (input) input.value = ''; }
 }
@@ -2784,11 +2803,14 @@ async function importarEscalaAnestesiaCsv(file, vigenciaEscolhida = '') {
             });
             db.close();
             METADADOS_ESCALAS_ANESTESIA.get(escala.ano).origem = 'salva neste navegador';
+            mensagemImportacao('anestesia',`Tabela ${escala.ano} importada com sucesso. Vigência: ${escala.vigencia}.`);
             atualizarStatusTabelas(`Escala anestésica ${escala.ano} importada com 9 portes.`);
         } catch (error) {
+            mensagemImportacao('anestesia','Tabela ativa nesta sessão, mas não foi possível salvá-la para a próxima sessão.','aviso');
             atualizarStatusTabelas(`Escala anestésica ${escala.ano} ativa, mas não pôde ser salva: ${error.message}.`);
         }
     } catch (error) {
+        mensagemImportacao('anestesia',error.message,'erro');
         atualizarStatusTabelas(`Importação da anestesia recusada: ${error.message}`);
     } finally { if (input) input.value = ''; }
 }
@@ -3748,21 +3770,11 @@ function tabelaHospitalarEvento(evento) {
     if(data>=fim) return null;
     return tabela;
 }
-function mostrarTabelaHospitalar() {
- const ano=document.getElementById('anoVisualizacaoHospitalar').value;
- const tipos=['A','B','C'].map(tipo=>TABELAS_HOSPITALARES_ANUAIS.get(ano+'|'+tipo));
- const codigos=[...new Set(tipos.flatMap(t=>Object.keys(t?.registros||{})))].sort();
- document.getElementById('visualizacaoTabelaHospitalar').innerHTML='<div class="auditoria-tabela-wrap"><table><thead><tr><th>Código</th><th>Serviço</th><th>Fator</th><th>Tipo A</th><th>Tipo B</th><th>Tipo C</th></tr></thead><tbody>'+codigos.map(c=>{const r=tipos.find(t=>t?.registros[c])?.registros[c];return `<tr><td>${escAuditoria(c)}</td><td>${escAuditoria(r.d)}</td><td>${escAuditoria(r.fator)}</td>${tipos.map(t=>`<td>${!t?.registros[c]?'Não fornecido':t.registros[c].t===null?'Sem preço fixo':valorBRL(t.registros[c].t)}</td>`).join('')}</tr>`;}).join('')+'</tbody></table></div>';
-}
-
 function atualizarStatusHospitalares() {
     const tabelas=[...TABELAS_HOSPITALARES_ANUAIS.values()].sort((a,b)=>a.ano.localeCompare(b.ano)||a.tipo.localeCompare(b.tipo));
-    document.getElementById('statusHospitalares').textContent=tabelas.map(t=>`${t.ano} tipo ${t.tipo}: ${t.origem} (${t.vigencia})`).join(' · ');
-    const anos=[...new Set(tabelas.map(t=>t.ano))].sort();
-    const visual=document.getElementById('anoVisualizacaoHospitalar'),anoAnterior=visual.value;
-    visual.innerHTML=anos.map(ano=>`<option value="${ano}">${ano}</option>`).join('');visual.value=anos.includes(anoAnterior)?anoAnterior:anos.at(-1)||'';
+    document.getElementById('statusHospitalares').textContent='';
+    atualizarCatalogoTabelas();
     atualizarCamposReajustes();
-    mostrarTabelaHospitalar();
 }
 function salvarHospitalaresLocais() {
     try {localStorage.setItem('relatorio-tabelas-hospitalares',JSON.stringify([...TABELAS_HOSPITALARES_ANUAIS.values()].filter(t=>t.origem!=='incorporada')));}
@@ -3777,9 +3789,10 @@ async function importarTabelasHospitalares(files, tipoEsperado = '', vigenciaEsc
             tabelas.push(tabela);
         }
         if(!tabelas.length)return;
-        for(const t of tabelas) {if(TABELAS_HOSPITALARES_ANUAIS.has(t.ano+'|'+t.tipo)&&!confirm(`Substituir tabela hospitalar ${t.ano} tipo ${t.tipo}?`))continue;cadastrarTabelaHospitalar(t);}
+        for(const t of tabelas) {if(TABELAS_HOSPITALARES_ANUAIS.has(t.ano+'|'+t.tipo)&&!confirm(`Substituir tabela hospitalar ${t.ano} tipo ${t.tipo}?`)){mensagemImportacao(tipoEsperado,'Importação cancelada.','aviso');continue;}cadastrarTabelaHospitalar(t);}
         atualizarStatusHospitalares();atualizarAuditoria();salvarHospitalaresLocais();
-    }catch(e){alert(e.message);}
+        for(const t of tabelas)if(TABELAS_HOSPITALARES_ANUAIS.get(t.ano+'|'+t.tipo)===t)mensagemImportacao(t.tipo,`Tabela hospitalar Tipo ${t.tipo} ${t.ano} importada com sucesso. Vigência: ${t.vigencia}.`);
+    }catch(e){mensagemImportacao(tipoEsperado,e.message,e.message.includes('aplicada nesta sessão')?'aviso':'erro');}
 }
 function atualizarCamposReajustes() {
     for (const tipo of ['honoraria','anestesia','A','B','C']) {
