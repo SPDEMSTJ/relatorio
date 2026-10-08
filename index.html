@@ -939,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.76</p>
+    <p class="versao-relatorio">Versão 4.77</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3525,7 +3525,7 @@ function avaliarCirurgia(eventos) {
         // pode informar a via do mesmo procedimento quando a linha do cirurgião não foi marcada.
         [...cirurgioes, ...items.filter(item => item.equipe.numero > 0)].forEach(item => {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
-            if (!codigoSempreIntegral(item.evento.codigo) && !percentuaisPorAto.has(item.chaveAto) && [50, 70, 100].includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
+            if ((!codigoSempreIntegral(item.evento.codigo) || ehEndoscopiaIntervencionista(item.evento.codigo)) && !percentuaisPorAto.has(item.chaveAto) && (ehEndoscopiaIntervencionista(item.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
         });
         cirurgioes.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
@@ -3913,7 +3913,7 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
     const oftalmologia = linha.categoria === 'Oftalmologia';
     const radiologia = linha.categoria === 'Radiologia';
     const honorariosGerais = linha.categoria === 'Tabela de honorários';
-    if (codigoSempreIntegral(linha.evento.codigo)) percentual = 100;
+    if (codigoSempreIntegral(linha.evento.codigo) && !ehEndoscopiaIntervencionista(linha.evento.codigo)) percentual = 100;
     if (honorariosGerais && (/MEDICINA LABORATORIAL/.test(normalizarAuditoria(linha.referencia?.r))
         || ehEventoPacoteAuditoria(linha.evento, linha.referencia))) percentual = 100;
     if ((oftalmologia || radiologia) && Number(percentual) === 50) return null;
@@ -3995,7 +3995,7 @@ function aplicarPercentualEventoAuditoria(seletor) {
     const valor = Number(seletor.value);
     const linhaAtual = GLOBAL_TODAS_LINHAS_AUDITORIA.find(linha => linha.evento.id === id);
     const categoria = linhaAtual?.categoria;
-    if ((categoria === 'Radiologia' ? [70, 100, 170] : categoria === 'Oftalmologia' ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
+    if ((categoria === 'Radiologia' ? [70, 100, 170] : categoria === 'Oftalmologia' || ehEndoscopiaIntervencionista(linhaAtual?.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
     else PERCENTUAIS_EVENTOS_AUDITORIA.delete(id);
     atualizarAuditoria();
 }
@@ -4068,9 +4068,9 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const explicacao = acima && !calculado ? 'Não concluir glosa sem confirmar a regra.' : !calculado ? 'Faltam dados para calcular a possível glosa.' : '';
         const chaveBilateral = oftalmologia ? chaveBilateralOftalmo(linha.evento) : '';
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
-        const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : codigoSempreIntegral(linha.evento.codigo) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
+        const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : (codigoSempreIntegral(linha.evento.codigo) && !ehEndoscopiaIntervencionista(linha.evento.codigo)) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
                 <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
-                    <option value="" ${!informado ? 'selected' : ''}>${linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
+                    <option value="" ${!informado ? 'selected' : ''}>${ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Automático: 100% — alterar' : linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia && !ehEndoscopiaIntervencionista(linha.evento.codigo) ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
         const controleOftalmo = oftalmologia ? `<label class="percentual-label-auditoria" for="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}">Exame monocular em dois olhos?</label>
             <select id="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}" class="bilateral-oftalmo-auditoria" data-chave-bilateral="${escAuditoria(chaveBilateral)}" onchange="aplicarBilateralidadeOftalmo(this)">
