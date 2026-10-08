@@ -939,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.77</p>
+    <p class="versao-relatorio">Versão 4.78</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1048,6 +1048,7 @@
         </div>
         <div class="total-beneficiarios-processo"><span>Valor total apresentado</span><strong id="valorTotalBeneficiariosProcesso">R$ 0,00</strong></div>
         <div class="beneficiarios-processo-controles"><label>Ordenar por<select id="ordemBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="guia">Número da guia</option><option value="data">Data</option><option value="nome">Nome do beneficiário</option><option value="matricula">Número da matrícula</option><option value="valor">Valor apresentado</option><option value="regime">Regime de atendimento</option></select></label><label>Direção<select id="direcaoBeneficiariosProcesso" onchange="renderizarPopupBeneficiariosProcesso()"><option value="asc">Menor para maior / A–Z</option><option value="desc">Maior para menor / Z–A</option></select></label><label class="pesquisa-beneficiarios-popup">Localizar<input id="pesquisaBeneficiariosProcesso" type="search" placeholder="Nome, valor ou guia" autocomplete="off" oninput="localizarBeneficiarioPopup(this.value)"></label></div>
+        <button type="button" class="btn-lista-beneficiarios" style="align-self:flex-start;margin:0 0 6px" onclick="limparSelecaoBeneficiarios()">Limpar seleção</button>
         <div id="conteudoBeneficiariosProcesso"></div>
     </div>
 </div>
@@ -1111,6 +1112,18 @@ function fecharPopupBeneficiariosProcesso(origemJanelaSeparada = false) {
 
 function chaveConferenciaBeneficiario(item) {
     return [item.peg, item.guia, item.matricula, item.data, normalizarAuditoria(item.nome)].join('|');
+}
+
+function limparSelecaoBeneficiarios() {
+    const area = document.getElementById('conteudoBeneficiariosProcesso');
+    const scrollTop = area?.scrollTop || 0;
+    const scrollLeft = area?.scrollLeft || 0;
+    for (const item of GLOBAL_DADOS_RESUMO[PEG_BENEFICIARIOS_POPUP]?.beneficiarios || []) {
+        BENEFICIARIOS_CONFERIDOS_POPUP.delete(chaveConferenciaBeneficiario(item));
+    }
+    renderizarPopupBeneficiariosProcesso();
+    if (area) { area.scrollTop = scrollTop; area.scrollLeft = scrollLeft; }
+    atualizarConteudoJanelaSeparada('beneficiarios');
 }
 
 function alternarConferenciaBeneficiario(chave) {
@@ -1319,6 +1332,7 @@ function abrirPopupEmJanelaSeparada(tipo) {
         localizarBeneficiarioPopup(valor, janela.document);
     };
     janela.alternarConferenciaBeneficiario = chave => { alternarConferenciaBeneficiario(chave, false); atualizarConteudoJanelaSeparada(tipo); };
+    janela.limparSelecaoBeneficiarios = () => limparSelecaoBeneficiarios();
     janela.abrirPopupGlosasBeneficiario = chave => { abrirPopupGlosasBeneficiario(chave); window.focus(); };
     janela.teclaConferenciaBeneficiario = (evento, chave) => {
         if (evento.key !== 'Enter' && evento.key !== ' ') return;
