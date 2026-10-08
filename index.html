@@ -939,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.73</p>
+    <p class="versao-relatorio">Versão 4.74</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1555,6 +1555,7 @@ async function copiarValorProcesso(botao) {
 
 // --- FUNÇÃO PARA ATUALIZAR VISUAL E RESUMO ---
 function atualizarFiltroVisual() {
+    atualizarIndicadoresAnotacoesPeg();
     atualizarAnotacoesPeg();
     const seletorPeg = document.getElementById('filtroPegSelect');
     if (seletorPeg.dataset.pegPesquisa !== seletorPeg.value) {
@@ -2253,6 +2254,17 @@ window.onscroll = function() { const btn = document.getElementById("btnTopo"); i
 function subirTopo() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 const ANOTACOES_PEG_SESSAO = new Map();
+function atualizarIndicadoresAnotacoesPeg() {
+    for (const opcao of document.getElementById('filtroPegSelect').options) {
+        const peg = opcao.value;
+        if (!peg || peg === 'todos') continue;
+        let anotacao = ANOTACOES_PEG_SESSAO.get(peg) || '';
+        try { anotacao = localStorage.getItem(`relatorio-peg-anotacoes:${peg}`) ?? anotacao; } catch {}
+        const temAnotacao = Boolean(anotacao.trim());
+        opcao.textContent = `PEG ${peg}${temAnotacao ? ' 📝' : ''}`;
+        opcao.title = temAnotacao ? 'Este PEG tem anotação salva' : '';
+    }
+}
 function pegDasAnotacoes() {
     const selecionado = document.getElementById('filtroPegSelect')?.value;
     if (selecionado && selecionado !== 'todos') return selecionado;
@@ -2284,6 +2296,7 @@ function salvarAnotacoesPeg(campo) {
     let status = 'Anotação salva neste navegador.';
     try { localStorage.setItem(`relatorio-peg-anotacoes:${peg}`, campo.value); }
     catch { status = 'Armazenamento indisponível: anotação mantida apenas nesta sessão.'; }
+    atualizarIndicadoresAnotacoesPeg();
     campo.ownerDocument.getElementById('statusAnotacoesPeg').textContent = status;
     for (const contexto of [document, ...Object.values(JANELAS_POPUP_SEPARADAS).filter(janela => janela && !janela.closed).map(janela => janela.document)]) {
         const outro = contexto.getElementById('textoAnotacoesPeg');
