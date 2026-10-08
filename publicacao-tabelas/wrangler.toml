@@ -9,7 +9,7 @@ REPOSITORY = "samuelcnovaes/Relatorio_PEG"
 BRANCH = "main"
 ALLOWED_LOGIN = "samuelcnovaes"
 # Preencha com o Client ID da GitHub App (não é segredo).
-GITHUB_CLIENT_ID = "PREENCHER"
+GITHUB_CLIENT_ID = "Iv23lihn1NeCq620s0aV"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
