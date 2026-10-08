@@ -939,7 +939,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.74</p>
+    <p class="versao-relatorio">Versão 4.75</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3547,7 +3547,7 @@ function avaliarCirurgia(eventos) {
             const auxExcedido = item.equipe.numero > 0 && maxAuxiliares !== null && item.equipe.numero > maxAuxiliares;
             const video = /VIDEO/.test(normalizarAuditoria(item.evento.descricao));
             const observacoes = [item.equipe.tipo];
-            if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia intervencionista: item 4.1, maior porte 100% e demais 50% pela mesma via; 70% por vias diferentes, com ajuste disponível. Internação e urgência incidem apenas no porte; custo operacional integral. Atos integrantes e código específico para o conjunto devem ser conferidos.');
+            if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia intervencionista: 100% por ocorrência, sem redução por via de acesso. Internação e urgência incidem apenas no porte; custo operacional integral.');
             if (!PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id) && percentual === 70) observacoes.push('70% aplicado automaticamente ao ato adicional; altere para 50% se a via de acesso for a mesma.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Cirurgião, 1º auxiliar e anestesista no mesmo código da guia: 100% automático para este conjunto, com ajuste manual disponível.');
             if (!principal && auxiliar) observacoes.push('Porte do cirurgião obtido na tabela para calcular o auxiliar, mesmo sem linha do cirurgião na extração.');
@@ -4184,7 +4184,7 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
 }
 
 function ehEndoscopiaIntervencionista(codigo) { return /^40202\d{3}$/.test(codigoAuditoria(codigo)); }
-function codigoSempreIntegral(codigo) { return !ehEndoscopiaIntervencionista(codigo) && /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
+function codigoSempreIntegral(codigo) { return /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
 
 const CODIGOS_PACOTES_CORRESPONDENTES = new Set([
     '90031199','90031202','90031210','90031229','90031237','90031253','90031261','90031270','90031288','90031296','90031300','90031318','90031326','90031334','90031342','90031350','90031369','90031377','90031385','90031393','90031407','90031415','90031423','90031431','90031440','90031458','90031466','90031474','90031482','90031490','90031504','90031512','90031520','90031539','90031547','90031555','90031571','90031580','90031598','90031601','90031610','90031628','90031636','90031644',
