@@ -757,6 +757,7 @@
 .perito-previa table{table-layout:auto!important;}.perito-previa th{position:static!important;background:#eff6ff!important;color:#1e3a8a!important;}.perito-previa td{white-space:normal;}.perito-previa th,.perito-previa td{padding:6px 8px!important;font-size:12px;}
 .auditoria-textos{grid-template-columns:minmax(0,1fr);}
 #abaRegras .beneficiario-identidade-auditoria > strong{color:#1d4ed8;font-weight:700;}
+.auditoria-retirar-glosa{display:block;margin-top:4px;padding:5px 8px;border-left:3px solid #16a34a;border-radius:4px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -856,51 +857,7 @@
 </div>
 <details id="painelAuditoria" class="painel-auditoria" open>
     <summary>🔎 Detalhamento da auditoria</summary>
-    <div class="auditoria-controles no-print">
-        <div class="campo-controle">
-            <label for="areaAuditoria">Área</label>
-            <select id="areaAuditoria" onchange="atualizarAuditoria()">
-                <option value="todas">Todas as áreas</option>
-                <option value="Cirurgia">Cirurgia</option>
-                <option value="Anestesia">Anestesiologia</option>
-                <option value="Tabela de honorários">Tabela de honorários</option>
-                <option value="Oftalmologia">Oftalmologia</option>
-                <option value="Radiologia">Radiologia</option>
-                <option value="Serviços hospitalares">Serviços hospitalares</option>
-            </select>
-        </div>
-        <div class="campo-controle">
-            <label for="modoAuditoria">Linhas analisadas</label>
-            <select id="modoAuditoria" onchange="atualizarAuditoria()">
-                <option value="todas">Todos os eventos com referência</option>
-                <option value="glosas">Somente com glosa</option>
-                <option value="acima-tabela">Somente acima da tabela</option>
-                <option value="com-referencia">Somente com referência</option>
-            </select>
-        </div>
-        <div class="campo-controle">
-            <label for="modoApresentacaoAuditoria">Apresentação</label>
-            <select id="modoApresentacaoAuditoria" onchange="atualizarAuditoria()">
-                <option value="detalhado">Detalhada</option>
-                <option value="sintetico">Sintética por guia</option>
-            </select>
-        </div>
-        <div class="campo-controle"><label for="ordemAlertasAuditoria">Ordenação</label><select id="ordemAlertasAuditoria" onchange="atualizarAuditoria()"><option value="nome">Nome do beneficiário</option><option value="alertas" selected>Ver alertas primeiro</option></select></div>
-        <div class="campo-controle"><label for="buscarBeneficiarioAuditoria">Buscar beneficiário ou matrícula</label><input id="buscarBeneficiarioAuditoria" type="search" placeholder="Nome ou matrícula" oninput="atualizarAuditoria()"></div>
-        <div class="campo-controle"><label for="tabelaPercentualAuditoria">Base do percentual informado</label><select id="tabelaPercentualAuditoria" onchange="atualizarPercentuaisVisiveisAuditoria()"><option value="">Tabela vigente na data</option></select></div>
-        <div class="auditoria-textos">
-            <div class="campo-controle">
-                <label for="palavrasAuditoria">Filtro de palavras ou códigos</label>
-                <textarea id="palavrasAuditoria" placeholder="Ex.: hepatite; 40301010&#10;Use vírgula, ponto e vírgula ou uma linha por termo."></textarea>
-            </div>
-
-        </div>
-        <div class="auditoria-acoes">
-            <button class="btn-primary" onclick="atualizarAuditoria()">🧮 Atualizar auditoria</button>
-
-        </div>
-        <p class="auditoria-info">Em cirurgia, a escolha 100% / 70% / 50% recalcula o limite técnico sobre os honorários, sem dobrar a UCO. Em exame oftalmológico monocular, o relatório presume dois olhos quando há duas unidades do mesmo código na guia e calcula a UCO em 100%–70%; essa inferência deve ser conferida se houver dúvida. Nas outras áreas, o percentual informado é apenas simulação. Confira via, bilateralidade, equipe e contrato antes de concluir uma glosa.</p>
-    </div>
+    <div class="no-print" style="margin:12px 0"><label for="buscarBeneficiarioAuditoria">Pesquisar na auditoria</label><input id="buscarBeneficiarioAuditoria" type="search" style="width:100%" placeholder="Beneficiário, matrícula, evento, código ou valor" oninput="atualizarAuditoria()"></div>
     <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
     <div id="auditoriaSaida" class="auditoria-saida"><div class="auditoria-vazia">Gere o relatório para executar a auditoria técnica.</div></div>
 </details>
@@ -957,7 +914,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.04</p>
+    <p class="versao-relatorio">Versão 5.05</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2153,7 +2110,7 @@ function render(preservarPeg = false) {
             }
             const dataEventoEspecial = obj.linhasEventos.map(linha => linha.split('\t'))
                 .find(camposEvento => String(camposEvento[39] || '').trim() === '1' && periodoAcrescimoPorte(camposEvento[7]).aplicavel)?.[7];
-            const avisoCalendario = avisoCalendarioGuia({ data: dataEventoEspecial || c[3], condicao: c[31] });
+            const avisoCalendario = avisoCalendarioGuia({ data: dataEventoEspecial || c[3], condicao: c[31], linhasEventos: obj.linhasEventos });
             if (avisoCalendario) {
                 const linhaCalendario = tbl.insertRow(); linhaCalendario.className = 'linha-calendario-guia';
                 const celula = linhaCalendario.insertCell(); celula.colSpan = 11; celula.textContent = avisoCalendario;
@@ -3314,6 +3271,9 @@ function acrescimoPorteAutomatico(registro) {
 function avisoCalendarioGuia(registro) {
     const guia = registro?.guia || registro || {};
     const data = registro?.data || guia.data;
+    let cobrado=numeroOuNulo(registro?.valorApresentado),liberado=numeroOuNulo(registro?.valorPago);
+    if(cobrado===null&&guia.linhasEventos){cobrado=0;liberado=0;for(const linha of guia.linhasEventos){const c=linha.split('\t');if(c[39]==='1'){cobrado+=moeda(c[9]);liberado+=moeda(c[13]);}}}
+    if(cobrado===null||liberado===null||centavosTabela(cobrado)<=centavosTabela(liberado))return '';
     const periodo = periodoAcrescimoPorte(data);
     if (!periodo.aplicavel) return '';
     const prefixo='Data/horário do atendimento '+data+': '+periodo.motivos.join(' / ')+'. ';
@@ -3504,7 +3464,7 @@ function avaliarRadiologia(eventos) {
             const confirmado = [100, 70, 170].includes(manual) && (manual !== 170 || qtd > 1);
             const familia = item.evento.codigo.slice(0, 3);
             const observacao = { '408': '4.08.99.004/12', '409': '4.09.99.009/5', '410': '4.10.99.001/4', '411': '4.11.99.006/3' }[familia] || '';
-            const sugestao = posicao === 0 ? (qtd > 1 ? 170 : 100) : 70;
+            const sugestao = item.evento.codigo==='40813363' ? 100 : posicao === 0 ? (qtd > 1 ? 170 : 100) : 70;
             const percentual = confirmado ? manual : sugestao;
             const reduzidoDisponivel = item.tarifa70 !== null && item.tarifa70 > 0;
             const previsto = percentual === 100 ? item.tarifa100 * qtd
@@ -3514,7 +3474,7 @@ function avaliarRadiologia(eventos) {
             const permitido = ajusteUrgenciaUco.valor;
             const us = familia === '409';
             const empatePorte = items.slice(1).some(outro => porteNumerico(outro.ref.p) === porteNumerico(items[0].ref.p));
-            const orientacao = `${observacao ? `Referência ${observacao}. ` : ''}${posicao === 0
+            const orientacao = item.evento.codigo==='40813363' ? 'Código 4.08.13.363: 100% automático por ocorrência, com possibilidade de ajuste manual.' : `${observacao ? `Referência ${observacao}. ` : ''}${posicao === 0
                 ? `Exame principal por maior porte${us ? ` (${item.ref.p || 'não informado'})` : ''}${empatePorte ? ' e, no empate, por maior valor apresentado' : ''}: ${sugestao === 170 ? 'uma unidade a 100% e as demais a 70%' : '100%'}.`
                 : 'Exame adicional: 70% da UCO pela regra universal, independentemente da região anatômica.'}`;
             resultados.push(criarLinhaAuditoria(item.evento, item.tipo, permitido, {
@@ -4109,7 +4069,10 @@ function filtrarLinhasAuditoria(linhas) {
         if (modo === 'glosas' && !(linha.benner > 0 || (linha.glosaTecnica ?? 0) > 0)) return false;
         if (modo === 'acima-tabela' && !(linha.excessoTabela > 0)) return false;
         if (modo === 'com-referencia' && !linha.referencia) return false;
-        if (beneficiario && !normalizarAuditoria(`${linha.guia.beneficiario} ${linha.guia.matricula}`).includes(beneficiario)) return false;
+        if (beneficiario) {
+            const alvo=normalizarAuditoria(`${linha.guia.beneficiario} ${linha.guia.matricula} ${linha.evento.descricao} ${linha.evento.codigo} ${formatarCodigoAuditoria(linha.evento.codigo)} ${linha.evento.grau} ${linha.solicitado} ${fmt(linha.solicitado)} ${numeroAuditoria(linha.evento.valorPago)} ${fmt(numeroAuditoria(linha.evento.valorPago))} ${linha.limiteReferencia??''} ${linha.limiteReferencia!==null?fmt(linha.limiteReferencia):''}`);
+            if(!alvo.includes(beneficiario))return false;
+        }
         if (!palavras.length) return true;
         const alvo = normalizarAuditoria(`${linha.evento.codigo} ${linha.evento.descricao} ${linha.regra} ${linha.observacao} ${linha.alertaValor}`);
         return palavras.some(palavra => alvo.includes(palavra));
@@ -4298,6 +4261,8 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const oftalmologia = ehOftalmologia && linha.elegivelBilateral;
         const condicoes = condicoesEventoAuditoria(linha.evento);
         const calculado = linha.permitido !== null;
+        const diferencaRetirar=calculado&&linha.benner>0?Math.min(centavosTabela(linha.benner),Math.max(centavosTabela(Math.min(linha.solicitado,linha.limiteReferencia??0))-centavosTabela(numeroAuditoria(linha.evento.valorPago)),0)):0;
+        const retirarGlosa=diferencaRetirar>1?diferencaRetirar/100:0;
         const acima = linha.excessoTabela > 0;
         const pendente = linha.permitido === null || Boolean(linha.alerta);
         const percentualAuxiliar = cirurgia && /^1º Auxiliar$/.test(linha.funcaoCirurgica || '') ? 30
@@ -4333,7 +4298,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td class="valor">${valorBRL(numeroAuditoria(linha.evento.valorPago))}</td>
             <td class="valor limite-relatorio-popup">${linha.limiteReferencia === null ? 'A confirmar' : valorBRL(linha.limiteReferencia)}${!calculado && linha.limiteReferencia !== null ? '<small>Preço-base; regra pendente</small>' : ''}</td>
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
-            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
+            <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${retirarGlosa>0?`<small class="auditoria-retirar-glosa">Retirar glosa do Benner: ${valorBRL(retirarGlosa)}</small>`:''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleOftalmo}${percentualControle}
                 ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
