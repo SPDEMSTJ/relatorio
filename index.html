@@ -954,7 +954,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.93</p>
+    <p class="versao-relatorio">Versão 4.94</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1320,6 +1320,9 @@ function abrirPopupEmJanelaSeparada(tipo) {
     janela.alternarAnotacoesPeg = () => alternarAnotacoesPeg(janela.document);
     janela.salvarAnotacoesPeg = campo => salvarAnotacoesPeg(campo);
     atualizarAnotacoesPeg(janela.document);
+    janela.atualizarPreviaOrientacaoPerito = campo => { atualizarPreviaOrientacaoPerito(campo); const alvo=janela.document.getElementById('previaOrientacaoPerito');if(alvo)alvo.innerHTML=document.getElementById('previaOrientacaoPerito').innerHTML;janela.document.getElementById('aplicarOrientacaoPerito').disabled=document.getElementById('aplicarOrientacaoPerito').disabled; };
+    janela.aplicarOrientacaoPerito = () => aplicarOrientacaoPerito();
+    janela.registrarAberturaOrientacaoPerito = aberto => registrarAberturaOrientacaoPerito(aberto);
     janela.selecionarGrauPopupAuditoria = controle => { selecionarGrauPopupAuditoria(controle); atualizarConteudoJanelaSeparada(tipo); };
     janela.selecionarCodigoPopupAuditoria = codigo => { selecionarCodigoPopupAuditoria(codigo); atualizarConteudoJanelaSeparada(tipo); };
     janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
@@ -4398,6 +4401,56 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
     return `${sintetico ? '<p class="auditoria-info">Para informar o percentual de cada código, escolha a apresentação detalhada.</p>' : ''}<div class="beneficiarios-barra-auditoria"><strong>${ordenados.length} beneficiário(s)</strong><span>Clique no nome para recolher ou expandir os eventos.</span><div><button type="button" onclick="alternarGruposAuditoria(true)">Expandir todos</button><button type="button" onclick="alternarGruposAuditoria(false)">Recolher todos</button></div></div><div class="beneficiarios-lista-auditoria">${cartoes}</div>`;
 }
 
+let TEXTO_ORIENTACAO_PERITO = '';
+let ORIENTACAO_PERITO_ABERTA = false;
+function registrarAberturaOrientacaoPerito(aberto){ORIENTACAO_PERITO_ABERTA=aberto;}
+function interpretarOrientacaoPerito(texto) {
+    const regras=new Map(),erros=[];let demais=null;
+    for(const [indice,bruta] of String(texto).split(/\r?\n/).entries()) {
+        const linha=bruta.trim();if(!linha)continue;
+        if(/^[\d\s,]+:\s*$/.test(linha))continue;
+        const match=linha.match(/^([\d.\s-]+|demais)\s*:\s*(\d+)\s*%\s*[.;]?$/i);
+        if(!match){erros.push(`Linha ${indice+1}: use Código: percentual% ou Demais: percentual%.`);continue;}
+        const percentual=Number(match[2]);
+        if(![50,70,100].includes(percentual)){erros.push(`Linha ${indice+1}: percentual deve ser 100%, 70% ou 50%.`);continue;}
+        if(/^demais$/i.test(match[1])){if(demais!==null&&demais!==percentual)erros.push('Instruções conflitantes para Demais.');demais=percentual;}
+        else {const codigo=codigoAuditoria(match[1]);if(codigo.length!==8){erros.push(`Linha ${indice+1}: código deve conter oito dígitos.`);continue;}if(regras.has(codigo)&&regras.get(codigo)!==percentual)erros.push(`Percentuais conflitantes para ${formatarCodigoAuditoria(codigo)}.`);regras.set(codigo,percentual);}
+    }
+    if(!regras.size)erros.push('Informe pelo menos um código com seu percentual.');
+    return {regras,demais,erros};
+}
+function previaOrientacaoPerito() {
+    const interpretacao=interpretarOrientacaoPerito(TEXTO_ORIENTACAO_PERITO);
+    const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
+    const erros=[...interpretacao.erros];
+    for(const codigo of interpretacao.regras.keys())if(!linhas.some(l=>codigoAuditoria(l.evento.codigo)===codigo))erros.push(`Código ${formatarCodigoAuditoria(codigo)} não encontrado neste caso.`);
+    const alteracoes=[];
+    for(const linha of linhas) {
+        const percentual=interpretacao.regras.get(codigoAuditoria(linha.evento.codigo))??interpretacao.demais;
+        if(percentual===null||percentual===undefined)continue;
+        const permitidos=linha.referencia?.hospitalar?[]:linha.categoria==='Radiologia'||linha.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(linha.evento.codigo)?[70,100]:[50,70,100];
+        if(!permitidos.includes(percentual)){erros.push(`Guia ${linha.guia.ordem}, item ${linha.evento.ordem}, código ${formatarCodigoAuditoria(linha.evento.codigo)}: ${percentual}% incompatível com os ajustes desta categoria; conferir manualmente.`);continue;}
+        alteracoes.push({linha,percentual});
+    }
+    if(!alteracoes.length&&!erros.length)erros.push('Nenhum evento deste caso corresponde à orientação.');
+    return {alteracoes,erros};
+}
+function atualizarPreviaOrientacaoPerito(campo) {
+    if(campo)TEXTO_ORIENTACAO_PERITO=campo.value;
+    const area=document.getElementById('previaOrientacaoPerito');if(!area)return;
+    if(!TEXTO_ORIENTACAO_PERITO.trim()){area.innerHTML='';document.getElementById('aplicarOrientacaoPerito').disabled=true;return;}
+    const {alteracoes,erros}=previaOrientacaoPerito();
+    area.innerHTML=(erros.length?`<div class="importacao-retorno importacao-erro"><strong>Conferir antes de aplicar</strong><ul>${erros.map(e=>`<li>${escAuditoria(e)}</li>`).join('')}</ul></div>`:'')+(alteracoes.length?`<div style="overflow:auto;max-height:220px"><table><thead><tr><th>Guia / item</th><th>Código / evento / grau</th><th>Atual → perito</th></tr></thead><tbody>${alteracoes.map(({linha:l,percentual:p})=>`<tr><td>${escAuditoria(l.guia.ordem)} / ${escAuditoria(l.evento.ordem)}</td><td>${escAuditoria(formatarCodigoAuditoria(l.evento.codigo))} · ${escAuditoria(l.evento.descricao)}<br>${escAuditoria(l.evento.grau)}</td><td>${PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id)??l.percentual??'Pendente'}% → <strong>${p}%</strong>${l.categoria==='Cirurgia'&&equipeCirurgica(l.evento.grau)?.numero?'<br><small>Sobre o porte; percentual próprio do auxiliar preservado.</small>':''}</td></tr>`).join('')}</tbody></table></div>`:'');
+    document.getElementById('aplicarOrientacaoPerito').disabled=!!erros.length||!alteracoes.length;
+}
+function aplicarOrientacaoPerito() {
+    const {alteracoes,erros}=previaOrientacaoPerito();if(erros.length||!alteracoes.length)return;
+    for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
+    atualizarAuditoria();
+    const area=document.getElementById('previaOrientacaoPerito');if(area){const aviso=document.createElement('p');aviso.className='importacao-retorno importacao-sucesso';aviso.textContent=`Orientação aplicada a ${alteracoes.length} evento(s) deste caso. Confira os limites recalculados.`;area.prepend(aviso);}
+    atualizarConteudoJanelaSeparada('auditoria');
+}
+
 let CHAVE_POPUP_AUDITORIA_BENEFICIARIO = '';
 let FOCO_RETORNO_POPUP_AUDITORIA = null;
 const CODIGOS_SELECIONADOS_POPUP_AUDITORIA = new Set();
@@ -4509,6 +4562,7 @@ function abrirPopupAuditoriaBeneficiario(chave, botao) {
     CHAVE_POPUP_AUDITORIA_BENEFICIARIO = chave;
     CODIGOS_SELECIONADOS_POPUP_AUDITORIA.clear();
     GRAU_SELECIONADO_POPUP_AUDITORIA='';
+    TEXTO_ORIENTACAO_PERITO='';ORIENTACAO_PERITO_ABERTA=false;
     FOCO_RETORNO_POPUP_AUDITORIA = botao || document.activeElement;
     const modal = document.getElementById('modalAuditoriaBeneficiario');
     modal.style.display = 'block';
@@ -4568,12 +4622,14 @@ function renderizarPopupAuditoriaBeneficiario() {
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+        <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. A orientação alcança todos os eventos deste caso, inclusive os ocultos pelos filtros. Os percentuais próprios dos auxiliares são preservados.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
         <div class="auditoria-filtros-codigos"><label for="filtroGrauPopupAuditoria"><strong>Filtrar por grau</strong></label><select id="filtroGrauPopupAuditoria" onchange="selecionarGrauPopupAuditoria(this)" style="width:100%;min-width:0;margin-top:4px"><option value="">Todos os graus (${todosItens.length})</option>${graus.map(grau=>`<option value="${escAuditoria(grau)}" ${GRAU_SELECIONADO_POPUP_AUDITORIA===grau?'selected':''}>${escAuditoria(grau)} (${todosItens.filter(linha=>grupoGrauPopupAuditoria(linha)===grau).length})</option>`).join('')}</select></div>
         </div>
         <div class="auditoria-resumo"><div><span>Eventos com tabela</span><b>${itens.length}</b></div><div><span>Possíveis glosas pela regra</span><b>${possiveis.length}</b></div><div><span>Valor possível a glosar</span><b>${valorBRL(glosa)}</b></div><div><span>Alertas só de preço</span><b>${apenasPreco.length}</b></div><button type="button" class="auditoria-resumo-atalho" onclick="irParaPrimeiraPendenciaAuditoria()" ${pendentes.length ? '' : 'disabled'} title="${pendentes.length ? 'Ir para a primeira pendência exibida' : 'Não há pendências exibidas'}"><span>Pendências a conferir · clicar para ir</span><b>${pendentes.length}</b></button></div>
         ${renderizarTabelaAuditoria(itens, GLOBAL_MODELO_AUDITORIA.internacoes, 'popup-')}`;
+    atualizarPreviaOrientacaoPerito();
     const tabela = conteudo.querySelector('.auditoria-tabela-wrap');
     if (tabela) tabela.scrollTop = posicao;
     if (indiceFoco >= 0) conteudo.querySelectorAll('input, select, summary')[indiceFoco]?.focus({ preventScroll: true });
