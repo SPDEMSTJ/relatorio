@@ -756,6 +756,7 @@
 #filtroGrauPopupAuditoria,.auditoria-filtros-codigos label strong{font-size:12px;color:var(--blue-deep);}
 .perito-previa table{table-layout:auto!important;}.perito-previa th{position:static!important;background:#eff6ff!important;color:#1e3a8a!important;}.perito-previa td{white-space:normal;}.perito-previa th,.perito-previa td{padding:6px 8px!important;font-size:12px;}
 .auditoria-textos{grid-template-columns:minmax(0,1fr);}
+#abaRegras .beneficiario-identidade-auditoria > strong{color:#b91c1c;}
 </style>
 </head>
 <body>
@@ -825,7 +826,7 @@
 </nav>
 
 <section id="abaRegras" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRegras" hidden>
-<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo; “Demais” vale somente para o mesmo beneficiário, dia e grupo. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Códigos não encontrados ou orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
+<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Códigos não encontrados ou orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
 <div class="painel-regras">
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
@@ -955,7 +956,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.97</p>
+    <p class="versao-relatorio">Versão 4.99</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4373,6 +4374,21 @@ function temAlertaAuditoria(linha, internacoes) {
         || (sarh && sarh !== 'Internação confirmada no SARH'));
 }
 
+const FILTROS_INDIVIDUAIS_AUDITORIA=new Map();
+function alterarFiltroBeneficiarioAuditoria(controle,tipo) {
+    const chave=controle.dataset.chave;
+    const filtro=FILTROS_INDIVIDUAIS_AUDITORIA.get(chave)||{codigos:new Set(),grau:''};
+    if(tipo==='grau')filtro.grau=controle.value;
+    else {const codigo=controle.dataset.codigo;if(!codigo)filtro.codigos.clear();else if(filtro.codigos.has(codigo))filtro.codigos.delete(codigo);else filtro.codigos.add(codigo);}
+    FILTROS_INDIVIDUAIS_AUDITORIA.set(chave,filtro);
+    const posicao=window.scrollY;atualizarAuditoria();window.scrollTo({top:posicao,behavior:'instant'});
+}
+function filtrosIndividuaisBeneficiario(chave,itens,filtro) {
+    const codigos=[...new Set(itens.map(l=>codigoAuditoria(l.evento.codigo)))].sort();
+    const graus=[...new Set(itens.map(grupoGrauPopupAuditoria))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    return `<div class="auditoria-filtros-linha filtros-beneficiario" style="margin:10px"><div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!filtro.codigos.size?'ativo':''}" data-chave="${escAuditoria(chave)}" data-codigo="" aria-pressed="${!filtro.codigos.size}" onclick="alterarFiltroBeneficiarioAuditoria(this,'codigo')">Todos (${itens.length})</button>${codigos.map(c=>`<button type="button" class="auditoria-filtro-codigo ${filtro.codigos.has(c)?'ativo':''}" data-chave="${escAuditoria(chave)}" data-codigo="${c}" aria-pressed="${filtro.codigos.has(c)}" onclick="alterarFiltroBeneficiarioAuditoria(this,'codigo')">${formatarCodigoAuditoria(c)} <small>${itens.filter(l=>codigoAuditoria(l.evento.codigo)===c).length}</small></button>`).join('')}</div></div><div class="auditoria-filtros-codigos"><label><strong>Filtrar por grau</strong><select class="filtro-grau-beneficiario" data-chave="${escAuditoria(chave)}" onchange="alterarFiltroBeneficiarioAuditoria(this,'grau')" style="width:100%;font-size:12px;margin-top:4px"><option value="">Todos os graus (${itens.length})</option>${graus.map(g=>`<option value="${escAuditoria(g)}" ${filtro.grau===g?'selected':''}>${escAuditoria(g)} (${itens.filter(l=>grupoGrauPopupAuditoria(l)===g).length})</option>`).join('')}</select></label></div></div>`;
+}
+
 function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, gruposAbertos = null) {
     if (!linhas.length) return '<div class="auditoria-vazia">Nenhum evento atende aos filtros selecionados.</div>';
     const grupos = new Map();
@@ -4390,6 +4406,9 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
         if (alertasPrimeiro) itens.sort((a, b) => Number(temAlertaAuditoria(b, internacoes)) - Number(temAlertaAuditoria(a, internacoes)));
         const guia = itens[0].guia;
         const nome = guia.beneficiario || 'Beneficiário sem nome';
+        const chaveFiltro=guia.peg+'|'+chave;
+        const filtro=FILTROS_INDIVIDUAIS_AUDITORIA.get(chaveFiltro)||{codigos:new Set(),grau:''};
+        const exibidos=itens.filter(l=>(!filtro.codigos.size||filtro.codigos.has(codigoAuditoria(l.evento.codigo)))&&(!filtro.grau||grupoGrauPopupAuditoria(l)===filtro.grau));
         const guias = new Set(itens.map(item => item.guia.ordem)).size;
         const alertas = itens.filter(item => temAlertaAuditoria(item, internacoes)).length;
         const informados = itens.filter(item => PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id)).length;
@@ -4397,7 +4416,7 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
         return `<details class="beneficiario-grupo-auditoria" data-beneficiario-chave="${escAuditoria(chave)}" ${aberto ? 'open' : ''}>
             <summary><span class="beneficiario-identidade-auditoria"><strong>${escAuditoria(nome)}</strong><small>Matrícula ${escAuditoria(guia.matricula || 'não informada')}</small></span>
                 <span class="beneficiario-metricas-auditoria"><span>${guias} guia(s)</span><span>${itens.length} evento(s)</span>${alertas ? `<span class="metrica-alerta-auditoria">${alertas} alerta(s)</span>` : ''}${informados ? `<span class="metrica-percentual-auditoria">${informados} percentual(is) informado(s)</span>` : ''}</span>
-            </summary>${sintetico ? renderizarSinteticoAuditoria(itens) : renderizarTabelaAuditoria(itens, internacoes)}</details>`;
+            </summary>${filtrosIndividuaisBeneficiario(chaveFiltro,itens,filtro)}${sintetico ? renderizarSinteticoAuditoria(exibidos) : renderizarTabelaAuditoria(exibidos, internacoes)}</details>`;
     }).join('');
     return `${sintetico ? '<p class="auditoria-info">Para informar o percentual de cada código, escolha a apresentação detalhada.</p>' : ''}<div class="beneficiarios-barra-auditoria"><strong>${ordenados.length} beneficiário(s)</strong><span>Clique no nome para recolher ou expandir os eventos.</span><div><button type="button" onclick="alternarGruposAuditoria(true)">Expandir todos</button><button type="button" onclick="alternarGruposAuditoria(false)">Recolher todos</button></div></div><div class="beneficiarios-lista-auditoria">${cartoes}</div>`;
 }
@@ -4421,20 +4440,28 @@ function aplicarParecerCompleto() {
     const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA),grupos=new Map(),resultados=[];
     if(!elegiveis.length){area.textContent='Gere o relatório e selecione o PEG antes de aplicar o parecer.';return;}
     for(const l of elegiveis){const key=chaveGrupoPercentualAuditoria(l);if(!grupos.has(key))grupos.set(key,[]);grupos.get(key).push(l);}
-    for(const b of blocos)if(!elegiveis.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo))avisos.push(`Código ${formatarCodigoAuditoria(b.codigo)} não encontrado nos eventos elegíveis do PEG ativo.`);
+    for(const b of blocos)if(!elegiveis.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo)){const localizado=GLOBAL_TODAS_LINHAS_AUDITORIA.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo);avisos.push(`Código ${formatarCodigoAuditoria(b.codigo)} ${localizado?'encontrado no PEG, mas fora dos eventos elegíveis para ajuste de vias pelas regras atuais':'não encontrado nos eventos elegíveis do PEG ativo'}.`);}
     let total=0;
+    const gruposAplicacao=[];
     for(const linhas of grupos.values()) {
+        const principais=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));
+        if(principais.length>1) {
+            const porGuia=new Map();for(const l of linhas){if(!porGuia.has(l.guia.id))porGuia.set(l.guia.id,[]);porGuia.get(l.guia.id).push(l);}
+            gruposAplicacao.push(...porGuia.values());
+        } else gruposAplicacao.push(linhas);
+    }
+    for(const linhas of gruposAplicacao) {
         const correspondencias=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));if(!correspondencias.length)continue;
         const propostas=correspondencias.map(b=>linhas.map(l=>({linha:l,percentual:codigoAuditoria(l.evento.codigo)===b.codigo?b.principal:b.demais})));
-        if(propostas.some(p=>p.some((a,i)=>a.percentual!==propostas[0][i].percentual))){avisos.push(`${linhas[0].guia.beneficiario}: mais de um código principal com orientações conflitantes no mesmo dia e grupo; aplicar por caso.`);continue;}
+        if(propostas.some(p=>p.some((a,i)=>a.percentual!==propostas[0][i].percentual))){avisos.push(`${linhas[0].guia.beneficiario}: guia ${linhas[0].guia.ordem}: mais de um código principal com orientações conflitantes na mesma guia; aplicar por caso.`);continue;}
         const alteracoes=propostas[0];
         const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(l.evento.codigo))&&p===50));
         if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(correspondencias[0].codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
         for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
-        total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,codigo:correspondencias[0].codigo,principal:correspondencias[0].principal,demais:correspondencias[0].demais,quantidade:alteracoes.length});
+        total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,guias:[...new Set(linhas.map(l=>l.guia.ordem))].join(', '),codigo:correspondencias[0].codigo,principal:correspondencias[0].principal,demais:correspondencias[0].demais,quantidade:alteracoes.length});
     }
     if(total)atualizarAuditoria();
-    area.innerHTML=`<p class="importacao-retorno ${total?'importacao-sucesso':'importacao-aviso'}">${total?`Parecer aplicado a ${total} evento(s) em ${resultados.length} grupo(s) do PEG ativo.`:'Nenhuma orientação compatível foi aplicada.'}</p>`+(avisos.length?`<ul class="importacao-retorno importacao-aviso">${avisos.map(a=>`<li>${escAuditoria(a)}</li>`).join('')}</ul>`:'')+(resultados.length?`<div class="perito-previa" style="max-height:300px;overflow:auto"><table><thead><tr><th>Beneficiário</th><th>Data</th><th>Código principal</th><th>Percentuais</th><th>Eventos</th></tr></thead><tbody>${resultados.map(r=>`<tr><td>${escAuditoria(r.guia.beneficiario)} · Matrícula ${escAuditoria(r.guia.matricula)}</td><td>${escAuditoria(r.data)}</td><td>${escAuditoria(formatarCodigoAuditoria(r.codigo))}</td><td>${r.principal}% · Demais ${r.demais}%</td><td>${r.quantidade}</td></tr>`).join('')}</tbody></table></div>`:'');
+    area.innerHTML=`<p class="importacao-retorno ${total?'importacao-sucesso':'importacao-aviso'}">${total?`Parecer aplicado a ${total} evento(s) em ${resultados.length} grupo(s) do PEG ativo.`:'Nenhuma orientação compatível foi aplicada.'}</p>`+(avisos.length?`<ul class="importacao-retorno importacao-aviso">${avisos.map(a=>`<li>${escAuditoria(a)}</li>`).join('')}</ul>`:'')+(resultados.length?`<div class="perito-previa" style="max-height:300px;overflow:auto"><table><thead><tr><th>Beneficiário</th><th>Guia(s)</th><th>Data</th><th>Código principal</th><th>Percentuais</th><th>Eventos</th></tr></thead><tbody>${resultados.map(r=>`<tr><td>${escAuditoria(r.guia.beneficiario)} · Matrícula ${escAuditoria(r.guia.matricula)}</td><td>${escAuditoria(r.guias)}</td><td>${escAuditoria(r.data)}</td><td>${escAuditoria(formatarCodigoAuditoria(r.codigo))}</td><td>${r.principal}% · Demais ${r.demais}%</td><td>${r.quantidade}</td></tr>`).join('')}</tbody></table></div>`:'');
     if(!blocos.length&&!avisos.length)area.textContent='Nenhum bloco Código: percentual% / Demais: percentual% encontrado.';
 }
 
