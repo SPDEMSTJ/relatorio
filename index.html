@@ -754,6 +754,8 @@
 .auditoria-filtros-linha .auditoria-filtros-codigos{min-width:0;}
 @media(max-width:640px){.auditoria-filtros-linha{grid-template-columns:minmax(0,1fr);}}
 #filtroGrauPopupAuditoria,.auditoria-filtros-codigos label strong{font-size:12px;color:var(--blue-deep);}
+.perito-previa table{table-layout:auto!important;}.perito-previa th{position:static!important;background:#eff6ff!important;color:#1e3a8a!important;}.perito-previa td{white-space:normal;}.perito-previa th,.perito-previa td{padding:6px 8px!important;font-size:12px;}
+.auditoria-textos{grid-template-columns:minmax(0,1fr);}
 </style>
 </head>
 <body>
@@ -823,6 +825,7 @@
 </nav>
 
 <section id="abaRegras" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRegras" hidden>
+<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo; “Demais” vale somente para o mesmo beneficiário, dia e grupo. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Códigos não encontrados ou orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
 <div class="painel-regras">
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
@@ -848,7 +851,7 @@
         <input id="anoCalendarioGuia" type="number" min="1980" max="2199" onchange="mostrarCalendarioFeriados()">
         <ul id="listaFeriadosGuia"></ul>
     </details>
-    <div id="resumoAreasAuditoria" class="cards-areas" aria-live="polite"></div>
+
 </div>
 <details id="painelAuditoria" class="painel-auditoria" open>
     <summary>🔎 Detalhamento da auditoria</summary>
@@ -889,14 +892,11 @@
                 <label for="palavrasAuditoria">Filtro de palavras ou códigos</label>
                 <textarea id="palavrasAuditoria" placeholder="Ex.: hepatite; 40301010&#10;Use vírgula, ponto e vírgula ou uma linha por termo."></textarea>
             </div>
-            <div class="campo-controle">
-                <label for="inputInternacoes">Internações do SARH (opcional, colar TAB)</label>
-                <textarea id="inputInternacoes" placeholder="Nome | Dt. Autorização | Dt. Internação | Dt. Alta | Dias Autorizados | Hospital"></textarea>
-            </div>
+
         </div>
         <div class="auditoria-acoes">
             <button class="btn-primary" onclick="atualizarAuditoria()">🧮 Atualizar auditoria</button>
-            <button class="btn-secondary" onclick="exportarAuditoriaCsv()">⬇️ Exportar CSV</button>
+
         </div>
         <p class="auditoria-info">Em cirurgia, a escolha 100% / 70% / 50% recalcula o limite técnico sobre os honorários, sem dobrar a UCO. Em exame oftalmológico monocular, o relatório presume dois olhos quando há duas unidades do mesmo código na guia e calcula a UCO em 100%–70%; essa inferência deve ser conferida se houver dúvida. Nas outras áreas, o percentual informado é apenas simulação. Confira via, bilateralidade, equipe e contrato antes de concluir uma glosa.</p>
     </div>
@@ -955,7 +955,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.95</p>
+    <p class="versao-relatorio">Versão 4.97</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1018,8 +1018,8 @@
         <section id="manualAuditoria" class="manual-secao">
             <h3>4. Aba 100–70–50 e alertas</h3>
             <p>A auditoria mostra, para o <b>PEG em trabalho</b>, todos os eventos cujos códigos têm referência nas tabelas, inclusive os sem glosa. Códigos não localizados não entram nessa aba. Se o código só aparece em tabela de outro ano, ele pode ser mostrado com aviso, mas sem cálculo técnico de preço até existir tabela aplicável à data do atendimento.</p>
-            <p>Os eventos são agrupados por beneficiário e matrícula. Use <b>Área</b>, <b>Linhas analisadas</b>, busca de beneficiário, palavras ou códigos e apresentação detalhada ou sintética para reduzir a visualização. <b>Atualizar auditoria</b> aplica os filtros digitados; <b>Exportar CSV</b> salva as linhas exibidas. <b>Base do percentual informado</b> permite simular com outra tabela anual, sem substituir a referência vigente da auditoria.</p>
-            <p>As colunas comparam <b>valor cobrado</b>, <b>limite pela tabela/regra</b> e <b>valor acima do limite</b>. O código e o <b>Grau</b> aparecem em destaque e, em cirurgia, também a função de cirurgião ou auxiliar. O relatório aplica automaticamente 100% ao maior porte/valor e 70% aos adicionais, permitindo alterar o percentual para 100%, 70% ou 50% quando aplicável. Em códigos iguais do mesmo beneficiário e dia, o maior valor apresentado recebe 100%, exceto quando as linhas representam funções distintas da mesma equipe. “Preço acima da tabela” é alerta; “Possível glosa pela regra” aparece quando há cálculo técnico. Nenhum desses sinais, sozinho, é uma glosa definitiva. Você pode colar dados de internações do SARH, separados por TAB, para acrescentar avisos de conferência.</p>
+            <p>Os eventos são agrupados por beneficiário e matrícula. Use <b>Área</b>, <b>Linhas analisadas</b>, busca de beneficiário, palavras ou códigos e apresentação detalhada ou sintética para reduzir a visualização. <b>Atualizar auditoria</b> aplica os filtros digitados. <b>Base do percentual informado</b> permite simular com outra tabela anual, sem substituir a referência vigente da auditoria.</p>
+            <p>As colunas comparam <b>valor cobrado</b>, <b>limite pela tabela/regra</b> e <b>valor acima do limite</b>. O código e o <b>Grau</b> aparecem em destaque e, em cirurgia, também a função de cirurgião ou auxiliar. O relatório aplica automaticamente 100% ao maior porte/valor e 70% aos adicionais, permitindo alterar o percentual para 100%, 70% ou 50% quando aplicável. Em códigos iguais do mesmo beneficiário e dia, o maior valor apresentado recebe 100%, exceto quando as linhas representam funções distintas da mesma equipe. “Preço acima da tabela” é alerta; “Possível glosa pela regra” aparece quando há cálculo técnico. Nenhum desses sinais, sozinho, é uma glosa definitiva.</p>
         </section>
         <section id="manualRegras" class="manual-secao">
             <h3>5. Como o relatório trata as regras</h3>
@@ -4402,6 +4402,42 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
     return `${sintetico ? '<p class="auditoria-info">Para informar o percentual de cada código, escolha a apresentação detalhada.</p>' : ''}<div class="beneficiarios-barra-auditoria"><strong>${ordenados.length} beneficiário(s)</strong><span>Clique no nome para recolher ou expandir os eventos.</span><div><button type="button" onclick="alternarGruposAuditoria(true)">Expandir todos</button><button type="button" onclick="alternarGruposAuditoria(false)">Recolher todos</button></div></div><div class="beneficiarios-lista-auditoria">${cartoes}</div>`;
 }
 
+function interpretarParecerCompleto(texto) {
+    const blocos=[],avisos=[];let atual=null;
+    for(const linha of String(texto).split(/\r?\n/)) {
+        const codigo=linha.match(/(?:^|[^\d])((?:\d\.\d{2}\.\d{2}\.\d{3})|\d{8})\s*:\s*(\d+)\s*[^\d\w%]*%/);
+        const demais=linha.match(/\bdemais\s*:\s*(\d+)\s*[^\d\w%]*%/i);
+        if(codigo){atual={codigo:codigoAuditoria(codigo[1]),principal:Number(codigo[2]),demais:null};blocos.push(atual);}
+        else if(demais){if(atual&&atual.demais===null)atual.demais=Number(demais[1]);else avisos.push('Instrução Demais sem código principal ou repetida; conferir.');}
+    }
+    const unicos=new Map(),conflitos=new Set();
+    for(const b of blocos){if(![50,70,100].includes(b.principal)||![50,70,100].includes(b.demais)){avisos.push(`Bloco ${formatarCodigoAuditoria(b.codigo)} incompleto ou com percentual inválido.`);conflitos.add(b.codigo);continue;}const anterior=unicos.get(b.codigo);if(anterior&&(anterior.principal!==b.principal||anterior.demais!==b.demais)){conflitos.add(b.codigo);avisos.push(`Orientações conflitantes para ${formatarCodigoAuditoria(b.codigo)}.`);}else unicos.set(b.codigo,b);}
+    for(const c of conflitos)unicos.delete(c);
+    return {blocos:[...unicos.values()],avisos};
+}
+function aplicarParecerCompleto() {
+    const area=document.getElementById('resultadoParecerCompleto');
+    const {blocos,avisos}=interpretarParecerCompleto(document.getElementById('parecerMedicoCompleto').value);
+    const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA),grupos=new Map(),resultados=[];
+    if(!elegiveis.length){area.textContent='Gere o relatório e selecione o PEG antes de aplicar o parecer.';return;}
+    for(const l of elegiveis){const key=chaveGrupoPercentualAuditoria(l);if(!grupos.has(key))grupos.set(key,[]);grupos.get(key).push(l);}
+    for(const b of blocos)if(!elegiveis.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo))avisos.push(`Código ${formatarCodigoAuditoria(b.codigo)} não encontrado nos eventos elegíveis do PEG ativo.`);
+    let total=0;
+    for(const linhas of grupos.values()) {
+        const correspondencias=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));if(!correspondencias.length)continue;
+        const propostas=correspondencias.map(b=>linhas.map(l=>({linha:l,percentual:codigoAuditoria(l.evento.codigo)===b.codigo?b.principal:b.demais})));
+        if(propostas.some(p=>p.some((a,i)=>a.percentual!==propostas[0][i].percentual))){avisos.push(`${linhas[0].guia.beneficiario}: mais de um código principal com orientações conflitantes no mesmo dia e grupo; aplicar por caso.`);continue;}
+        const alteracoes=propostas[0];
+        const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(l.evento.codigo))&&p===50));
+        if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(correspondencias[0].codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
+        for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
+        total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,codigo:correspondencias[0].codigo,principal:correspondencias[0].principal,demais:correspondencias[0].demais,quantidade:alteracoes.length});
+    }
+    if(total)atualizarAuditoria();
+    area.innerHTML=`<p class="importacao-retorno ${total?'importacao-sucesso':'importacao-aviso'}">${total?`Parecer aplicado a ${total} evento(s) em ${resultados.length} grupo(s) do PEG ativo.`:'Nenhuma orientação compatível foi aplicada.'}</p>`+(avisos.length?`<ul class="importacao-retorno importacao-aviso">${avisos.map(a=>`<li>${escAuditoria(a)}</li>`).join('')}</ul>`:'')+(resultados.length?`<div class="perito-previa" style="max-height:300px;overflow:auto"><table><thead><tr><th>Beneficiário</th><th>Data</th><th>Código principal</th><th>Percentuais</th><th>Eventos</th></tr></thead><tbody>${resultados.map(r=>`<tr><td>${escAuditoria(r.guia.beneficiario)} · Matrícula ${escAuditoria(r.guia.matricula)}</td><td>${escAuditoria(r.data)}</td><td>${escAuditoria(formatarCodigoAuditoria(r.codigo))}</td><td>${r.principal}% · Demais ${r.demais}%</td><td>${r.quantidade}</td></tr>`).join('')}</tbody></table></div>`:'');
+    if(!blocos.length&&!avisos.length)area.textContent='Nenhum bloco Código: percentual% / Demais: percentual% encontrado.';
+}
+
 let TEXTO_ORIENTACAO_PERITO = '';
 let ORIENTACAO_PERITO_ABERTA = false;
 let SUCESSO_ORIENTACAO_PERITO = '';
@@ -4442,7 +4478,7 @@ function atualizarPreviaOrientacaoPerito(campo) {
     const area=document.getElementById('previaOrientacaoPerito');if(!area)return;
     if(!TEXTO_ORIENTACAO_PERITO.trim()){area.innerHTML='';document.getElementById('aplicarOrientacaoPerito').disabled=true;return;}
     const {alteracoes,erros}=previaOrientacaoPerito();
-    area.innerHTML=(erros.length?`<div class="importacao-retorno importacao-erro"><strong>Conferir antes de aplicar</strong><ul>${erros.map(e=>`<li>${escAuditoria(e)}</li>`).join('')}</ul></div>`:'')+(alteracoes.length?`<div style="overflow:auto;max-height:220px"><table><thead><tr><th>Guia / item</th><th>Código / evento / grau</th><th>Atual → perito</th></tr></thead><tbody>${alteracoes.map(({linha:l,percentual:p})=>`<tr><td>${escAuditoria(l.guia.ordem)} / ${escAuditoria(l.evento.ordem)}</td><td>${escAuditoria(formatarCodigoAuditoria(l.evento.codigo))} · ${escAuditoria(l.evento.descricao)}<br>${escAuditoria(l.evento.grau)}</td><td>${PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id)??l.percentual??'Pendente'}% → <strong>${p}%</strong>${l.categoria==='Cirurgia'&&equipeCirurgica(l.evento.grau)?.numero?'<br><small>Sobre o porte; percentual próprio do auxiliar preservado.</small>':''}</td></tr>`).join('')}</tbody></table></div>`:'');
+    area.innerHTML=(erros.length?`<div class="importacao-retorno importacao-erro"><strong>Conferir antes de aplicar</strong><ul>${erros.map(e=>`<li>${escAuditoria(e)}</li>`).join('')}</ul></div>`:'')+(alteracoes.length?`<div class="perito-previa" style="overflow:auto;max-height:220px"><table><thead><tr><th>Guia / item</th><th>Código / evento / grau</th><th>Atual → perito</th></tr></thead><tbody>${alteracoes.map(({linha:l,percentual:p})=>`<tr><td>${escAuditoria(l.guia.ordem)} / ${escAuditoria(l.evento.ordem)}</td><td>${escAuditoria(formatarCodigoAuditoria(l.evento.codigo))} · ${escAuditoria(l.evento.descricao)}<br>${escAuditoria(l.evento.grau)}</td><td>${PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id)??l.percentual??'Pendente'}% → <strong>${p}%</strong>${l.categoria==='Cirurgia'&&equipeCirurgica(l.evento.grau)?.numero?'<br><small>Sobre o porte; percentual próprio do auxiliar preservado.</small>':''}</td></tr>`).join('')}</tbody></table></div>`:'');
     document.getElementById('aplicarOrientacaoPerito').disabled=!!erros.length||!alteracoes.length;
 }
 function aplicarOrientacaoPerito() {
