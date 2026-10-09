@@ -753,6 +753,7 @@
 .auditoria-filtros-linha{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,1fr);gap:8px;align-items:start;margin-bottom:7px;}
 .auditoria-filtros-linha .auditoria-filtros-codigos{min-width:0;}
 @media(max-width:640px){.auditoria-filtros-linha{grid-template-columns:minmax(0,1fr);}}
+#filtroGrauPopupAuditoria,.auditoria-filtros-codigos label strong{font-size:12px;color:var(--blue-deep);}
 </style>
 </head>
 <body>
@@ -954,7 +955,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.94</p>
+    <p class="versao-relatorio">Versão 4.95</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4403,6 +4404,7 @@ function renderizarGruposBeneficiariosAuditoria(linhas, internacoes, sintetico, 
 
 let TEXTO_ORIENTACAO_PERITO = '';
 let ORIENTACAO_PERITO_ABERTA = false;
+let SUCESSO_ORIENTACAO_PERITO = '';
 function registrarAberturaOrientacaoPerito(aberto){ORIENTACAO_PERITO_ABERTA=aberto;}
 function interpretarOrientacaoPerito(texto) {
     const regras=new Map(),erros=[];let demais=null;
@@ -4446,8 +4448,9 @@ function atualizarPreviaOrientacaoPerito(campo) {
 function aplicarOrientacaoPerito() {
     const {alteracoes,erros}=previaOrientacaoPerito();if(erros.length||!alteracoes.length)return;
     for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
+    ORIENTACAO_PERITO_ABERTA=false;
+    SUCESSO_ORIENTACAO_PERITO=`Orientação aplicada a ${alteracoes.length} evento(s) deste caso. Confira os limites recalculados.`;
     atualizarAuditoria();
-    const area=document.getElementById('previaOrientacaoPerito');if(area){const aviso=document.createElement('p');aviso.className='importacao-retorno importacao-sucesso';aviso.textContent=`Orientação aplicada a ${alteracoes.length} evento(s) deste caso. Confira os limites recalculados.`;area.prepend(aviso);}
     atualizarConteudoJanelaSeparada('auditoria');
 }
 
@@ -4562,7 +4565,7 @@ function abrirPopupAuditoriaBeneficiario(chave, botao) {
     CHAVE_POPUP_AUDITORIA_BENEFICIARIO = chave;
     CODIGOS_SELECIONADOS_POPUP_AUDITORIA.clear();
     GRAU_SELECIONADO_POPUP_AUDITORIA='';
-    TEXTO_ORIENTACAO_PERITO='';ORIENTACAO_PERITO_ABERTA=false;
+    TEXTO_ORIENTACAO_PERITO='';ORIENTACAO_PERITO_ABERTA=false;SUCESSO_ORIENTACAO_PERITO='';
     FOCO_RETORNO_POPUP_AUDITORIA = botao || document.activeElement;
     const modal = document.getElementById('modalAuditoriaBeneficiario');
     modal.style.display = 'block';
@@ -4622,6 +4625,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+        ${SUCESSO_ORIENTACAO_PERITO?`<p class="importacao-retorno importacao-sucesso" role="status">${escAuditoria(SUCESSO_ORIENTACAO_PERITO)}</p>`:''}
         <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. A orientação alcança todos os eventos deste caso, inclusive os ocultos pelos filtros. Os percentuais próprios dos auxiliares são preservados.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
