@@ -756,7 +756,7 @@
 #filtroGrauPopupAuditoria,.auditoria-filtros-codigos label strong{font-size:12px;color:var(--blue-deep);}
 .perito-previa table{table-layout:auto!important;}.perito-previa th{position:static!important;background:#eff6ff!important;color:#1e3a8a!important;}.perito-previa td{white-space:normal;}.perito-previa th,.perito-previa td{padding:6px 8px!important;font-size:12px;}
 .auditoria-textos{grid-template-columns:minmax(0,1fr);}
-#abaRegras .beneficiario-identidade-auditoria > strong{color:#b91c1c;}
+#abaRegras .beneficiario-identidade-auditoria > strong{color:#1d4ed8;font-weight:700;}
 </style>
 </head>
 <body>
@@ -826,7 +826,7 @@
 </nav>
 
 <section id="abaRegras" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRegras" hidden>
-<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
+
 <div class="painel-regras">
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
@@ -901,6 +901,7 @@
         </div>
         <p class="auditoria-info">Em cirurgia, a escolha 100% / 70% / 50% recalcula o limite técnico sobre os honorários, sem dobrar a UCO. Em exame oftalmológico monocular, o relatório presume dois olhos quando há duas unidades do mesmo código na guia e calcula a UCO em 100%–70%; essa inferência deve ser conferida se houver dúvida. Nas outras áreas, o percentual informado é apenas simulação. Confira via, bilateralidade, equipe e contrato antes de concluir uma glosa.</p>
     </div>
+    <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
     <div id="auditoriaSaida" class="auditoria-saida"><div class="auditoria-vazia">Gere o relatório para executar a auditoria técnica.</div></div>
 </details>
 </section>
@@ -956,7 +957,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.01</p>
+    <p class="versao-relatorio">Versão 5.04</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4329,8 +4330,8 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
                 <small>${escAuditoria(linha.categoria)} · guia ${escAuditoria(linha.guia.ordem || '—')} / item ${escAuditoria(linha.evento.ordem || '—')} · ${popup ? `<span class="auditoria-data-item">${escAuditoria(linha.evento.data || linha.guia.data || 'sem data')}</span>` : escAuditoria(linha.evento.data || linha.guia.data || 'sem data')}${linha.sugestaoPercentual ? ` · ${linha.sugestaoPercentual}% aplicado` : ''}</small></td>
             <td class="valor">${escAuditoria(linha.evento.quantidade)}</td>
             <td class="valor">${valorBRL(linha.solicitado)}</td>
-            ${popup ? `<td class="valor">${valorBRL(numeroAuditoria(linha.evento.valorPago))}</td>` : ''}
-            <td class="valor ${popup ? 'limite-relatorio-popup' : ''}">${linha.limiteReferencia === null ? 'A confirmar' : valorBRL(linha.limiteReferencia)}${!calculado && linha.limiteReferencia !== null ? '<small>Preço-base; regra pendente</small>' : ''}</td>
+            <td class="valor">${valorBRL(numeroAuditoria(linha.evento.valorPago))}</td>
+            <td class="valor limite-relatorio-popup">${linha.limiteReferencia === null ? 'A confirmar' : valorBRL(linha.limiteReferencia)}${!calculado && linha.limiteReferencia !== null ? '<small>Preço-base; regra pendente</small>' : ''}</td>
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
@@ -4338,11 +4339,11 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
                 ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
-        </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="${popup ? 8 : 7}"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
+        </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="8"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
     }).join('');
     return `<div class="auditoria-tabela-wrap"><table class="auditoria-tabela"><thead><tr>
-        <th>Evento</th><th class="valor">Qtd.</th><th class="valor">Valor cobrado</th>${popup ? '<th class="valor" title="Valor pago informado na extração do Benner">Liberado pelo Benner</th>' : ''}<th class="valor ${popup ? 'limite-relatorio-popup' : ''}">${popup ? 'Limite do relatório' : 'Limite da tabela/regra'}</th>
-        <th class="valor ${popup ? 'limite-relatorio-popup' : ''}">Acima do limite</th><th>Situação</th><th>Regra e conferência</th>
+        <th>Evento</th><th class="valor">Qtd.</th><th class="valor">Valor cobrado</th><th class="valor" title="Valor pago informado na extração do Benner">Liberado pelo Benner</th><th class="valor limite-relatorio-popup">Limite do relatório</th>
+        <th class="valor limite-relatorio-popup">Acima do limite</th><th>Situação</th><th>Regra e conferência</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
