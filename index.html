@@ -750,6 +750,9 @@
 .importacao-sucesso{color:#166534;background:#dcfce7;}.importacao-erro{color:#991b1b;background:#fee2e2;}.importacao-aviso{color:#92400e;background:#fef3c7;}
 .catalogo-tabelas{display:flex;flex-direction:column;gap:6px;margin:10px 0;}.catalogo-grupo{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;padding:7px 9px;border-radius:7px;border:1px solid;}.catalogo-grupo h3{margin:0;font-size:12px;white-space:nowrap;}.catalogo-grupo ul{display:flex;flex-wrap:wrap;gap:4px;list-style:none;padding:0;margin:0;flex:1;min-width:180px;}.catalogo-grupo li{margin:0;padding:3px 6px;border:1px solid currentColor;border-radius:5px;font-size:11px;line-height:1.3;}.catalogo-grupo p{margin:0;font-size:11px;}.tabelas-incorporadas{background:#eff6ff;border-color:#93c5fd;color:#1e3a8a;}.tabelas-importadas{background:#f0fdf4;border-color:#86efac;color:#166534;}.tabelas-reajustadas{background:#faf5ff;border-color:#d8b4fe;color:#6b21a8;}
 .excluir-tabela{padding:1px 5px!important;font-size:10px!important;line-height:1.2!important;min-height:0!important;height:auto!important;color:#991b1b;background:white;border:1px solid #fca5a5;border-radius:4px;margin-left:3px;}
+.auditoria-filtros-linha{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,1fr);gap:8px;align-items:start;margin-bottom:7px;}
+.auditoria-filtros-linha .auditoria-filtros-codigos{min-width:0;}
+@media(max-width:640px){.auditoria-filtros-linha{grid-template-columns:minmax(0,1fr);}}
 </style>
 </head>
 <body>
@@ -951,7 +954,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.92</p>
+    <p class="versao-relatorio">Versão 4.93</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4565,8 +4568,10 @@ function renderizarPopupAuditoriaBeneficiario() {
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+        <div class="auditoria-filtros-linha">
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
-        <div class="auditoria-filtros-codigos"><label for="filtroGrauPopupAuditoria"><strong>Filtrar por grau</strong></label><select id="filtroGrauPopupAuditoria" onchange="selecionarGrauPopupAuditoria(this)" style="width:auto;max-width:100%;margin-top:4px"><option value="">Todos os graus (${todosItens.length})</option>${graus.map(grau=>`<option value="${escAuditoria(grau)}" ${GRAU_SELECIONADO_POPUP_AUDITORIA===grau?'selected':''}>${escAuditoria(grau)} (${todosItens.filter(linha=>grupoGrauPopupAuditoria(linha)===grau).length})</option>`).join('')}</select></div>
+        <div class="auditoria-filtros-codigos"><label for="filtroGrauPopupAuditoria"><strong>Filtrar por grau</strong></label><select id="filtroGrauPopupAuditoria" onchange="selecionarGrauPopupAuditoria(this)" style="width:100%;min-width:0;margin-top:4px"><option value="">Todos os graus (${todosItens.length})</option>${graus.map(grau=>`<option value="${escAuditoria(grau)}" ${GRAU_SELECIONADO_POPUP_AUDITORIA===grau?'selected':''}>${escAuditoria(grau)} (${todosItens.filter(linha=>grupoGrauPopupAuditoria(linha)===grau).length})</option>`).join('')}</select></div>
+        </div>
         <div class="auditoria-resumo"><div><span>Eventos com tabela</span><b>${itens.length}</b></div><div><span>Possíveis glosas pela regra</span><b>${possiveis.length}</b></div><div><span>Valor possível a glosar</span><b>${valorBRL(glosa)}</b></div><div><span>Alertas só de preço</span><b>${apenasPreco.length}</b></div><button type="button" class="auditoria-resumo-atalho" onclick="irParaPrimeiraPendenciaAuditoria()" ${pendentes.length ? '' : 'disabled'} title="${pendentes.length ? 'Ir para a primeira pendência exibida' : 'Não há pendências exibidas'}"><span>Pendências a conferir · clicar para ir</span><b>${pendentes.length}</b></button></div>
         ${renderizarTabelaAuditoria(itens, GLOBAL_MODELO_AUDITORIA.internacoes, 'popup-')}`;
     const tabela = conteudo.querySelector('.auditoria-tabela-wrap');
