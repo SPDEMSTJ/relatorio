@@ -4,7 +4,7 @@ compatibility_date = "2026-10-01"
 
 [vars]
 SITE_ORIGIN = "https://spdemstj.github.io"
-TEST_PAGE = "https://spdemstj.github.io/relatorio/Teste-publicacao.html"
+TEST_PAGE = "https://spdemstj.github.io/relatorio/index.html"
 REPOSITORY = "SPDEMSTJ/relatorio"
 BRANCH = "main"
 ALLOWED_LOGIN = "SPDEMSTJ"

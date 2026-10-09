@@ -901,6 +901,7 @@
 </section>
 
 <section id="abaTabelas" class="aba-conteudo" role="tabpanel" aria-labelledby="tabTabelas" hidden>
+<section class="painel-tabelas no-print" id="publicacaoTabelas"><h2>Publicar tabelas para todos</h2><p class="auditoria-info">As tabelas publicadas ficam disponíveis para todos após a atualização do site. Entre com a conta GitHub autorizada para publicar.</p><label for="servicoPublicacao">Endereço do serviço de publicação (Cloudflare Workers)</label><input id="servicoPublicacao" type="url" placeholder="https://peg-publicacao-tabelas-teste.sua-conta.workers.dev" style="width:min(100%,650px)"><div style="margin:10px 0"><button type="button" onclick="entrarPublicacao()">Entrar com GitHub</button> <button type="button" onclick="sairPublicacao()">Sair</button><span id="contaPublicacao"> Não conectado</span></div><div class="tabelas-importacao"><label>Tipo da tabela<select id="tipoPublicacao"><option value="honoraria">Honorários médicos</option><option value="anestesia">Anestesiologia</option><option value="A">Serviços hospitalares — Tipo A</option><option value="B">Serviços hospitalares — Tipo B</option><option value="C">Serviços hospitalares — Tipo C</option></select></label><label>Arquivo CSV<input id="csvPublicacao" type="file" accept=".csv,text/csv" onchange="prepararPublicacao(this.files?.[0])"></label><label>Vigência a partir de<input id="vigenciaPublicacao" type="date" required></label></div><button id="enviarPublicacao" type="button" onclick="publicarTabelaTeste()">Publicar tabela</button><p id="statusPublicacao" class="auditoria-info" role="status" aria-live="polite">Configure o serviço e entre com GitHub para publicar.</p><p id="statusCatalogoTeste" class="auditoria-info" role="status"></p></section>
 <details class="painel-tabelas" id="instrucoesHospitalares"><summary><strong>Serviços hospitalares A, B e C — hospitais e instruções</strong></summary><div class="tabelas-importacao"><div><h3>Tipo A</h3><ul><li>Hospital DF Star</li><li>Hospital Sírio Libanês</li><li>Hospital Brasília</li><li>Hospital Santa Luzia</li><li>Hospital Santa Lúcia</li><li>Hospital Santa Helena</li><li>Hospital do Coração do Brasil</li><li>Hospital Anchieta</li><li>Hospital Águas Claras</li><li>Hospital Home</li></ul></div><div><h3>Tipo B</h3><ul><li>Hospital Daher Lago Sul</li><li>Hospital Prontonorte</li><li>Hospital Santa Marta</li><li>Hospital Alvorada Brasília</li><li>Hospital Mantevida</li><li>Hospital Maternidade Brasília</li><li>Hospital Anchieta Ceilândia (São Francisco)</li></ul></div><div><h3>Tipo C</h3><ul><li>Hospital Dia Jardim Botânico</li><li>Hospital Urológico de Brasília</li><li>Hospital Santa Lúcia de Taguatinga</li><li>Hospital das Clínicas e PS de Fraturas de Ceilândia</li><li>Hospital São Mateus</li><li>Hospital Maria Auxiliadora</li><li>Hospitais oftalmológicos: Pacini, HOB, HOG, HODF e HOBRASIL</li><li>Clínicas que realizam procedimentos ambulatoriais</li></ul></div></div><h3>Instruções aplicadas</h3><p>O tipo é reconhecido pelo nome do prestador, inclusive quando contém outras expressões, como filial ou unidade. Hospital Anchieta Ceilândia (São Francisco) é tipo B; Hospital Santa Lúcia de Taguatinga é tipo C.</p><p>Nas taxas de sala, a cirurgia de maior porte é considerada a 100%. A segunda cirurgia é considerada a 50% pela mesma via de acesso ou a 70% por vias diferentes. As demais cirurgias são consideradas a 25%. Confirme a via de acesso na guia física ou com a auditoria médica.</p><p>Os demais serviços hospitalares são comparados pelo preço e quantidade, conforme o fator da tabela. A análise respeita o tipo do prestador e a vigência; tabelas geradas por reajuste são identificadas no relatório. Serviços sem preço fixo exigem conferência manual.</p></details>
     <div class="painel-tabelas">
         <h2>Importar tabelas por ano</h2>
@@ -950,7 +951,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.89</p>
+    <p class="versao-relatorio">Versão 4.90</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4740,6 +4741,83 @@ for(const tipo of ['honoraria','anestesia'])document.getElementById('baseReajust
 atualizarStatusHospitalares();
 
 carregarTabelasSalvas();
+
+</script>
+<script>
+let SESSAO_PUBLICACAO = '';
+function servicoPublicacao() {
+    const url=new URL(document.getElementById('servicoPublicacao').value.trim());
+    if(url.protocol!=='https:'||url.username||url.password||url.pathname!=='/'||url.search||url.hash)throw new Error('Informe o endereço HTTPS do seu serviço, sem caminho ou parâmetros.');
+    return url.origin;
+}
+function statusPublicacao(texto,estado='aviso') {
+    const el=document.getElementById('statusPublicacao');el.textContent=texto;el.className='importacao-retorno importacao-'+estado;
+}
+async function apiPublicacao(path,options={}) {
+    const response=await fetch(servicoPublicacao()+path,{...options,headers:{...(SESSAO_PUBLICACAO?{Authorization:'Bearer '+SESSAO_PUBLICACAO}:{}),...options.headers}});
+    const result=await response.json();if(!response.ok)throw new Error(result.error||'O serviço recusou a operação.');return result;
+}
+function entrarPublicacao() {
+    try {const url=servicoPublicacao();localStorage.setItem('peg-servico-publicacao-teste',url);location.assign(url+'/auth/login');}
+    catch(e){statusPublicacao(e.message,'erro');}
+}
+async function sairPublicacao() {
+    try{if(SESSAO_PUBLICACAO)await apiPublicacao('/api/logout',{method:'POST'});}catch{}
+    SESSAO_PUBLICACAO='';document.getElementById('contaPublicacao').textContent=' Não conectado';statusPublicacao('Você saiu da publicação.');
+}
+async function prepararPublicacao(file) {
+    const data=document.getElementById('vigenciaPublicacao');data.value='';
+    if(!file)return;
+    if(file.size>15*1024*1024){statusPublicacao('CSV acima de 15 MB.','erro');return;}
+    const match=(await file.text()).match(/VIG[EÊ]NCIA[^\d\r\n]*(\d{2})\/(\d{2})\/(\d{4})/i);
+    if(match)data.value=`${match[3]}-${match[2]}-${match[1]}`;
+    statusPublicacao(data.value?'Confira o tipo e a vigência antes de publicar.':'Preencha a vigência antes de publicar.');
+}
+async function publicarTabelaTeste() {
+    const button=document.getElementById('enviarPublicacao');button.disabled=true;
+    try {
+        if(!SESSAO_PUBLICACAO)throw new Error('Entre com GitHub antes de publicar.');
+        const file=document.getElementById('csvPublicacao').files[0],tipo=document.getElementById('tipoPublicacao').value,data=document.getElementById('vigenciaPublicacao');
+        if(!file||file.size>15*1024*1024)throw new Error('Selecione um CSV de até 15 MB.');
+        if(!data.value||!data.checkValidity())throw new Error('Preencha uma vigência válida.');
+        const csv=csvComVigenciaEscolhida(await file.text(),data.value);
+        const tabela=tipo==='honoraria'?lerTabelaCsv(csv,file.name):tipo==='anestesia'?lerEscalaAnestesiaCsv(csv,file.name):lerTabelaHospitalarCsv(csv,file.name);
+        if(['A','B','C'].includes(tipo)&&tabela.tipo!==tipo)throw new Error('O tipo hospitalar do arquivo não corresponde ao selecionado.');
+        if(!confirm(`Publicar a tabela ${tipo} com vigência ${data.value.split('-').reverse().join('/')} no GitHub para todos?`))return;
+        const form=new FormData();form.set('file',file);form.set('tipo',tipo);form.set('vigencia',data.value);
+        statusPublicacao('Publicando tabela…');
+        let result=await apiPublicacao('/api/publish',{method:'POST',body:form});
+        if(result.conflict){if(!confirm('Já existe uma tabela publicada deste tipo e ano. Substituir?')){statusPublicacao('Publicação cancelada.');return;}form.set('replace','true');result=await apiPublicacao('/api/publish',{method:'POST',body:form});}
+        if(!result.ok)throw new Error('Não foi possível concluir a publicação.');
+        statusPublicacao('Tabela publicada no repositório com sucesso. Aguarde a atualização do GitHub Pages e recarregue esta página para usar os novos valores.','sucesso');
+    }catch(e){statusPublicacao(e.message,'erro');}finally{button.disabled=false;}
+}
+async function carregarCatalogoTeste() {
+    const status=document.getElementById('statusCatalogoTeste');
+    try {
+        const response=await fetch('tabelas-teste/catalogo.json',{cache:'no-store'});if(!response.ok)throw new Error('Catálogo indisponível.');
+        const catalog=await response.json();if(catalog.versao!==1||!Array.isArray(catalog.tabelas))throw new Error('Catálogo inválido.');
+        const preparadas=[];
+        for(const item of catalog.tabelas) {
+            if(!['honoraria','anestesia','A','B','C'].includes(item.tipo)||!/^\d{4}$/.test(item.ano)||!/^\d{4}-\d{2}-\d{2}$/.test(item.vigencia)||item.arquivo!==`tabelas-teste/${item.tipo}-${item.ano}.csv`)throw new Error('Entrada inválida no catálogo.');
+            const csvResponse=await fetch(item.arquivo,{cache:'no-store'});if(!csvResponse.ok)throw new Error('Uma tabela publicada não foi encontrada.');
+            const csv=csvComVigenciaEscolhida(await csvResponse.text(),item.vigencia);
+            const tabela=ajustarVigenciaImportacao(item.tipo==='honoraria'?lerTabelaCsv(csv,item.arquivo):item.tipo==='anestesia'?lerEscalaAnestesiaCsv(csv,item.arquivo):lerTabelaHospitalarCsv(csv,item.arquivo),item.vigencia);
+            if(['A','B','C'].includes(item.tipo)&&tabela.tipo!==item.tipo)throw new Error('Tipo hospitalar divergente no catálogo.');
+            preparadas.push({tipo:item.tipo,tabela});
+        }
+        for(const {tipo,tabela} of preparadas){if(tipo==='honoraria')aplicarTabelaCsv(tabela,'incorporada');else if(tipo==='anestesia')aplicarEscalaAnestesia(tabela,'incorporada');else{tabela.origem='incorporada';cadastrarTabelaHospitalar(tabela);}}
+        atualizarStatusHospitalares();if(GLOBAL_MODELO_AUDITORIA.eventos.length)atualizarAuditoria();
+        status.textContent=preparadas.length?`${preparadas.length} tabela(s) publicada(s) carregada(s) do repositório.`:'Nenhuma tabela publicada ainda.';
+    }catch(e){status.textContent='Não foi possível carregar as tabelas publicadas: '+e.message;}
+}
+(async()=>{
+    try{document.getElementById('servicoPublicacao').value=localStorage.getItem('peg-servico-publicacao-teste')||'https://peg-publicacao-tabelas.spdem-stj.workers.dev';}catch{}
+    const ticket=new URLSearchParams(location.hash.slice(1)).get('ticket');
+    if(ticket){history.replaceState(null,'',location.pathname+location.search);try{const result=await apiPublicacao('/api/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket})});SESSAO_PUBLICACAO=result.token;document.getElementById('contaPublicacao').textContent=' Conectado como '+result.login;statusPublicacao('Autenticado. Você pode publicar tabelas de teste.','sucesso');}catch(e){statusPublicacao(e.message,'erro');}}
+    await carregarCatalogoTeste();
+})();
+
 
 </script>
 </body>
