@@ -826,7 +826,7 @@
 </nav>
 
 <section id="abaRegras" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRegras" hidden>
-<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Códigos não encontrados ou orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
+<details class="painel-tabelas" id="painelParecerCompleto"><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
 <div class="painel-regras">
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
@@ -956,7 +956,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.99</p>
+    <p class="versao-relatorio">Versão 5.00</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4434,6 +4434,19 @@ function interpretarParecerCompleto(texto) {
     for(const c of conflitos)unicos.delete(c);
     return {blocos:[...unicos.values()],avisos};
 }
+function escolherPrincipalParecer(correspondencias,linhas) {
+    const candidatos=correspondencias.map(bloco=>{
+        const refs=linhas.filter(l=>codigoAuditoria(l.evento.codigo)===bloco.codigo).map(l=>l.referencia);
+        const porte=Math.max(...refs.map(r=>r?.p?porteNumerico(r.p):-1));
+        const valor=Math.max(...refs.map(r=>numeroOuNulo(r?.h)??numeroOuNulo(r?.t)??0));
+        return {bloco,porte,valor};
+    }).sort((a,b)=>b.porte-a.porte||b.valor-a.valor);
+    if(candidatos.length===1)return candidatos[0].bloco;
+    if(candidatos[0].porte<0)return null;
+    if(candidatos[0].porte===candidatos[1].porte&&Math.abs(candidatos[0].valor-candidatos[1].valor)<0.005)return null;
+    return candidatos[0].bloco;
+}
+
 function aplicarParecerCompleto() {
     const area=document.getElementById('resultadoParecerCompleto');
     const {blocos,avisos}=interpretarParecerCompleto(document.getElementById('parecerMedicoCompleto').value);
@@ -4452,13 +4465,13 @@ function aplicarParecerCompleto() {
     }
     for(const linhas of gruposAplicacao) {
         const correspondencias=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));if(!correspondencias.length)continue;
-        const propostas=correspondencias.map(b=>linhas.map(l=>({linha:l,percentual:codigoAuditoria(l.evento.codigo)===b.codigo?b.principal:b.demais})));
-        if(propostas.some(p=>p.some((a,i)=>a.percentual!==propostas[0][i].percentual))){avisos.push(`${linhas[0].guia.beneficiario}: guia ${linhas[0].guia.ordem}: mais de um código principal com orientações conflitantes na mesma guia; aplicar por caso.`);continue;}
-        const alteracoes=propostas[0];
+        const principalEscolhido=escolherPrincipalParecer(correspondencias,linhas);
+        if(!principalEscolhido){avisos.push(`${linhas[0].guia.beneficiario} · guia ${linhas[0].guia.ordem}: empate de porte e valor entre ${correspondencias.map(b=>formatarCodigoAuditoria(b.codigo)).join(' e ')}; escolha o principal no popup de análise de vias.`);continue;}
+        const alteracoes=linhas.map(l=>({linha:l,percentual:codigoAuditoria(l.evento.codigo)===principalEscolhido.codigo?principalEscolhido.principal:principalEscolhido.demais}));
         const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(l.evento.codigo))&&p===50));
-        if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(correspondencias[0].codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
+        if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(principalEscolhido.codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
         for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
-        total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,guias:[...new Set(linhas.map(l=>l.guia.ordem))].join(', '),codigo:correspondencias[0].codigo,principal:correspondencias[0].principal,demais:correspondencias[0].demais,quantidade:alteracoes.length});
+        total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,guias:[...new Set(linhas.map(l=>l.guia.ordem))].join(', '),codigo:principalEscolhido.codigo,principal:principalEscolhido.principal,demais:principalEscolhido.demais,quantidade:alteracoes.length});
     }
     if(total)atualizarAuditoria();
     area.innerHTML=`<p class="importacao-retorno ${total?'importacao-sucesso':'importacao-aviso'}">${total?`Parecer aplicado a ${total} evento(s) em ${resultados.length} grupo(s) do PEG ativo.`:'Nenhuma orientação compatível foi aplicada.'}</p>`+(avisos.length?`<ul class="importacao-retorno importacao-aviso">${avisos.map(a=>`<li>${escAuditoria(a)}</li>`).join('')}</ul>`:'')+(resultados.length?`<div class="perito-previa" style="max-height:300px;overflow:auto"><table><thead><tr><th>Beneficiário</th><th>Guia(s)</th><th>Data</th><th>Código principal</th><th>Percentuais</th><th>Eventos</th></tr></thead><tbody>${resultados.map(r=>`<tr><td>${escAuditoria(r.guia.beneficiario)} · Matrícula ${escAuditoria(r.guia.matricula)}</td><td>${escAuditoria(r.guias)}</td><td>${escAuditoria(r.data)}</td><td>${escAuditoria(formatarCodigoAuditoria(r.codigo))}</td><td>${r.principal}% · Demais ${r.demais}%</td><td>${r.quantidade}</td></tr>`).join('')}</tbody></table></div>`:'');
