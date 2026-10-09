@@ -4813,7 +4813,7 @@ async function carregarCatalogoTeste() {
     }catch(e){status.textContent='Não foi possível carregar as tabelas publicadas de teste: '+e.message;}
 }
 (async()=>{
-    try{document.getElementById('servicoPublicacao').value=localStorage.getItem('peg-servico-publicacao-teste')||'https://peg-publicacao-tabelas-teste.samucagbi.workers.dev';}catch{}
+    try{document.getElementById('servicoPublicacao').value=localStorage.getItem('peg-servico-publicacao-teste')||'https://peg-publicacao-tabelas.spdem-stj.workers.dev';}catch{}
     const ticket=new URLSearchParams(location.hash.slice(1)).get('ticket');
     if(ticket){history.replaceState(null,'',location.pathname+location.search);try{const result=await apiPublicacao('/api/exchange',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ticket})});SESSAO_PUBLICACAO=result.token;document.getElementById('contaPublicacao').textContent=' Conectado como '+result.login;statusPublicacao('Autenticado. Você pode publicar tabelas de teste.','sucesso');}catch(e){statusPublicacao(e.message,'erro');}}
     await carregarCatalogoTeste();

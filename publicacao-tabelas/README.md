@@ -5,10 +5,10 @@ A página `Teste-publicacao.html` é uma cópia do relatório com um painel de p
 ## Configuração inicial na sua conta
 
 1. Crie uma conta gratuita em https://dash.cloudflare.com/ se ainda não tiver.
-2. No GitHub, abra **Settings → Developer settings → GitHub Apps → New GitHub App**. Use um nome exclusivo, como `PEG Tabelas Samuel`. Homepage: `https://samuelcnovaes.github.io/Relatorio_PEG/Teste-publicacao.html`.
+2. No GitHub, abra **Settings → Developer settings → GitHub Apps → New GitHub App**. Use um nome exclusivo, como `PEG Tabelas Samuel`. Homepage: `https://spdemstj.github.io/relatorio/Teste-publicacao.html`.
 3. Crie primeiro o Worker na Cloudflare para obter o endereço final. A callback da GitHub App será `https://SEU-WORKER.workers.dev/auth/callback`. Ative o fluxo OAuth para usuários; não habilite Device Flow. Desmarque **Active** em Webhook, pois este serviço não usa webhooks.
 4. Em **Repository permissions**, conceda **Contents: Read and write**; **Metadata: Read-only** é automática. Nenhuma outra permissão é necessária. Escolha instalar a aplicação apenas na sua conta.
-5. Instale a GitHub App na conta `samuelcnovaes`, selecionando somente o repositório `Relatorio_PEG`. O login sozinho não substitui essa instalação.
+5. Instale a GitHub App na conta `SPDEMSTJ`, selecionando somente o repositório `Relatorio_PEG`. O login sozinho não substitui essa instalação.
 6. Copie o **Client ID** (não o App ID) para `GITHUB_CLIENT_ID` em `wrangler.toml`. Gere um **Client secret** na GitHub App e guarde-o como secret do Worker. Não cole o secret no HTML, no repositório ou no chat.
 7. Na pasta `publicacao-tabelas`, execute:
 
@@ -28,7 +28,7 @@ A página `Teste-publicacao.html` é uma cópia do relatório com um painel de p
 
 8. Confira que a callback no GitHub usa exatamente o endereço que o deploy informou. Na página de teste, preencha esse endereço no campo de serviço e clique em **Entrar com GitHub**.
 
-O login é restrito à conta `samuelcnovaes`. O token do GitHub fica no Worker/KV, por até uma hora; a página recebe apenas uma sessão temporária mantida em memória. Reabrir a página exige entrar novamente. Não há chave privada de GitHub App neste fluxo: são usados os tokens de usuário da própria GitHub App instalada somente nesse repositório.
+O login é restrito à conta `SPDEMSTJ`. O token do GitHub fica no Worker/KV, por até uma hora; a página recebe apenas uma sessão temporária mantida em memória. Reabrir a página exige entrar novamente. Não há chave privada de GitHub App neste fluxo: são usados os tokens de usuário da própria GitHub App instalada somente nesse repositório.
 
 ## Teste antes de migrar para o relatório principal
 
