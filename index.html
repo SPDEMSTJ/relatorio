@@ -756,6 +756,9 @@
 #filtroGrauPopupAuditoria,.auditoria-filtros-codigos label strong{font-size:12px;color:var(--blue-deep);}
 .perito-previa table{table-layout:auto!important;}.perito-previa th{position:static!important;background:#eff6ff!important;color:#1e3a8a!important;}.perito-previa td{white-space:normal;}.perito-previa th,.perito-previa td{padding:6px 8px!important;font-size:12px;}
 .auditoria-textos{grid-template-columns:minmax(0,1fr);}
+.auditoria-pesquisa{margin:16px 20px;}
+.auditoria-pesquisa label{display:block;margin-bottom:6px;color:var(--muted);font-size:12px;font-weight:600;}
+.auditoria-pesquisa input{display:block;box-sizing:border-box;min-width:0;}
 #abaRegras .beneficiario-identidade-auditoria > strong{color:#1d4ed8;font-weight:700;}
 .auditoria-retirar-glosa{display:block;margin-top:4px;padding:5px 8px;border-left:3px solid #16a34a;border-radius:4px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;}
 </style>
@@ -828,6 +831,12 @@
 
 <section id="abaRegras" class="aba-conteudo" role="tabpanel" aria-labelledby="tabRegras" hidden>
 
+<details id="painelAuditoria" class="painel-auditoria" open>
+    <summary>🔎 Detalhamento da auditoria</summary>
+    <div class="no-print auditoria-pesquisa"><label for="buscarBeneficiarioAuditoria">Pesquisar na auditoria</label><input id="buscarBeneficiarioAuditoria" type="search" style="width:100%" placeholder="Beneficiário, matrícula, evento, código ou valor" oninput="atualizarAuditoria()"></div>
+    <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados. Quando o código principal se repete, só a ocorrência de maior valor recebe seu percentual; as demais recebem “Demais”.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
+    <div id="auditoriaSaida" class="auditoria-saida"><div class="auditoria-vazia">Gere o relatório para executar a auditoria técnica.</div></div>
+</details>
 <div class="painel-regras">
     <h2>Regras 100–70–50 e alertas de preço</h2>
     <p id="saudacaoRegrasPessoa" class="mensagem-personalizada no-print">Confira os percentuais e os alertas antes de concluir a análise.</p>
@@ -855,12 +864,6 @@
     </details>
 
 </div>
-<details id="painelAuditoria" class="painel-auditoria" open>
-    <summary>🔎 Detalhamento da auditoria</summary>
-    <div class="no-print" style="margin:12px 0"><label for="buscarBeneficiarioAuditoria">Pesquisar na auditoria</label><input id="buscarBeneficiarioAuditoria" type="search" style="width:100%" placeholder="Beneficiário, matrícula, evento, código ou valor" oninput="atualizarAuditoria()"></div>
-    <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados. Quando o código principal se repete, só a ocorrência de maior valor recebe seu percentual; as demais recebem “Demais”.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
-    <div id="auditoriaSaida" class="auditoria-saida"><div class="auditoria-vazia">Gere o relatório para executar a auditoria técnica.</div></div>
-</details>
 </section>
 
 <section id="abaTabelas" class="aba-conteudo" role="tabpanel" aria-labelledby="tabTabelas" hidden>
@@ -914,7 +917,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.06</p>
+    <p class="versao-relatorio">Versão 5.07</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
