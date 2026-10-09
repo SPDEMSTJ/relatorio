@@ -631,7 +631,7 @@
     .popup-auditoria-cabecalho p { margin:0; color:var(--muted); font-size:12px; }
     .popup-auditoria-fechar { border:1px solid #cbd8e9; border-radius:9px; background:#fff; color:var(--blue-deep); padding:8px 11px; font-weight:700; cursor:pointer; }
     .auditoria-percentual-badge { display:inline-flex; align-items:center; white-space:nowrap; padding:4px 10px; border:2px solid; border-radius:999px; font-size:12px; line-height:1.2; font-weight:800; }
-    .auditoria-percentual-badge.percentual-100 { color:#116149; background:#e2f5ec; border-color:#a7dec4; }
+    .auditoria-percentual-badge.percentual-20, .auditoria-percentual-badge.percentual-30, .auditoria-percentual-badge.percentual-100 { color:#116149; background:#e2f5ec; border-color:#a7dec4; }
     .auditoria-percentual-badge.percentual-70 { color:#8a5212; background:#fff1d8; border-color:#f3cc87; }
     .auditoria-percentual-badge.percentual-50 { color:#654494; background:#f0eaff; border-color:#d3c1ee; }
     .auditoria-percentual-badge.percentual-170 { color:#27549a; background:#e9f1ff; border-color:#b9cef3; }
@@ -951,7 +951,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 4.90</p>
+    <p class="versao-relatorio">Versão 4.91</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4290,8 +4290,11 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const calculado = linha.permitido !== null;
         const acima = linha.excessoTabela > 0;
         const pendente = linha.permitido === null || Boolean(linha.alerta);
-        const percentualBadge = [25, 50, 70, 100, 170].includes(linha.percentual)
-            ? `<span class="auditoria-percentual-badge percentual-${linha.percentual}" title="${calculado ? 'Percentual aplicado no cálculo' : 'Percentual sugerido; cálculo pendente'}">${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`}</span>` : '';
+        const percentualAuxiliar = cirurgia && /^1º Auxiliar$/.test(linha.funcaoCirurgica || '') ? 30
+            : cirurgia && /^2º Auxiliar$/.test(linha.funcaoCirurgica || '') ? 20 : null;
+        const percentualExibido = percentualAuxiliar ?? linha.percentual;
+        const percentualBadge = [20, 25, 30, 50, 70, 100, 170].includes(percentualExibido)
+            ? `<span class="auditoria-percentual-badge percentual-${percentualExibido}" title="${percentualAuxiliar !== null ? `${percentualAuxiliar}% do porte do cirurgião deste código; via de acesso ajustada separadamente` : calculado ? 'Percentual aplicado no cálculo' : 'Percentual sugerido; cálculo pendente'}">${percentualExibido === 170 ? '100% + 70%' : `${percentualExibido}%`}</span>` : '';
         const porteProcedimento = String(linha.referencia?.p ?? '').trim();
         const porteAnestesico = linha.categoria === 'Anestesia' ? numeroOuNulo(linha.referencia?.an) : null;
         const porteBadges = `${porteProcedimento ? `<span class="auditoria-porte" title="Porte do procedimento na tabela vigente">Porte ${escAuditoria(porteProcedimento)}</span>` : ''}${porteAnestesico !== null ? `<span class="auditoria-porte auditoria-porte-anestesico" title="Porte anestésico na tabela vigente">Anest. ${escAuditoria(porteAnestesico)}</span>` : ''}`;
