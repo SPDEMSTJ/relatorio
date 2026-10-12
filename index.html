@@ -844,14 +844,14 @@
     <details class="help-details"><summary>Instruções gerais aplicadas e conferências necessárias</summary>
         <p><b>Arredondamento:</b> os resultados monetários das tabelas e dos cálculos 100%–70%–50% usam arredondamento padrão para duas casas decimais (ex.: 5,044 → 5,04; 5,045 → 5,05). Somente os códigos 4.13.xx.xxx são arredondados para cima no centavo (ex.: 5,044 → 5,05). Valores com duas casas permanecem iguais. A comparação e a exibição usam o mesmo critério; os dados originais dos CSVs são preservados.</p>
     <div class="rule-highlights">
-        <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. O relatório sugere 70% aos atos adicionais; confirme via diferente, ou altere para 50% se for a mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Os prefixos 1.01, 2.01, 2.02, 3.01, 4.01 a 4.07 e 4.12 ficam sempre em 100%, sem análise 100–70–50.</p></div>
+        <div class="rule-note"><strong>Atos cirúrgicos: 100–70 ou 100–50</strong><p>O procedimento de maior porte é o principal a 100%. Confirme os percentuais antes do cálculo: 100% no principal, 70% por via diferente ou 50% pela mesma via. Equipe/ato distinto pode ser informado a 100%. A redução incide no porte/honorários, não na UCO. Os prefixos 1.01, 2.01, 2.02, 3.01, 4.01 a 4.07 e 4.12 ficam sempre em 100%, sem análise 100–70–50.</p></div>
         <div class="rule-note"><strong>Radiologia, US, TC e RM</strong><p>Regra universal por família de imagem no mesmo atendimento: 100% da UCO para o exame de maior porte e 70% para os demais. Em empate de porte, fica a 100% o evento com maior valor apresentado. Porte/honorários e filme permanecem integrais. Quando a linha principal tem mais de uma unidade, uma fica a 100% e as demais a 70%. O percentual pode ser ajustado manualmente. Em Vilas Boas, honorários e UCO recebem o fator contratual de 51%, com filme integral.</p></div>
         <div class="rule-note"><strong>Exames oftalmológicos</strong><p>Nos exames monoculares realizados nos dois olhos, somente a UCO do segundo olho cai para 70%; os portes continuam integrais. Quando o nome traz “monocular”, duas unidades do mesmo código na guia fazem o relatório presumir dois olhos; uma unidade fica a 100%, e mais de duas exigem conferência. Sem essa identificação no nome, a bilateralidade pode ser informada manualmente. Cirurgias de olhos seguem as regras dos atos cirúrgicos.</p></div>
-        <div class="rule-note"><strong>Anestesiologia</strong><p>O primeiro ato usa 100% do porte e os seguintes, provisoriamente, 70%. A mesma via pode exigir 50%; internação e urgência no período contratual podem alterar o limite. O porte 0 exige justificativa.</p></div>
+        <div class="rule-note"><strong>Anestesiologia</strong><p>O percentual do porte anestésico depende de confirmação: 100%, 70% ou 50%, conforme a via de acesso. A mesma via pode exigir 50%; internação e urgência no período contratual podem alterar o limite. O porte 0 exige justificativa.</p></div>
         <div class="rule-note"><strong>Internação e urgência</strong><p>“Internação Hospitalar” dobra o porte, sem dobrar a UCO. O cálculo só aplica automaticamente +30% ao porte quando a guia informa urgência/emergência e o atendimento ocorre entre 19h e 7h ou, em qualquer horário, aos sábados, domingos e feriados. A condição de urgência/emergência isolada, fora desses períodos, não gera acréscimo. O ajuste manual permanece disponível. Vídeo/UCO e acomodações devem ser conferidos.</p></div>
     </div>
 
-        <p>Os portes expressam a valoração dos honorários; a UCO é componente separado. Ajustes de UCO, acessórios, descartáveis e a banda referencial de até 20% dependem do contrato e não são presumidos automaticamente. Para atos cirúrgicos, o maior porte recebe 100%; os adicionais recebem 70% por padrão, com opção de alterar para 50% pela mesma via ou 100% em equipe/ato distinto. A identificação de ato integrante ou criança com menos de 2,5 kg não é inferida do SQL e exige análise fora desses controles.</p>
+        <p>Os portes expressam a valoração dos honorários; a UCO é componente separado. Ajustes de UCO, acessórios, descartáveis e a banda referencial de até 20% dependem do contrato e não são presumidos automaticamente. Para atos cirúrgicos, o maior porte recebe 100%; os adicionais exigem confirmação de 70% por via diferente, 50% pela mesma via ou 100% em equipe/ato distinto. A identificação de ato integrante ou criança com menos de 2,5 kg não é inferida do SQL e exige análise fora desses controles.</p>
         <p>Primeiro auxiliar: 30% do porte do cirurgião do mesmo código e ocorrência; segundo ao quarto: 20% cada. O relatório não soma valores de códigos diferentes para calcular uma linha de auxiliar. O número de auxiliares segue o procedimento de maior porte. Confira se as linhas pertencem ao mesmo ato e se a equipe está completa. Urgência/emergência acrescenta 30% ao porte quando ocorre entre 19h e 7h ou, em qualquer horário, aos sábados, domingos e feriados. Sem horário ou calendário de feriados na extração, confirme manualmente antes de glosar.</p>
         <p>Cuidados pós-operatórios até 10 dias podem estar incluídos no porte cirúrgico; visitas nesse período são sinalizadas para conferência, sem glosa automática. Procedimentos cirúrgicos por vídeo seguem a regra de internação; diagnósticos por vídeo não recebem esse modificador por si só. UCO/taxa de equipamento de vídeo depende de quem possui o equipamento e de negociação contratual. Conforme a regra operacional informada para este relatório, “Internação Hospitalar” dobra os honorários cirúrgicos, mas não a UCO; confira a acomodação e o contrato, pois o item 6.2 das instruções especifica apartamento/quarto privativo, hospital-dia ou UTI e exclui certos procedimentos diagnósticos/terapêuticos.</p>
     </details>
@@ -917,7 +917,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.07</p>
+    <p class="versao-relatorio">Versão 5.08</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3623,13 +3623,9 @@ function avaliarCirurgia(eventos) {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
             if ((!codigoSempreIntegral(item.evento.codigo) || ehEndoscopiaIntervencionista(item.evento.codigo)) && !percentuaisPorAto.has(item.chaveAto) && (ehEndoscopiaIntervencionista(item.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
         });
-        cirurgioes.forEach(item => {
-            if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal || (!ehEndoscopiaIntervencionista(item.evento.codigo) && equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? null : 70);
-        });
         items.forEach(item => {
             if (!percentuaisPorAto.has(item.chaveAto)) percentuaisPorAto.set(item.chaveAto,
-                codigoSempreIntegral(item.evento.codigo) || item.chaveAto === chavePrincipal ? 100 : ehEndoscopiaIntervencionista(item.evento.codigo) ? null : 70);
+                codigoSempreIntegral(item.evento.codigo) ? 100 : null);
         });
         const portesCirurgiao = new Map(cirurgioes.map(item => [item.chaveAto,
             calcularAtoCirurgico(item.evento, item.referencia, item.equipe, percentuaisPorAto.get(item.chaveAto))]));
@@ -3644,8 +3640,8 @@ function avaliarCirurgia(eventos) {
             const video = /VIDEO/.test(normalizarAuditoria(item.evento.descricao));
             const observacoes = [item.equipe.tipo];
             if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia intervencionista: 100% por ocorrência, sem redução por via de acesso. Internação e urgência incidem apenas no porte; custo operacional integral.');
-            if (!PERCENTUAIS_EVENTOS_AUDITORIA.has(item.evento.id) && percentual === 70) observacoes.push('70% aplicado automaticamente ao ato adicional; altere para 50% se a via de acesso for a mesma.');
-            if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Cirurgião, 1º auxiliar e anestesista no mesmo código da guia: 100% automático para este conjunto, com ajuste manual disponível.');
+            if (percentual === null) observacoes.push('Confirmação necessária para aplicar 100%, 70% ou 50% sobre o porte/honorários. Escolha o percentual ou aplique o parecer médico.');
+            if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe completa identificada; a via de acesso ainda exige confirmação.');
             if (!principal && auxiliar) observacoes.push('Porte do cirurgião obtido na tabela para calcular o auxiliar, mesmo sem linha do cirurgião na extração.');
             if (calculo?.urgencia) observacoes.push('Urgência/emergência registrada na guia: +30% no porte aplicado automaticamente.');
             if (video && numeroAuditoria(item.referencia.u) > 0) observacoes.push('Vídeo: confirmar titularidade do equipamento e UCO contratada.');
@@ -3661,7 +3657,7 @@ function avaliarCirurgia(eventos) {
                 regra, observacao: observacoes.join(' — '), referencia: item.referencia,
                 limiteReferencia: permitido,
                 baseComparacao: permitido === null ? 'Cálculo técnico indisponível' : 'Limite técnico estimado',
-                alerta: percentual === null && ehEndoscopiaIntervencionista(item.evento.codigo) ? 'Confirme a via: 50% pela mesma via, 70% por vias diferentes ou 100% quando aplicável. Sem confirmação, não calcular possível glosa.' : auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : porteMesmoCodigo === null && auxiliar ? 'Porte cirúrgico deste código não localizado na tabela; confira a referência.' : '',
+                alerta: percentual === null ? 'Confirme a via: 50% pela mesma via, 70% por vias diferentes ou 100% quando aplicável. Sem confirmação, não calcular possível glosa.' : auxExcedido ? 'Limite de auxiliares excedido; conferir equipe.' : porteMesmoCodigo === null && auxiliar ? 'Porte cirúrgico deste código não localizado na tabela; confira a referência.' : '',
                 percentual, funcaoCirurgica: item.equipe.tipo
             }));
         });
@@ -3696,22 +3692,22 @@ function avaliarAnestesia(eventos) {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
             const integral = codigoSempreIntegral(item.evento.codigo);
             const sugestao = integral || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || posicao === 0 ? 100 : 70;
-            const percentual = !integral && [100, 70, 50].includes(manual) ? manual : sugestao;
+            const percentual = integral ? 100 : [100, 70, 50].includes(manual) ? manual : null;
             const acesso = percentual / 100;
             const condicao = (interna ? 2 : 1) * (urgencia ? 1.3 : 1);
-            const permitido = item.base === null ? null : item.base * acesso * condicao * Math.max(item.evento.quantidade, 1);
+            const permitido = item.base === null || percentual === null ? null : item.base * acesso * condicao * Math.max(item.evento.quantidade, 1);
             const observacoes = [`Porte anestésico ${item.porte}`];
             if (item.base === null) observacoes.push(`Escala monetária de anestesia não informada para atendimento em ${item.ano}; percentual sugerido sem cálculo de preço.`);
             if (item.porte === 0) observacoes.push('Porte 0: pagamento condicionado à justificativa para participação do anestesiologista');
             if (integral) observacoes.push('Prefixo sem análise 100–70–50 na tabela de honorários: mantido em 100%.');
-            else if (posicao > 0 && sugestao === 70) observacoes.push('70% aplicados automaticamente ao ato adicional; altere se a via de acesso exigir 50%.');
-            if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe do mesmo código na guia: 100% automático para cada função; ajuste manual disponível.');
+            else if (percentual === null) observacoes.push('Confirme 100%, 70% ou 50% no porte anestésico antes do cálculo.');
+            if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe do mesmo código identificada; percentual sujeito à confirmação.');
             if (item.porte === 7) observacoes.push('Acréscimo de porte 7 exige conferência manual');
             resultados.push(criarLinhaAuditoria(item.evento, 'Anestesia', permitido, {
-                regra: `${Math.round(acesso * 100)}% por via${interna ? ' + internação' : ''}${urgencia ? ' + urgência' : ''}`,
+                regra: percentual === null ? 'Confirme 100%, 70% ou 50% no porte anestésico' : `${Math.round(acesso * 100)}% por via${interna ? ' + internação' : ''}${urgencia ? ' + urgência' : ''}`,
                 observacao: observacoes.join(' — '),
                 referencia: item.referencia,
-                alerta: item.base === null ? `Escala monetária de anestesia aplicável à data não disponível; confirmar o preço antes de glosar.`
+                alerta: percentual === null ? 'Confirme o percentual da via de acesso ou aplique o parecer médico. Sem confirmação, não calcular possível glosa.' : item.base === null ? `Escala monetária de anestesia aplicável à data não disponível; confirmar o preço antes de glosar.`
                     : item.porte === 0 ? 'Porte 0: verificar justificativa clínica/contratual.' : '',
                 percentual, limiteReferencia: permitido
             }));
@@ -4284,7 +4280,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
         const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : (codigoSempreIntegral(linha.evento.codigo) && !ehEndoscopiaIntervencionista(linha.evento.codigo)) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
                 <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
-                    <option value="" ${!informado ? 'selected' : ''}>${ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Automático: 100% — alterar' : linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Escolha o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia && !ehEndoscopiaIntervencionista(linha.evento.codigo) ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
+                    <option value="" ${!informado ? 'selected' : ''}>${ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Automático: 100% — alterar' : linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Confirme o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia && !ehEndoscopiaIntervencionista(linha.evento.codigo) ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
         const controleOftalmo = oftalmologia ? `<label class="percentual-label-auditoria" for="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}">Exame monocular em dois olhos?</label>
             <select id="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}" class="bilateral-oftalmo-auditoria" data-chave-bilateral="${escAuditoria(chaveBilateral)}" onchange="aplicarBilateralidadeOftalmo(this)">
