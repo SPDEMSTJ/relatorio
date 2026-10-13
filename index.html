@@ -772,6 +772,7 @@
 .filtro-secao-guias{display:flex;align-items:center;gap:7px;margin:0 0 9px;font-size:12px;cursor:pointer;}.filtro-secao-guias input{width:16px;height:16px;margin:0;accent-color:#2563eb;}
 .aviso-via-pendente-beneficiario{display:block;margin-top:5px;color:#b91c1c;font-size:12px;font-weight:700;line-height:1.4;}.botao-regra-beneficiario.via-pendente{background:#b91c1c!important;color:#fff!important;border-color:#991b1b!important;}
 .selecao-correcao{display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.4;margin:7px 0;color:#1e3a8a;white-space:normal;}.selecao-correcao input{flex:none;width:15px;height:15px;margin:1px 0;accent-color:#2563eb;}#modalCorrecoes{position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.65);padding:3vh 3vw;overflow:auto;}#modalCorrecoes[hidden]{display:none;}.correcoes-painel{max-width:1100px;margin:auto;background:white;padding:20px;border-radius:14px;}.correcoes-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:12px;}.correcoes-cabecalho h2{margin:0 0 12px;font-size:19px;}#itensCorrecoes{max-height:22vh;overflow:auto;margin:12px 0;}.item-correcao-previa{border-bottom:1px solid #dbeafe;padding:8px 0;font-size:12px;}.item-correcao-previa label{display:block;}.item-correcao-previa input[type=text]{width:100%;margin-top:5px;box-sizing:border-box;}#textoRelatorioCorrecoes{display:block;width:100%;height:40vh;box-sizing:border-box;margin:8px 0;font-family:inherit;font-size:13px;}.abrir-relatorio-correcoes{align-self:flex-start;margin:8px 0;}
+.eps .selecao-correcao{color:#fde047!important;}.eps .selecao-correcao input{accent-color:#fde047;}
 </style>
 </head>
 <body>
@@ -930,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.28</p>
+    <p class="versao-relatorio">Versão 5.29</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1520,6 +1521,13 @@ function valoresCorrecao(l){
     return {retirar:retirar>1?retirar/100:0,adicionar:adicionar>1?adicionar/100:0};
 }
 function controleCorrecaoEvento(l){const v=valoresCorrecao(l);return v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,'Divergência após aplicação da regra'):'';}
+function guiaIntegralmenteGlosada(g){
+    const dado=GLOBAL_DADOS_RESUMO[g.peg]?.beneficiarios?.find(b=>b.guia===g.ordem&&b.matricula===g.matricula&&b.nome===g.beneficiario);
+    const valor=dado?.valor??g.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorApresentado),0);
+    const glosa=dado?.valorGlosado??g.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorGlosadoBenner),0);
+    const pago=dado?.valorPago??g.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorPago),0);
+    return centavosTabela(valor)>0&&centavosTabela(glosa)>=centavosTabela(valor)&&centavosTabela(pago)===0;
+}
 function montarSeletoresCorrecoesGuias(linhas){
     document.querySelectorAll('#saida .seletores-correcao-guia,#saida .selecao-correcao-evento').forEach(e=>e.remove());
     for(const g of GLOBAL_MODELO_AUDITORIA.guias){
@@ -1527,11 +1535,11 @@ function montarSeletoresCorrecoesGuias(linhas){
         const dado=GLOBAL_DADOS_RESUMO[g.peg]?.beneficiarios?.find(b=>b.guia===g.ordem&&b.matricula===g.matricula&&b.nome===g.beneficiario);
         const criticas=[];if(dado?.eps)criticas.push(['eps','Beneficiário EPS']);if(dado?.exercicioDistinto)criticas.push(['exercicio','Exercício distinto']);if(dado?.maisDeUmAno)criticas.push(['prazo','Guia expirada']);
         const destino=card.querySelector('.linha-beneficiario td');
-        if(destino&&criticas.length){const div=document.createElement('div');div.className='seletores-correcao-guia';div.innerHTML=criticas.map(([tipo,motivo])=>checkboxCorrecao(tipo,g,null,motivo)).join('');destino.append(div);}
+        if(destino&&criticas.length&&!guiaIntegralmenteGlosada(g)){const div=document.createElement('div');div.className='seletores-correcao-guia';div.innerHTML=criticas.map(([tipo,motivo])=>checkboxCorrecao(tipo,g,null,motivo)).join('');destino.append(div);}
         for(const e of g.eventos){const row=[...card.querySelectorAll('tr[data-auditoria-id]')].find(r=>r.dataset.auditoriaId===e.id);if(!row)continue;
             const l=linhas.find(l=>l.evento.id===e.id);const div=document.createElement('div');div.className='selecao-correcao-evento';
             div.innerHTML=l?controleCorrecaoEvento(l):'';
-            let next=row.nextElementSibling;while(next&&!next.dataset.auditoriaId){if(next.classList.contains('alerta-parecer-sei')){div.innerHTML+=checkboxCorrecao('parecer',g,e,'Sem glosa: conferir parecer técnico no SEI');break;}next=next.nextElementSibling;}
+            let next=row.nextElementSibling;while(next&&!next.dataset.auditoriaId){if(next.classList.contains('alerta-parecer-sei')&&!guiaIntegralmenteGlosada(g)){div.innerHTML+=checkboxCorrecao('parecer',g,e,'Sem glosa: conferir parecer técnico no SEI');break;}next=next.nextElementSibling;}
             if(div.innerHTML)row.cells[3]?.append(div);
         }
     }
@@ -1552,6 +1560,7 @@ function textoRelatorioCorrecoes(peg){
     for(const {item,guia,evento,linha:linhaOriginal} of itens){
         const linha=linhaEfetivaCorrecao(linhaOriginal);
         if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
+        if(['eps','exercicio','prazo','parecer'].includes(item.tipo)&&guiaIntegralmenteGlosada(guia)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
         const critAtual=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios?.find(b=>b.guia===guia.ordem&&b.matricula===guia.matricula&&b.nome===guia.beneficiario);
         if((item.tipo==='eps'&&!critAtual?.eps)||(item.tipo==='exercicio'&&!critAtual?.exercicioDistinto)||(item.tipo==='prazo'&&!critAtual?.maisDeUmAno)||(item.tipo==='parecer'&&(evento?.qtdGlosa>0||evento?.valorGlosadoBenner>0||evento?.glosas?.length))){pendencias.push(`Guia ${guia.ordem}: ${item.motivo} não mais identificado na extração atual. Conferir a seleção.`);continue;}
         const v=item.tipo==='regra'?valoresCorrecao(linha||{}):null;
@@ -2077,6 +2086,7 @@ function render(preservarPeg = false) {
                     const evento = linha.split("\t");
                     return soma + (evento[39] === '1' ? moeda(evento[13]) : 0);
                 }, 0),
+                valorGlosado: guia.linhasEventos.reduce((soma,linha)=>{const c=linha.split('\t');return soma+(c[39]==='1'?moeda(c[11]):0);},0),
                 glosas: obterGlosasBeneficiario(guia.linhasEventos)
             };
         });
