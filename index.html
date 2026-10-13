@@ -926,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.12</p>
+    <p class="versao-relatorio">Versão 5.14</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1300,6 +1300,7 @@ function abrirPopupEmJanelaSeparada(tipo) {
     janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
     janela.aplicarCondicaoEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarCondicaoEventoAuditoria');
     janela.aplicarBilateralidadeOftalmo = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarBilateralidadeOftalmo');
+    janela.alterarHorarioEspecialHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarHorarioEspecialHospitalar');
     janela.alterarTipoHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarTipoHospitalar');
     janela.alterarViaHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarViaHospitalar');
     janela.irParaPrimeiraPendenciaAuditoria = () => {
@@ -3160,7 +3161,7 @@ function limparAuditoria(preservarPercentuais = false) {
     GLOBAL_MODELO_AUDITORIA = { guias: [], eventos: [], internacoes: [] };
     GLOBAL_LINHAS_AUDITORIA = [];
     GLOBAL_TODAS_LINHAS_AUDITORIA = [];
-    if (!preservarPercentuais) { PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); }
+    if (!preservarPercentuais) { PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); }
     if (!preservarPercentuais) CONDICOES_EVENTOS_AUDITORIA.clear();
     if (!preservarPercentuais) BILATERALIDADE_OFTALMO_AUDITORIA.clear();
     const area = document.getElementById('auditoriaSaida');
@@ -3815,6 +3816,17 @@ function controleTipoHospitalar(linha,prefixo) {
     const tipo=TIPOS_HOSPITALARES_MANUAIS.get(chaveTipoHospitalPrestador(linha.guia)) || '';
     return `<label class="percentual-label-auditoria" for="${prefixo}tipo-hospital-${escAuditoria(linha.evento.id)}">Confirme o tipo do prestador</label><select id="${prefixo}tipo-hospital-${escAuditoria(linha.evento.id)}" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="alterarTipoHospitalar(this)"><option value="" ${!tipo?'selected':''}>Tipo não identificado — escolher</option>${['A','B','C'].map(t=>`<option value="${t}" ${tipo===t?'selected':''}>Tipo ${t}</option>`).join('')}</select><small>Aplica-se a este prestador no PEG atual. Confira o contrato antes de escolher.</small>`;
 }
+const HORARIOS_ESPECIAIS_HOSPITALARES = new Map();
+function alterarHorarioEspecialHospitalar(campo) {
+    if(campo.value==='sim')HORARIOS_ESPECIAIS_HOSPITALARES.set(campo.dataset.eventoId,true);
+    else HORARIOS_ESPECIAIS_HOSPITALARES.delete(campo.dataset.eventoId);
+    atualizarAuditoria();atualizarConteudoJanelaSeparada('auditoria');
+}
+function controleHorarioEspecialHospitalar(linha,prefixo) {
+    if(!ehPorteHospitalar(linha.evento.codigo))return '';
+    const aplicado=HORARIOS_ESPECIAIS_HOSPITALARES.has(linha.evento.id);
+    return `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar horário especial</summary><label for="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}">Horário especial: +30% na taxa de sala</label><select id="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="alterarHorarioEspecialHospitalar(this)"><option value="" ${!aplicado?'selected':''}>Não aplicar — ajuste manual</option><option value="sim" ${aplicado?'selected':''}>Aplicar +30%</option></select><small>Aplica-se somente a este evento, após os percentuais da via de acesso.</small></details>`;
+}
 const VIAS_HOSPITALARES = new Map();
 function chaveViaHospitalar(evento) { return `${evento.guia.id}|${chaveDataAuditoria(evento.data || evento.guia.data)}`; }
 function ehPorteHospitalar(codigo) { return /^981040(0[13456789]|1[0-3])$/.test(codigoAuditoria(codigo)); }
@@ -3976,8 +3988,9 @@ function avaliarServicosHospitalares(eventos) {
         const pendente = porte && (!quantidadeValida || (nSegunda > 0 && !via));
         const segundo = via === 'mesma' ? 50 : 70;
         const partes = !porte ? '100%' : [n100 ? '1 × 100%' : '', nSegunda ? `1 × ${via ? segundo+'%' : '50% ou 70% (via pendente)'}` : '', n25 ? `${n25} × 25%` : ''].filter(Boolean).join(' + ');
-        const percentual = !porte ? 100 : pendente || qtd > 1 ? null : n100 ? 100 : nSegunda ? segundo : 25;
-        const limite = valido && !pendente ? arredondarTabela(registro.t * (porte ? n100 + nSegunda * segundo/100 + n25 * 0.25 : qtd)) : null;
+        const percentual = !porte ? 100 : pendente ? null : n25 === qtd ? 25 : qtd > 1 ? null : n100 ? 100 : nSegunda ? segundo : 25;
+        const horarioEspecial = porte && HORARIOS_ESPECIAIS_HOSPITALARES.has(evento.id);
+        const limite = valido && !pendente ? arredondarTabela(registro.t * (porte ? n100 + nSegunda * segundo/100 + n25 * 0.25 : qtd) * (horarioEspecial ? 1.3 : 1)) : null;
         const alerta = !tipo ? 'Tipo hospitalar não identificado. Confira o prestador antes de comparar preços.'
             : !vigente ? 'Sem tabela hospitalar vigente para esta data e tipo de prestador; importe a tabela ou cadastre o reajuste do novo ano.'
             : registro.t === null ? `Serviço sem preço fixo: ${registro.fator}. Conferir manualmente.`
@@ -3986,6 +3999,7 @@ function avaliarServicosHospitalares(eventos) {
         return criarLinhaAuditoria(evento,'Serviços hospitalares', porte && valido ? limite : null, {
             referencia, limiteReferencia:limite, percentual:valido ? percentual : null,
             regra:`Tabela hospitalar ${tipo ? 'tipo '+tipo : 'tipo a confirmar'} · vigência ${tabela?.vigencia || 'não disponível'} · ${tabela?.origem || 'sem tabela vigente'} · ${registro.fator}`
+                + (horarioEspecial ? ' · horário especial +30% (ajuste manual)' : '')
                 + (valido ? porte ? ` · ${partes}${via ? via === 'mesma' ? ' (mesma via)' : ' (vias diferentes)' : ''}` : ' · comparação integral de preço, sem 100–70' : ''),
             observacao: porte ? 'Taxa de maior porte a 100%; segunda cirurgia a 50% na mesma via ou 70% por vias diferentes; demais cirurgias a 25%. Ordenação pelo valor unitário da taxa, por guia e data. Quantidades representam cirurgias: confirme o mesmo ato e a via na guia física.'
                 : 'Comparação de valor unitário × quantidade, conforme fator da tabela. Confira a unidade de cobrança; não constitui glosa automática.',
@@ -4385,7 +4399,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${retirarGlosa>0?`<small class="auditoria-retirar-glosa">Retirar glosa do Benner: ${valorBRL(retirarGlosa)}</small>`:''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
-                ${hospitalar ? controleTipoHospitalar(linha,prefixoId) : ''}${controleOftalmo}${percentualControle}
+                ${hospitalar ? controleTipoHospitalar(linha,prefixoId)+controleHorarioEspecialHospitalar(linha,prefixoId) : ''}${controleOftalmo}${percentualControle}
                 ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
