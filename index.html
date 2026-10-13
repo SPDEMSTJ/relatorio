@@ -774,7 +774,7 @@
 .selecao-correcao{display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.4;margin:7px 0;color:#1e3a8a;white-space:normal;}.selecao-correcao input{flex:none;width:15px;height:15px;margin:1px 0;accent-color:#2563eb;}#modalCorrecoes{position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.65);padding:3vh 3vw;overflow:auto;}#modalCorrecoes[hidden]{display:none;}.correcoes-painel{max-width:1100px;margin:auto;background:white;padding:20px;border-radius:14px;}.correcoes-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:12px;}.correcoes-cabecalho h2{margin:0 0 12px;font-size:19px;}#itensCorrecoes{max-height:22vh;overflow:auto;margin:12px 0;}.item-correcao-previa{border-bottom:1px solid #dbeafe;padding:8px 0;font-size:12px;}.item-correcao-previa label{display:block;}.item-correcao-previa input[type=text]{width:100%;margin-top:5px;box-sizing:border-box;}#textoRelatorioCorrecoes{display:block;width:100%;height:40vh;box-sizing:border-box;margin:8px 0;font-family:inherit;font-size:13px;}.abrir-relatorio-correcoes{align-self:flex-start;margin:8px 0;}
 .eps .selecao-correcao{color:#fde047!important;}.eps .selecao-correcao input{accent-color:#fde047;}
 #itensCorrecoes .item-correcao-previa label{display:flex;align-items:center;gap:7px;}#itensCorrecoes input[type=checkbox]{width:15px;height:15px;min-width:15px;min-height:15px;max-width:15px;max-height:15px;flex:0 0 15px;padding:0;margin:0;accent-color:#2563eb;}
-#btnCorrecoesFlutuante{position:fixed;right:30px;bottom:150px;z-index:11000;border:1px solid #93c5fd;border-radius:22px;background:#1e40af;color:white;font-size:12px;font-weight:700;padding:10px 13px;box-shadow:0 3px 12px #0003;}#btnCorrecoesFlutuante[hidden]{display:none;}
+#btnCorrecoesFlutuante{position:fixed;right:30px;bottom:150px;z-index:11000;border:1px solid #991b1b;border-radius:22px;background:#b91c1c;color:white;font-size:12px;font-weight:700;padding:10px 13px;box-shadow:0 3px 12px #0003;}#btnCorrecoesFlutuante[hidden]{display:none;}
 </style>
 </head>
 <body>
@@ -934,7 +934,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.36</p>
+    <p class="versao-relatorio">Versão 5.38</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -957,7 +957,7 @@
     <div class="tour-acoes"><button class="btn-secondary" type="button" onclick="encerrarGuiaRapido()">Pular guia</button><div><button id="tourVoltar" class="btn-secondary" type="button" onclick="mudarPassoGuia(-1)">Voltar</button><button id="tourAvancar" class="btn-primary" type="button" onclick="mudarPassoGuia(1)">Próximo →</button></div></div>
 </div>
 
-<input id="arquivoRelatorioCorrecoes" type="file" accept=".txt,.json,text/plain,application/json" hidden onchange="importarRelatorioCorrecoes(this)"><button type="button" id="btnCorrecoesFlutuante" class="no-print" hidden onclick="abrirRelatorioCorrecoes(this.dataset.peg)" title="Acompanhar itens incluídos no relatório de correções">Correções (0)</button>
+<input id="arquivoRelatorioCorrecoes" type="file" accept=".txt,text/plain" hidden onchange="importarRelatorioCorrecoes(this)"><button type="button" id="btnCorrecoesFlutuante" class="no-print" hidden onclick="abrirRelatorioCorrecoes(this.dataset.peg)" title="Acompanhar itens incluídos no relatório de correções">Correções (0)</button>
 <button id="btnAnotacoesPeg" class="no-print" type="button" onclick="alternarAnotacoesPeg()" aria-label="Abrir anotações do PEG" title="Anotações do PEG" aria-expanded="false">📝</button>
 <section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Fechar anotações">✕</button></header><textarea id="textoAnotacoesPeg" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
 <button id="btnTopo" class="btn-topo no-print" onclick="subirTopo()">
@@ -1026,7 +1026,7 @@
     </div>
 </div>
 
-<div id="modalCorrecoes" class="no-print" role="dialog" aria-modal="true" aria-labelledby="tituloCorrecoes" hidden><div class="correcoes-painel"><div class="correcoes-cabecalho"><h2 id="tituloCorrecoes">Relatório de correções</h2><button type="button" onclick="document.getElementById('modalCorrecoes').hidden=true">Fechar ×</button></div><div><button type="button" onclick="exportarRelatorioCorrecoes()">Salvar relatório (TXT)</button> <button type="button" onclick="exportarArquivoCompletoCorrecoes()">Salvar arquivo completo (JSON)</button> <button type="button" onclick="document.getElementById('arquivoRelatorioCorrecoes').click()">Importar relatório</button> <button type="button" onclick="selecionarDivergenciasCorrecoes()">Selecionar divergências confirmadas</button> <button type="button" onclick="atualizarPreviaCorrecoes()">Atualizar texto</button> <button type="button" onclick="SELECOES_CORRECOES.set(document.getElementById('modalCorrecoes').dataset.peg,{});gravarCorrecoesPeg(document.getElementById('modalCorrecoes').dataset.peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===document.getElementById('modalCorrecoes').dataset.peg)el.checked=false;});atualizarPreviaCorrecoes()">Limpar seleção deste PEG</button></div><div id="itensCorrecoes"></div><label for="textoRelatorioCorrecoes">Texto para encaminhar no SEI (editável)</label><textarea id="textoRelatorioCorrecoes" oninput="salvarTextoCorrecoes()"></textarea><button type="button" class="btn-primary" onclick="copiarRelatorioCorrecoes()">Copiar texto para o SEI</button><p id="statusCorrecoes" role="status" aria-live="polite"></p></div></div>
+<div id="modalCorrecoes" class="no-print" role="dialog" aria-modal="true" aria-labelledby="tituloCorrecoes" hidden><div class="correcoes-painel"><div class="correcoes-cabecalho"><h2 id="tituloCorrecoes">Relatório de correções</h2><button type="button" onclick="document.getElementById('modalCorrecoes').hidden=true">Fechar ×</button></div><div><button type="button" onclick="exportarRelatorioCorrecoes()">Salvar relatório (TXT)</button> <button type="button" onclick="document.getElementById('arquivoRelatorioCorrecoes').click()">Importar relatório</button> <button type="button" onclick="selecionarDivergenciasCorrecoes()">Selecionar divergências confirmadas</button> <button type="button" onclick="atualizarPreviaCorrecoes()">Atualizar texto</button> <button type="button" onclick="SELECOES_CORRECOES.set(document.getElementById('modalCorrecoes').dataset.peg,{});gravarCorrecoesPeg(document.getElementById('modalCorrecoes').dataset.peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===document.getElementById('modalCorrecoes').dataset.peg)el.checked=false;});atualizarPreviaCorrecoes()">Limpar seleção deste PEG</button></div><div id="itensCorrecoes"></div><label for="textoRelatorioCorrecoes">Texto para encaminhar no SEI (editável)</label><textarea id="textoRelatorioCorrecoes" oninput="salvarTextoCorrecoes()"></textarea><button type="button" class="btn-primary" onclick="copiarRelatorioCorrecoes()">Copiar texto para o SEI</button><p id="statusCorrecoes" role="status" aria-live="polite"></p></div></div>
 <div id="modalAuditoriaBeneficiario" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloPopupAuditoriaBeneficiario" aria-hidden="true">
     <div class="modal-content">
         <div class="popup-auditoria-cabecalho">
@@ -1620,22 +1620,13 @@ const RASCUNHOS_CORRECOES=new Map();
 function rascunhoCorrecoes(peg){if(!RASCUNHOS_CORRECOES.has(peg)){let texto=null;try{texto=localStorage.getItem('relatorio-peg-correcoes-texto:'+peg);}catch{}RASCUNHOS_CORRECOES.set(peg,texto);}return RASCUNHOS_CORRECOES.get(peg);}
 function salvarTextoCorrecoes(){const peg=document.getElementById('modalCorrecoes').dataset.peg;if(!peg)return;const texto=document.getElementById('textoRelatorioCorrecoes').value;RASCUNHOS_CORRECOES.set(peg,texto);try{localStorage.setItem('relatorio-peg-correcoes-texto:'+peg,texto);}catch{}}
 function invalidarTextoCorrecoes(peg){RASCUNHOS_CORRECOES.set(peg,null);RELATORIOS_TXT_IMPORTADOS.delete(peg);try{localStorage.removeItem('relatorio-peg-correcoes-texto:'+peg);localStorage.removeItem('relatorio-peg-correcoes-txt:'+peg);}catch{}}
-function exportarArquivoCompletoCorrecoes(){
-    const peg=document.getElementById('modalCorrecoes').dataset.peg;if(!peg)return;
-    salvarTextoCorrecoes();let anotacoes=ANOTACOES_PEG_SESSAO.get(peg)||'';try{anotacoes=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??anotacoes;}catch{}
-    const itens=Object.fromEntries(itensAtuaisCorrecoes(peg).map(({chave,item,guia,evento})=>[chave,{...item,resumo:`${guia?.beneficiario||item.resumo||'Item a conferir'} - Guia ${guia?.ordem||'não localizada'}${evento?' / item '+evento.ordem:''}`} ]));
-    const conteudo={formato:'relatorio-peg-correcoes',versao:1,peg,salvoEm:new Date().toISOString(),itens,anotacoes,texto:normalizarTextoSEI(document.getElementById('textoRelatorioCorrecoes').value)};
-    const partes=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
-    const link=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(conteudo,null,2)],{type:'application/json;charset=utf-8'}));link.href=url;link.download=`Correcoes-${partes.day}-${partes.month}-${partes.year}-PEG-${peg}.json`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    document.getElementById('statusCorrecoes').textContent='Relatório exportado com seleções, observações, anotações e texto editado. Use este JSON para importar novamente.';
-}
 function exportarRelatorioCorrecoes(){
     const peg=document.getElementById('modalCorrecoes').dataset.peg;if(!peg)return;
     salvarTextoCorrecoes();let texto=normalizarTextoSEI(document.getElementById('textoRelatorioCorrecoes').value);
     if(!/^PEG:\s*\d+/im.test(texto))texto=`PEG: ${peg}\n\n${texto}`;
     const partes=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
     const url=URL.createObjectURL(new Blob([texto],{type:'text/plain;charset=utf-8'})),link=document.createElement('a');link.href=url;link.download=`Correcoes-${partes.day}-${partes.month}-${partes.year}-PEG-${peg}.txt`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-    document.getElementById('statusCorrecoes').textContent='Relatório exportado em TXT, pronto para leitura e envio pelo SEI. Para recuperar também as marcações, use Salvar arquivo completo (JSON).';
+    document.getElementById('statusCorrecoes').textContent='Relatório exportado em TXT, pronto para leitura e envio pelo SEI.';
 }
 function importarTextoCorrecoes(texto){
     texto=normalizarTextoSEI(texto.replace(/^\uFEFF/,''));const peg=texto.match(/^PEG:\s*(\d+)\b/im)?.[1];
@@ -1644,39 +1635,16 @@ function importarTextoCorrecoes(texto){
     const seletor=document.getElementById('filtroPegSelect');if([...seletor.options].some(o=>o.value===peg)){seletor.value=peg;atualizarFiltroVisual();atualizarAuditoria();}
     document.getElementById('modalCorrecoes').dataset.peg=peg;document.getElementById('textoRelatorioCorrecoes').value=texto;salvarTextoCorrecoes();
     try{localStorage.setItem('relatorio-peg-correcoes-txt:'+peg,'1');}catch{}
-    abrirRelatorioCorrecoes(peg);document.getElementById('statusCorrecoes').textContent='Texto do relatório importado com sucesso. O TXT recupera o texto; para recuperar checks e observações por item, importe o arquivo completo JSON.';
+    abrirRelatorioCorrecoes(peg);document.getElementById('statusCorrecoes').textContent='Texto do relatório importado com sucesso. O TXT recupera o texto salvo.';
 }
 async function importarRelatorioCorrecoes(campo){
     const arquivo=campo.files?.[0];if(!arquivo)return;
     try{
-        const conteudo=await arquivo.text();
-        if(/\.txt$/i.test(arquivo.name)){importarTextoCorrecoes(conteudo);return;}
-        const dados=JSON.parse(conteudo.replace(/^\uFEFF/,''));
-        if(dados.formato!=='relatorio-peg-correcoes'||dados.versao!==1||!/^\d+$/.test(dados.peg)||typeof dados.texto!=='string'||!dados.itens||typeof dados.itens!=='object'||Array.isArray(dados.itens))throw new Error('Selecione um JSON exportado pelo relatório de correções.');
-        const itens={};
-        for(const [chave,item] of Object.entries(dados.itens)){
-            if(!item||!['eps','exercicio','prazo','parecer','regra'].includes(item.tipo)||typeof item.guia!=='string'||!item.guia.startsWith(dados.peg+'|')||typeof item.motivo!=='string'||typeof item.evento!=='string'||item.evento&&!item.evento.startsWith(dados.peg+'|')||!chave.startsWith(item.tipo+'|'))throw new Error('O arquivo contém uma seleção inválida.');
-            itens[chave]={tipo:item.tipo,guia:item.guia,evento:item.evento,motivo:item.motivo,nota:typeof item.nota==='string'?item.nota:'',resumo:typeof item.resumo==='string'?item.resumo:''};
-        }
-        SELECOES_CORRECOES.set(dados.peg,itens);gravarCorrecoesPeg(dados.peg);
-        let anteriores=ANOTACOES_PEG_SESSAO.get(dados.peg)||'';try{anteriores=localStorage.getItem('relatorio-peg-anotacoes:'+dados.peg)??anteriores;}catch{}
-        if(typeof dados.anotacoes==='string'&&dados.anotacoes.trim()){
-            const anotacoes=anteriores.trim()?anteriores.includes(dados.anotacoes)?anteriores:anteriores+'\n\n'+dados.anotacoes:dados.anotacoes;
-            ANOTACOES_PEG_SESSAO.set(dados.peg,anotacoes);try{localStorage.setItem('relatorio-peg-anotacoes:'+dados.peg,anotacoes);}catch{}
-        }
-        ULTIMO_PEG_CORRECOES_IMPORTADO=dados.peg;
-        const seletor=document.getElementById('filtroPegSelect');
-        if([...seletor.options].some(o=>o.value===dados.peg)){seletor.value=dados.peg;atualizarFiltroVisual();atualizarAuditoria();}
-        const modal=document.getElementById('modalCorrecoes');modal.dataset.peg=dados.peg;
-        document.getElementById('textoRelatorioCorrecoes').value=normalizarTextoSEI(dados.texto);salvarTextoCorrecoes();
-        abrirRelatorioCorrecoes(dados.peg);
-        document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===dados.peg)el.checked=!!itens[el.dataset.correcaoChave];});
-        atualizarAnotacoesPeg();atualizarIndicadoresAnotacoesPeg();
-        document.getElementById('statusCorrecoes').textContent='Relatório importado com sucesso. O texto salvo foi preservado. Antes de atualizar o texto, carregue a extração correspondente e confirme as regras.';
+        if(!/\.txt$/i.test(arquivo.name))throw new Error('Selecione um relatório em TXT.');
+        importarTextoCorrecoes(await arquivo.text());
     }catch(erro){alert('Não foi possível importar: '+erro.message);}
     finally{campo.value='';}
 }
-
 function abrirRelatorioCorrecoes(pegImportado=''){
     const peg=pegImportado||pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;if(!peg){alert('Selecione um PEG para preparar o relatório de correções.');return;}
     const modal=document.getElementById('modalCorrecoes');modal.dataset.peg=peg;modal.hidden=false;
