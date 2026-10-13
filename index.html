@@ -770,6 +770,7 @@
 #conteudoPopupAuditoriaBeneficiario > .auditoria-tabela-wrap{min-height:200px;flex:1 0 200px;}
 .link-guia-resumo{padding:1px 4px!important;min-height:0!important;background:transparent;border:0;color:inherit;text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;}.link-guia-resumo:hover{background:#dbeafe;color:#1e40af;}.link-guia-resumo:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}.guia-destacada-resumo{animation:destaque-guia-resumo 2.5s ease;scroll-margin-top:16px;}@keyframes destaque-guia-resumo{0%,65%{box-shadow:0 0 0 3px #2563eb;}100%{box-shadow:none;}}
 .filtro-secao-guias{display:flex;align-items:center;gap:7px;margin:0 0 9px;font-size:12px;cursor:pointer;}.filtro-secao-guias input{width:16px;height:16px;margin:0;accent-color:#2563eb;}
+.aviso-via-pendente-beneficiario{display:block;margin-top:5px;color:#b91c1c;font-size:12px;font-weight:700;line-height:1.4;}.botao-regra-beneficiario.via-pendente{background:#b91c1c!important;color:#fff!important;border-color:#991b1b!important;}
 </style>
 </head>
 <body>
@@ -927,7 +928,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.17</p>
+    <p class="versao-relatorio">Versão 5.21</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1756,7 +1757,7 @@ function renderizarConteudoResumo(chavePeg) {
 
     const guiasPrazo=(dados.beneficiarios || []).filter(b=>b.maisDeUmAno);
     if(guiasPrazo.length) {
-        html += `<div class="resumo-card"><h3>⏳ Atendimento com mais de 1 ano</h3><ul>`;
+        html += `<div class="resumo-card"><h3>⏳ Atendimento(s) com guia(s) expirada(s)</h3><ul>`;
         for(const item of guiasPrazo)html += `<li>Guia ${linkGuiaResumo(item.guia,dados,item.nome,item.matricula)} - ${escAuditoria(item.nome)} — Atendimento: ${escAuditoria(item.data)}</li>`;
         html += '</ul></div>';
     }
@@ -3176,7 +3177,7 @@ function limparAuditoria(preservarPercentuais = false) {
     GLOBAL_MODELO_AUDITORIA = { guias: [], eventos: [], internacoes: [] };
     GLOBAL_LINHAS_AUDITORIA = [];
     GLOBAL_TODAS_LINHAS_AUDITORIA = [];
-    if (!preservarPercentuais) { SECOES_GUIAS_FILTRADAS.clear(); PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); }
+    if (!preservarPercentuais) { SECOES_GUIAS_FILTRADAS.clear(); PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); PERCENTUAIS_PORTES_PERITO.clear(); }
     if (!preservarPercentuais) CONDICOES_EVENTOS_AUDITORIA.clear();
     if (!preservarPercentuais) BILATERALIDADE_OFTALMO_AUDITORIA.clear();
     const area = document.getElementById('auditoriaSaida');
@@ -3831,6 +3832,7 @@ function controleTipoHospitalar(linha,prefixo) {
     const tipo=TIPOS_HOSPITALARES_MANUAIS.get(chaveTipoHospitalPrestador(linha.guia)) || '';
     return `<label class="percentual-label-auditoria" for="${prefixo}tipo-hospital-${escAuditoria(linha.evento.id)}">Confirme o tipo do prestador</label><select id="${prefixo}tipo-hospital-${escAuditoria(linha.evento.id)}" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="alterarTipoHospitalar(this)"><option value="" ${!tipo?'selected':''}>Tipo não identificado — escolher</option>${['A','B','C'].map(t=>`<option value="${t}" ${tipo===t?'selected':''}>Tipo ${t}</option>`).join('')}</select><small>Aplica-se a este prestador no PEG atual. Confira o contrato antes de escolher.</small>`;
 }
+const PERCENTUAIS_PORTES_PERITO = new Map();
 const HORARIOS_ESPECIAIS_HOSPITALARES = new Map();
 function alterarHorarioEspecialHospitalar(campo) {
     if(campo.value==='sim')HORARIOS_ESPECIAIS_HOSPITALARES.set(campo.dataset.eventoId,true);
@@ -3849,6 +3851,7 @@ function alterarViaHospitalar(seletor) {
     const linha = GLOBAL_TODAS_LINHAS_AUDITORIA.find(l => l.evento.id === seletor.dataset.eventoId);
     if (!linha) return;
     const chave = chaveViaHospitalar(linha.evento);
+    GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>l.referencia?.hospitalar&&chaveViaHospitalar(l.evento)===chave).forEach(l=>PERCENTUAIS_PORTES_PERITO.delete(l.evento.id));
     if (['mesma','diferentes'].includes(seletor.value)) VIAS_HOSPITALARES.set(chave,seletor.value);
     else VIAS_HOSPITALARES.delete(chave);
     atualizarAuditoria();
@@ -4000,12 +4003,14 @@ function avaliarServicosHospitalares(eventos) {
         const n100 = porte && inicio === 0 ? 1 : 0;
         const nSegunda = porte && inicio <= 1 && inicio + qtd > 1 ? 1 : 0;
         const n25 = porte ? Math.max(qtd - n100 - nSegunda,0) : 0;
-        const pendente = porte && (!quantidadeValida || (nSegunda > 0 && !via));
+        const percentuaisPerito=PERCENTUAIS_PORTES_PERITO.get(evento.id);
+        const orientado=porte&&quantidadeValida&&percentuaisPerito?.length===qtd&&percentuaisPerito.every(p=>[25,50,70,100].includes(p));
+        const pendente = porte && (!quantidadeValida || (!orientado&&nSegunda > 0 && !via));
         const segundo = via === 'mesma' ? 50 : 70;
-        const partes = !porte ? '100%' : [n100 ? '1 × 100%' : '', nSegunda ? `1 × ${via ? segundo+'%' : '50% ou 70% (via pendente)'}` : '', n25 ? `${n25} × 25%` : ''].filter(Boolean).join(' + ');
-        const percentual = !porte ? 100 : pendente ? null : n25 === qtd ? 25 : qtd > 1 ? null : n100 ? 100 : nSegunda ? segundo : 25;
+        const partes = orientado ? percentuaisPerito.map(p=>`${p}%`).join(' + ')+' (orientação do perito)' : !porte ? '100%' : [n100 ? '1 × 100%' : '', nSegunda ? `1 × ${via ? segundo+'%' : '50% ou 70% (via pendente)'}` : '', n25 ? `${n25} × 25%` : ''].filter(Boolean).join(' + ');
+        const percentual = orientado ? new Set(percentuaisPerito).size===1 ? percentuaisPerito[0] : null : !porte ? 100 : pendente ? null : n25 === qtd ? 25 : qtd > 1 ? null : n100 ? 100 : nSegunda ? segundo : 25;
         const horarioEspecial = porte && HORARIOS_ESPECIAIS_HOSPITALARES.has(evento.id);
-        const limite = valido && !pendente ? arredondarTabela(registro.t * (porte ? n100 + nSegunda * segundo/100 + n25 * 0.25 : qtd) * (horarioEspecial ? 1.3 : 1)) : null;
+        const limite = valido && !pendente ? arredondarTabela(registro.t * (orientado ? percentuaisPerito.reduce((soma,p)=>soma+p/100,0) : porte ? n100 + nSegunda * segundo/100 + n25 * 0.25 : qtd) * (horarioEspecial ? 1.3 : 1)) : null;
         const alerta = !tipo ? 'Tipo hospitalar não identificado. Confira o prestador antes de comparar preços.'
             : !vigente ? 'Sem tabela hospitalar vigente para esta data e tipo de prestador; importe a tabela ou cadastre o reajuste do novo ano.'
             : registro.t === null ? `Serviço sem preço fixo: ${registro.fator}. Conferir manualmente.`
@@ -4015,7 +4020,7 @@ function avaliarServicosHospitalares(eventos) {
             referencia, limiteReferencia:limite, percentual:valido ? percentual : null,
             regra:`Tabela hospitalar ${tipo ? 'tipo '+tipo : 'tipo a confirmar'} · vigência ${tabela?.vigencia || 'não disponível'} · ${tabela?.origem || 'sem tabela vigente'} · ${registro.fator}`
                 + (horarioEspecial ? ' · horário especial +30% (ajuste manual)' : '')
-                + (valido ? porte ? ` · ${partes}${via ? via === 'mesma' ? ' (mesma via)' : ' (vias diferentes)' : ''}` : ' · comparação integral de preço, sem 100–70' : ''),
+                + (valido ? porte ? ` · ${partes}${!orientado&&via ? via === 'mesma' ? ' (mesma via)' : ' (vias diferentes)' : ''}` : ' · comparação integral de preço, sem 100–70' : ''),
             observacao: porte ? 'Taxa de maior porte a 100%; segunda cirurgia a 50% na mesma via ou 70% por vias diferentes; demais cirurgias a 25%. Ordenação pelo valor unitário da taxa, por guia e data. Quantidades representam cirurgias: confirme o mesmo ato e a via na guia física.'
                 : 'Comparação de valor unitário × quantidade, conforme fator da tabela. Confira a unidade de cobrança; não constitui glosa automática.',
             baseComparacao:porte ? 'Taxas hospitalares 100–70/50–25' : 'Preço da tabela hospitalar', alerta
@@ -4386,7 +4391,8 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             ? `<span class="auditoria-percentual-badge percentual-${percentualExibido}" title="${percentualAuxiliar !== null ? `${percentualAuxiliar}% do porte do cirurgião deste código; via de acesso ajustada separadamente` : calculado ? 'Percentual aplicado no cálculo' : 'Percentual sugerido; cálculo pendente'}">${percentualExibido === 170 ? '100% + 70%' : `${percentualExibido}%`}</span>` : '';
         const porteProcedimento = String(linha.referencia?.p ?? '').trim();
         const porteAnestesico = linha.categoria === 'Anestesia' ? numeroOuNulo(linha.referencia?.an) : null;
-        const porteBadges = `${porteProcedimento ? `<span class="auditoria-porte" title="Porte do procedimento na tabela vigente">Porte ${escAuditoria(porteProcedimento)}</span>` : ''}${porteAnestesico !== null ? `<span class="auditoria-porte auditoria-porte-anestesico" title="Porte anestésico na tabela vigente">Anest. ${escAuditoria(porteAnestesico)}</span>` : ''}`;
+        const porteExibido = linha.categoria === 'Anestesia' ? porteAnestesico : porteProcedimento;
+        const porteBadges = porteExibido !== null && String(porteExibido).trim() !== '' ? `<span class="auditoria-porte" title="${linha.categoria === 'Anestesia' ? 'Porte anestésico (PORTE ANEST) na tabela vigente' : 'Porte do procedimento na tabela vigente'}">Porte ${escAuditoria(porteExibido)}</span>` : '';
         const guiaDestaque = prefixoId === 'popup-'
             ? `<span class="auditoria-guia-destaque guia-cor-${corGuiaAuditoria(linha.guia.ordem)}" title="Este evento pertence à guia ${escAuditoria(linha.guia.ordem || 'não informada')}">Guia ${escAuditoria(linha.guia.ordem || '—')}</span>` : '';
         const situacao = acima && calculado ? 'Possível glosa pela regra' : acima ? 'Preço acima da tabela' : calculado ? 'Dentro do limite' : 'Regra pendente';
@@ -4585,10 +4591,12 @@ let ORIENTACAO_PERITO_ABERTA = false;
 let SUCESSO_ORIENTACAO_PERITO = '';
 function registrarAberturaOrientacaoPerito(aberto){ORIENTACAO_PERITO_ABERTA=aberto;}
 function interpretarOrientacaoPerito(texto) {
-    const regras=new Map(),erros=[];let demais=null;
+    const regras=new Map(),portes=[],erros=[];let demais=null;
     for(const [indice,bruta] of String(texto).split(/\r?\n/).entries()) {
         const linha=bruta.trim();if(!linha)continue;
         if(/^[\d\s,]+:\s*$/.test(linha))continue;
+        const porte=linha.match(/^porte\s*0*(\d+)\s*:\s*(\d+)\s*%\s*[.;]?$/i);
+        if(porte){const percentual=Number(porte[2]);if(![25,50,70,100].includes(percentual))erros.push(`Linha ${indice+1}: porte aceita 100%, 70%, 50% ou 25%.`);else portes.push({porte:Number(porte[1]),percentual});continue;}
         const match=linha.match(/^([\d.\s-]+|demais)\s*:\s*(\d+)\s*%\s*[.;]?$/i);
         if(!match){erros.push(`Linha ${indice+1}: use Código: percentual% ou Demais: percentual%.`);continue;}
         const percentual=Number(match[2]);
@@ -4596,11 +4604,29 @@ function interpretarOrientacaoPerito(texto) {
         if(/^demais$/i.test(match[1])){if(demais!==null&&demais!==percentual)erros.push('Instruções conflitantes para Demais.');demais=percentual;}
         else {const codigo=codigoAuditoria(match[1]);if(codigo.length!==8){erros.push(`Linha ${indice+1}: código deve conter oito dígitos.`);continue;}if(regras.has(codigo)&&regras.get(codigo)!==percentual)erros.push(`Percentuais conflitantes para ${formatarCodigoAuditoria(codigo)}.`);regras.set(codigo,percentual);}
     }
-    if(!regras.size)erros.push('Informe pelo menos um código com seu percentual.');
-    return {regras,demais,erros};
+    if(!regras.size&&!portes.length)erros.push('Informe pelo menos um código ou porte com seu percentual.');
+    return {regras,portes,demais,erros};
+}
+function previaPortesPerito(interpretacao) {
+    const erros=[...interpretacao.erros],alteracoes=[];
+    if(interpretacao.regras.size||interpretacao.demais!==null)erros.push('Aplique os portes em um bloco separado da orientação por códigos.');
+    const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO)
+        .filter(l=>l.referencia?.hospitalar&&ehPorteHospitalar(l.evento.codigo));
+    const portes=new Map();for(const p of interpretacao.portes){if(!portes.has(p.porte))portes.set(p.porte,[]);portes.get(p.porte).push(p.percentual);}
+    for(const [porte,percentuais] of portes) {
+        const correspondentes=linhas.filter(l=>String(l.referencia.p).trim()!==''&&Number(l.referencia.p)===porte)
+            .sort((a,b)=>String(a.guia.ordem).localeCompare(String(b.guia.ordem),'pt-BR',{numeric:true})||Number(a.evento.ordem)-Number(b.evento.ordem));
+        const qtd=correspondentes.reduce((s,l)=>s+Number(l.evento.quantidade),0);
+        if(!correspondentes.length){erros.push(`Porte ${porte} não encontrado nas taxas de sala deste caso.`);continue;}
+        if(!Number.isInteger(qtd)||correspondentes.some(l=>!Number.isInteger(Number(l.evento.quantidade))||Number(l.evento.quantidade)<=0)||qtd!==percentuais.length){erros.push(`Porte ${porte}: ${qtd} ocorrência(s) nas taxas, mas ${percentuais.length} percentual(is) informado(s). Informe um percentual por ocorrência.`);continue;}
+        let inicio=0;
+        for(const linha of correspondentes){const partes=percentuais.slice(inicio,inicio+Number(linha.evento.quantidade));inicio+=partes.length;alteracoes.push({linha,percentual:partes.join('% + '),percentuaisPorte:partes});}
+    }
+    return {alteracoes,erros};
 }
 function previaOrientacaoPerito() {
     const interpretacao=interpretarOrientacaoPerito(TEXTO_ORIENTACAO_PERITO);
+    if(interpretacao.portes.length)return previaPortesPerito(interpretacao);
     const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO).filter(l=>l.categoria!=='Radiologia'&&!l.referencia?.hospitalar);
     const erros=[...interpretacao.erros];
     for(const codigo of interpretacao.regras.keys())if(!linhas.some(l=>codigoAuditoria(l.evento.codigo)===codigo))erros.push(`Código ${formatarCodigoAuditoria(codigo)} não encontrado neste caso.`);
@@ -4621,12 +4647,12 @@ function atualizarPreviaOrientacaoPerito(campo) {
     const area=document.getElementById('previaOrientacaoPerito');if(!area)return;
     if(!TEXTO_ORIENTACAO_PERITO.trim()){area.innerHTML='';document.getElementById('aplicarOrientacaoPerito').disabled=true;return;}
     const {alteracoes,erros}=previaOrientacaoPerito();
-    area.innerHTML=(erros.length?`<div class="importacao-retorno importacao-erro"><strong>Conferir antes de aplicar</strong><ul>${erros.map(e=>`<li>${escAuditoria(e)}</li>`).join('')}</ul></div>`:'')+(alteracoes.length?`<div class="perito-previa" style="overflow:auto;max-height:220px"><table><thead><tr><th>Guia / item</th><th>Código / evento / grau</th><th>Atual → perito</th></tr></thead><tbody>${alteracoes.map(({linha:l,percentual:p})=>`<tr><td>${escAuditoria(l.guia.ordem)} / ${escAuditoria(l.evento.ordem)}</td><td>${escAuditoria(formatarCodigoAuditoria(l.evento.codigo))} · ${escAuditoria(l.evento.descricao)}<br>${escAuditoria(l.evento.grau)}</td><td>${PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id)??l.percentual??'Pendente'}% → <strong>${p}%</strong>${l.categoria==='Cirurgia'&&equipeCirurgica(l.evento.grau)?.numero?'<br><small>Sobre o porte; percentual próprio do auxiliar preservado.</small>':''}</td></tr>`).join('')}</tbody></table></div>`:'');
+    area.innerHTML=(erros.length?`<div class="importacao-retorno importacao-erro"><strong>Conferir antes de aplicar</strong><ul>${erros.map(e=>`<li>${escAuditoria(e)}</li>`).join('')}</ul></div>`:'')+(alteracoes.length?`<div class="perito-previa" style="overflow:auto;max-height:220px"><table><thead><tr><th>Guia / item</th><th>Código / evento / grau</th><th>Atual → perito</th></tr></thead><tbody>${alteracoes.map(({linha:l,percentual:p})=>`<tr><td>${escAuditoria(l.guia.ordem)} / ${escAuditoria(l.evento.ordem)}</td><td>${escAuditoria(formatarCodigoAuditoria(l.evento.codigo))} · ${escAuditoria(l.evento.descricao)}${l.referencia?.hospitalar ? ` · Porte ${escAuditoria(l.referencia.p)} · ${escAuditoria(l.evento.quantidade)} unidade(s)` : ''}<br>${escAuditoria(l.evento.grau)}</td><td>${PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id)??l.percentual??'Pendente'}% → <strong>${p}%</strong>${l.categoria==='Cirurgia'&&equipeCirurgica(l.evento.grau)?.numero?'<br><small>Sobre o porte; percentual próprio do auxiliar preservado.</small>':''}</td></tr>`).join('')}</tbody></table></div>`:'');
     document.getElementById('aplicarOrientacaoPerito').disabled=!!erros.length||!alteracoes.length;
 }
 function aplicarOrientacaoPerito() {
     const {alteracoes,erros}=previaOrientacaoPerito();if(erros.length||!alteracoes.length)return;
-    for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
+    for(const {linha,percentual,percentuaisPorte} of alteracoes){if(percentuaisPorte)PERCENTUAIS_PORTES_PERITO.set(linha.evento.id,percentuaisPorte);else PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);}
     ORIENTACAO_PERITO_ABERTA=false;
     SUCESSO_ORIENTACAO_PERITO=`Orientação aplicada a ${alteracoes.length} evento(s) deste caso. Confira os limites recalculados.`;
     atualizarAuditoria();
@@ -4720,11 +4746,19 @@ function rotuloPercentuaisBeneficiario(itens) {
 function atualizarBotoesAuditoriaBeneficiarios(linhas) {
     const pegAtivo = linhas[0]?.guia.peg || '';
     document.querySelectorAll('#saida .linha-beneficiario[data-auditoria-peg]').forEach(row => {
+        row.querySelector('.aviso-via-pendente-beneficiario')?.remove();
         let botao = row.querySelector('.botao-regra-beneficiario');
         const remover = () => { if (botao) { if (botao.previousElementSibling?.tagName === 'BR') botao.previousElementSibling.remove(); botao.remove(); } };
         if (!pegAtivo || row.dataset.auditoriaPeg !== pegAtivo) { remover(); return; }
         const chave = row.dataset.auditoriaGuiaId;
         const itens = linhasPopupAuditoriaPorGuia(linhas, chave);
+        const viasPendentes=itens.filter(item=>((item.categoria==='Cirurgia'||item.categoria==='Anestesia')&&item.percentual===null&&!codigoSempreIntegral(item.evento.codigo))
+            || (item.referencia?.hospitalar&&ehPorteHospitalar(item.evento.codigo)&&/Informe se as cirurgias usam/.test(item.alerta)));
+        if(viasPendentes.length) {
+            const aviso=document.createElement('span');aviso.className='aviso-via-pendente-beneficiario';
+            aviso.textContent=`Via de acesso pendente de confirmação · ${viasPendentes.length} procedimento${viasPendentes.length===1?'':'s'}`;
+            row.cells[0]?.append(aviso);
+        }
         if (!itens?.length || (!itens.some(item => ehEndoscopiaIntervencionista(item.evento.codigo)) && itens.reduce((total, item) => total + Math.max(numeroAuditoria(item.evento.quantidade), 1), 0) < 2)) { remover(); return; }
         if (!botao) {
             botao = document.createElement('button');
@@ -4733,6 +4767,7 @@ function atualizarBotoesAuditoriaBeneficiarios(linhas) {
             botao.addEventListener('click', () => abrirPopupAuditoriaBeneficiario(chave, botao));
             row.cells[0]?.append(document.createElement('br'), botao);
         }
+        botao.classList.toggle('via-pendente',viasPendentes.length>0);
         botao.classList.toggle('com-glosa', itens.some(item => item.glosaTecnica > 0));
         botao.textContent = `Analisar vias de acesso · ${itens.length} evento${itens.length === 1 ? '' : 's'}`;
         botao.title = 'Abrir análise dos eventos elegíveis deste beneficiário, no mesmo dia e grupo, inclusive em guias separadas';
@@ -4805,7 +4840,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
         ${SUCESSO_ORIENTACAO_PERITO?`<p class="importacao-retorno importacao-sucesso" role="status">${escAuditoria(SUCESSO_ORIENTACAO_PERITO)}</p>`:''}
-        <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. A orientação alcança os eventos elegíveis deste caso, inclusive os ocultos pelos filtros. Radiologia e taxas hospitalares mantêm suas regras próprias e não recebem os percentuais do parecer. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
+        <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. Para taxas de sala, use um bloco separado: Porte 3: 100%, Porte 3: 50%, Porte 2: 25% (uma linha por ocorrência, incluindo cada unidade da quantidade). Portes repetidos são associados por número da guia e item; confira a prévia. A orientação alcança os eventos elegíveis deste caso, inclusive os ocultos pelos filtros. Radiologia e taxas hospitalares mantêm suas regras próprias e não recebem os percentuais do parecer. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
         <div class="auditoria-filtros-codigos"><label for="filtroGrauPopupAuditoria"><strong>Filtrar por grau</strong></label><select id="filtroGrauPopupAuditoria" onchange="selecionarGrauPopupAuditoria(this)" style="width:100%;min-width:0;margin-top:4px"><option value="">Todos os graus (${todosItens.length})</option>${graus.map(grau=>`<option value="${escAuditoria(grau)}" ${GRAU_SELECIONADO_POPUP_AUDITORIA===grau?'selected':''}>${escAuditoria(grau)} (${todosItens.filter(linha=>grupoGrauPopupAuditoria(linha)===grau).length})</option>`).join('')}</select></div>
