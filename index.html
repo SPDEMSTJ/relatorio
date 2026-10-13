@@ -768,6 +768,7 @@
 #conteudoPopupAuditoriaBeneficiario > :not(.auditoria-tabela-wrap){flex-shrink:0;}
 #conteudoPopupAuditoriaBeneficiario #orientacaoPerito{max-height:42vh;overflow:auto;}
 #conteudoPopupAuditoriaBeneficiario > .auditoria-tabela-wrap{min-height:200px;flex:1 0 200px;}
+.link-guia-resumo{padding:1px 4px!important;min-height:0!important;background:transparent;border:0;color:inherit;text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;}.link-guia-resumo:hover{background:#dbeafe;color:#1e40af;}.link-guia-resumo:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}.guia-destacada-resumo{animation:destaque-guia-resumo 2.5s ease;scroll-margin-top:16px;}@keyframes destaque-guia-resumo{0%,65%{box-shadow:0 0 0 3px #2563eb;}100%{box-shadow:none;}}
 </style>
 </head>
 <body>
@@ -925,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.09</p>
+    <p class="versao-relatorio">Versão 5.10</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1465,7 +1466,9 @@ function exportarConsultaSQL() {
     const url=URL.createObjectURL(new Blob([texto],{type:'text/plain;charset=utf-8'}));
     const link=document.createElement('a');link.href=url;
     const peg=document.getElementById('peg').value.replace(/[^0-9;, ]/g,'').trim().replace(/[;, ]+/g,'-');
-    link.download='consulta-SQL'+(peg?'-PEG-'+peg.slice(0,100):'')+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const partes=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
+    const dataSalva=`${partes.year}-${partes.month}-${partes.day}_${partes.hour}-${partes.minute}-${partes.second}`;
+    link.download='consulta-SQL'+(peg?'-PEG-'+peg.slice(0,100):'')+'_'+dataSalva+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     statusConsultaSQL('Consulta exportada em TXT.');
 }
 async function importarConsultaSQL(campo) {
@@ -1631,6 +1634,27 @@ function atualizarFiltroVisual() {
 }
 
 // Helper para renderizar o HTML do resumo
+function linkGuiaResumo(guia, dados, nome='', matricula='') {
+    const item=(dados.beneficiarios || []).find(b=>String(b.guia)===String(guia)&&(!nome||b.nome===nome)&&(!matricula||b.matricula===matricula));
+    const peg=item?.peg || dados.info?.peg || '';
+    return `<button type="button" class="link-guia-resumo" data-guia="${escAuditoria(guia)}" data-peg="${escAuditoria(peg)}" onclick="irParaGuiaResumo(this)">${escAuditoria(guia)}</button>`;
+}
+function irParaGuiaResumo(botao) {
+    const peg=botao.dataset.peg, guia=botao.dataset.guia;
+    const seletor=document.getElementById('filtroPegSelect');
+    if([...seletor.options].some(o=>o.value===peg))seletor.value=peg;
+    document.getElementById('pesquisaRelatorio').value='';
+    mostrarAba('relatorio');atualizarFiltroVisual();
+    let card=[...document.querySelectorAll('#saida .card')].find(c=>c.dataset.peg===peg&&c.dataset.guia===guia);
+    if(!card&&document.getElementById('palavrasEventos').value.trim()) {
+        document.getElementById('palavrasEventos').value='';render(true);
+        card=[...document.querySelectorAll('#saida .card')].find(c=>c.dataset.peg===peg&&c.dataset.guia===guia);
+    }
+    if(!card){alert('Guia não localizada no relatório exibido. Gere novamente o relatório com a extração completa.');return;}
+    card.classList.remove('guia-destacada-resumo');void card.offsetWidth;card.classList.add('guia-destacada-resumo');
+    card.setAttribute('tabindex','-1');card.focus({preventScroll:true});card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 function renderizarConteudoResumo(chavePeg) {
     const divResumo = document.getElementById("resumo");
     if (!GLOBAL_DADOS_RESUMO[chavePeg]) return;
@@ -1675,7 +1699,7 @@ function renderizarConteudoResumo(chavePeg) {
             listaGuias.forEach(item => {
                 const parts = item.split(' - ');
                 const g = parts[0].replace('Guia ', '');
-                const b = parts[1];
+                const b = parts.slice(1).join(' - ');
                 if(!agrupaBenef[b]) agrupaBenef[b] = [];
                 agrupaBenef[b].push(g);
             });
@@ -1683,7 +1707,7 @@ function renderizarConteudoResumo(chavePeg) {
                 // REGRA: Gramática (Guia vs Guias)
                 const numGuias = agrupaBenef[benef].length;
                 const textoGuia = numGuias > 1 ? "Guias" : "Guia";
-                html += `<li class="${anoClass}">${textoGuia} <b>${agrupaBenef[benef].join(', ')}</b> — ${benef} (${a})</li>`;
+                html += `<li class="${anoClass}">${textoGuia} <b>${agrupaBenef[benef].map(g=>linkGuiaResumo(g,dados,benef)).join(', ')}</b> — ${benef} (${a})</li>`;
             });
         });
         html += `</ul></div>`;
@@ -1709,11 +1733,17 @@ function renderizarConteudoResumo(chavePeg) {
         beneficiariosEpsAgrupados.forEach(item => {
             const guias = [...item.guias].sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric:true }));
             const rotuloGuia = guias.length === 1 ? 'Guia' : 'Guias';
-            html += `<li>${rotuloGuia} <b>${guias.map(escAuditoria).join(', ')}</b> - ${escAuditoria(item.nome)} — ${escAuditoria(item.matricula)}</li>`;
+            html += `<li>${rotuloGuia} <b>${guias.map(g=>linkGuiaResumo(g,dados,item.nome,item.matricula)).join(', ')}</b> - ${escAuditoria(item.nome)} — ${escAuditoria(item.matricula)}</li>`;
         });
         html += `</ul></div>`;
     }
 
+    const guiasPrazo=(dados.beneficiarios || []).filter(b=>b.maisDeUmAno);
+    if(guiasPrazo.length) {
+        html += `<div class="resumo-card"><h3>⏳ Atendimento com mais de 1 ano</h3><ul>`;
+        for(const item of guiasPrazo)html += `<li>Guia ${linkGuiaResumo(item.guia,dados,item.nome,item.matricula)} - ${escAuditoria(item.nome)} — Atendimento: ${escAuditoria(item.data)}</li>`;
+        html += '</ul></div>';
+    }
     const complementares = document.getElementById("resumosComplementares");
     complementares.innerHTML = html ? `<div class="resumo-grid">${html}</div>` : "";
     complementares.hidden = !html;
@@ -2131,7 +2161,7 @@ function render(preservarPeg = false) {
             }
 
             const trClass = `linha-beneficiario ${isEps?"eps":""} ${c[29].toLowerCase()!=="ambulatorial"?"internacao":""}`;
-            const card = document.createElement("div"); card.className = "card"; card.dataset.peg = pegAtual;
+            const card = document.createElement("div"); card.className = "card"; card.dataset.peg = pegAtual; card.dataset.guia = String(ordemGuia);
             saida.appendChild(card);
 
             const tbl = document.createElement("table");
