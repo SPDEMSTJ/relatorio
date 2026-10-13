@@ -931,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.30</p>
+    <p class="versao-relatorio">Versão 5.31</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1502,7 +1502,7 @@ function marcarCorrecao(campo){
     document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg&&el.dataset.correcaoChave===chave)el.checked=campo.checked;});
     atualizarContadoresCorrecoes();
 }
-function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes();const n=peg?Object.keys(selecoesCorrecoesPeg(peg)).length:0;document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
+function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes();const n=peg?itensAtuaisCorrecoes(peg).length:0;document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
 function linhaEfetivaCorrecao(l){
     if(!l?.evento||l.referencia?.hospitalar)return l;
     const manual=PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id);
@@ -1513,8 +1513,17 @@ function linhaEfetivaCorrecao(l){
     if(!calculo||calculo.valor===null)return l;
     return criarLinhaAuditoria(l.evento,l.categoria,calculo.valor,{...l,percentual,limiteReferencia:calculo.valor});
 }
+function elegivelCorrecaoVias(l){
+    if(!l?.evento||!linhasRegraBeneficiarioAuditoria([l]).length)return false;
+    const motivos=(l.evento.glosas||[]).map(g=>normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`));
+    if(motivos.some(t=>/VALOR.*(?:COBRAD|APRESENTAD).*(?:MAIOR|ACIMA|SUPERIOR)|VALOR\s+(?:MAIOR|ACIMA|SUPERIOR).*COBRAD/.test(t)))return false;
+    // A 100%, excesso sem ajuste por via é uma divergência de preço.
+    if(l.percentual===100&&numeroAuditoria(l.adicional)>0)return false;
+    return true;
+}
 function valoresCorrecao(l){
     l=linhaEfetivaCorrecao(l);
+    if(!elegivelCorrecaoVias(l))return null;
     if(l.permitido===null||!Number.isFinite(l.limiteReferencia))return null;
     const retirar=Math.min(centavosTabela(l.benner),Math.max(centavosTabela(Math.min(l.solicitado,l.limiteReferencia))-centavosTabela(numeroAuditoria(l.evento.valorPago)),0));
     const adicionar=centavosTabela(l.adicional || 0);
@@ -1551,7 +1560,7 @@ function itensAtuaisCorrecoes(peg){
         const evento=item.evento?guia?.eventos.find(e=>identidadeEventoCorrecao(e)===item.evento):null;
         const linha=evento?GLOBAL_TODAS_LINHAS_AUDITORIA.find(l=>l.evento.id===evento.id):null;
         return {chave,item,guia,evento,linha};
-    });
+    }).filter(r=>r.item.tipo!=='regra'||!r.linha||elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha)));
 }
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
@@ -1559,6 +1568,7 @@ function textoRelatorioCorrecoes(peg){
     const pendencias=[];let ordem=0;
     for(const {item,guia,evento,linha:linhaOriginal} of itens){
         const linha=linhaEfetivaCorrecao(linhaOriginal);
+        if(item.tipo==='regra'&&linha&&!elegivelCorrecaoVias(linha))continue;
         if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
         if(guiaIntegralmenteGlosada(guia)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
         const critAtual=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios?.find(b=>b.guia===guia.ordem&&b.matricula===guia.matricula&&b.nome===guia.beneficiario);
@@ -4972,7 +4982,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const apenasPreco = itens.filter(item => item.excessoTabela > 0 && item.permitido === null);
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
-    conteudo.innerHTML = `<button type="button" class="abrir-relatorio-correcoes btn-secondary" onclick="abrirRelatorioCorrecoes()">Relatório de correções (${Object.keys(selecoesCorrecoesPeg(guia.peg)).length})</button><p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+    conteudo.innerHTML = `<button type="button" class="abrir-relatorio-correcoes btn-secondary" onclick="abrirRelatorioCorrecoes()">Relatório de correções (${itensAtuaisCorrecoes(guia.peg).length})</button><p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
         ${SUCESSO_ORIENTACAO_PERITO?`<p class="importacao-retorno importacao-sucesso" role="status">${escAuditoria(SUCESSO_ORIENTACAO_PERITO)}</p>`:''}
         <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. O texto completo pode conter títulos, folhas, códigos e taxas de sala: Porte 3: 100%, Porte 3: 50%, Porte 2: 25%. Títulos e folhas são ignorados. Um único percentual de porte vale para todas as suas ocorrências; percentuais diferentes exigem uma linha por ocorrência. Portes repetidos são associados por número da guia e item; confira a prévia. A orientação alcança os eventos elegíveis deste caso, inclusive os ocultos pelos filtros. Radiologia e taxas hospitalares mantêm suas regras próprias e não recebem os percentuais do parecer. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
