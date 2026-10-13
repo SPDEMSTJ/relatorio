@@ -926,7 +926,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.14</p>
+    <p class="versao-relatorio">Versão 5.15</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3688,7 +3688,7 @@ function avaliarCirurgia(eventos) {
         const percentuaisPorAto = new Map();
         // A escolha na linha do cirurgião prevalece; uma escolha no auxiliar também
         // pode informar a via do mesmo procedimento quando a linha do cirurgião não foi marcada.
-        [...cirurgioes, ...items.filter(item => item.equipe.numero > 0)].forEach(item => {
+        [...cirurgioes, ...items.filter(item => item.equipe.tipo !== 'Cirurgião')].forEach(item => {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
             if ((!codigoSempreIntegral(item.evento.codigo) || ehEndoscopiaIntervencionista(item.evento.codigo)) && !percentuaisPorAto.has(item.chaveAto) && (ehEndoscopiaIntervencionista(item.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
         });
@@ -3721,7 +3721,7 @@ function avaliarCirurgia(eventos) {
                 : `${percentual}% ${percentual === 70 ? 'outra via' : percentual === 50 ? 'mesma via' : item.chaveAto === chavePrincipal ? 'procedimento principal' : 'ato/equipe distinto'}${calculo?.interna ? '; porte × 2 por internação' : ''}${calculo?.urgencia ? '; urgência +30% no porte' : ''}`;
             const permitido = auxiliar ? porteMesmoCodigo === null || auxExcedido ? null
                     : arredondarTabela(porteMesmoCodigo * item.equipe.multiplicador)
-                : !principal ? null : calculo?.permitido ?? null;
+                : calculo?.permitido ?? null;
             resultados.push(criarLinhaAuditoria(item.evento, 'Cirurgia', permitido, {
                 regra, observacao: observacoes.join(' — '), referencia: item.referencia,
                 limiteReferencia: permitido,
