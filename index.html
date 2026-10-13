@@ -927,7 +927,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.16</p>
+    <p class="versao-relatorio">Versão 5.17</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3780,7 +3780,7 @@ function avaliarAnestesia(eventos) {
             const acesso = percentual / 100;
             const condicao = (interna ? 2 : 1) * (urgencia ? 1.3 : 1);
             const permitido = item.base === null || percentual === null ? null : item.base * acesso * condicao * Math.max(item.evento.quantidade, 1);
-            const observacoes = [`Porte anestésico ${item.porte}`];
+            const observacoes = [`Porte anestésico ${item.porte}${item.base !== null ? ` · tabela de anestesiologia: ${valorBRL(item.base)}` : ''}`];
             if (item.base === null) observacoes.push(`Escala monetária de anestesia não informada para atendimento em ${item.ano}; percentual sugerido sem cálculo de preço.`);
             if (item.porte === 0) observacoes.push('Porte 0: pagamento condicionado à justificativa para participação do anestesiologista');
             if (integral) observacoes.push('Prefixo sem análise 100–70–50 na tabela de honorários: mantido em 100%.');
@@ -4847,12 +4847,16 @@ function atualizarAlertasNasGuias(linhas) {
         const comGlosaBenner = (linha?.benner ?? 0) > 0 || row.nextElementSibling?.classList.contains('glosa');
         if (comGlosaBenner) row.classList.add('evento-com-glosa');
         if (!linha) return;
-        if (/ANESTES/.test(normalizarAuditoria(linha.evento.grau)) && linha.limiteReferencia === null && linha.referencia) {
-            row.classList.add('linha-sem-preco');
+        if (linha.categoria === 'Anestesia' && linha.limiteReferencia === null && linha.referencia) {
+            const porte=numeroOuNulo(linha.referencia.an);
+            const data=linha.evento.data || linha.guia.data;
+            const base=porte===null?null:obterEscalaAnestesia(anoAuditoria(data),porte,data);
+            const temPreco=base>0;
+            if(!temPreco)row.classList.add('linha-sem-preco');
             const badge = document.createElement('span');
             badge.className = 'alerta-sem-preco-badge';
-            badge.textContent = 'Anestesia: sem preço para comparar';
-            badge.title = linha.observacao;
+            badge.textContent = temPreco ? `Anestesia: porte ${porte} · ${valorBRL(base)} · confirme o percentual` : 'Anestesia: sem preço para comparar';
+            badge.title = temPreco ? 'Porte obtido na coluna PORTE ANEST da tabela de honorários e preço na tabela de anestesiologia vigente. Confirme 100%, 70% ou 50% para calcular o limite.' : linha.observacao;
             row.cells[3]?.append(' ', badge);
             return;
         }
@@ -4865,7 +4869,9 @@ function atualizarAlertasNasGuias(linhas) {
         for (let indice = 0; indice < 3; indice++) aviso.insertCell();
         const texto = aviso.insertCell();
         texto.colSpan = 9;
-        const unitarioTabela = numeroOuNulo(linha.referencia?.t);
+        const unitarioTabela = linha.categoria === 'Anestesia'
+            ? obterEscalaAnestesia(anoAuditoria(linha.evento.data || linha.guia.data), numeroOuNulo(linha.referencia?.an), linha.evento.data || linha.guia.data)
+            : numeroOuNulo(linha.referencia?.t);
         const valorTabela = unitarioTabela === null ? linha.limiteReferencia
             : arredondarTabela(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1), linha.evento.codigo);
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
