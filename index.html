@@ -771,6 +771,7 @@
 .link-guia-resumo{padding:1px 4px!important;min-height:0!important;background:transparent;border:0;color:inherit;text-decoration:underline;font:inherit;font-weight:700;cursor:pointer;}.link-guia-resumo:hover{background:#dbeafe;color:#1e40af;}.link-guia-resumo:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}.guia-destacada-resumo{animation:destaque-guia-resumo 2.5s ease;scroll-margin-top:16px;}@keyframes destaque-guia-resumo{0%,65%{box-shadow:0 0 0 3px #2563eb;}100%{box-shadow:none;}}
 .filtro-secao-guias{display:flex;align-items:center;gap:7px;margin:0 0 9px;font-size:12px;cursor:pointer;}.filtro-secao-guias input{width:16px;height:16px;margin:0;accent-color:#2563eb;}
 .aviso-via-pendente-beneficiario{display:block;margin-top:5px;color:#b91c1c;font-size:12px;font-weight:700;line-height:1.4;}.botao-regra-beneficiario.via-pendente{background:#b91c1c!important;color:#fff!important;border-color:#991b1b!important;}
+.selecao-correcao{display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.4;margin:7px 0;color:#1e3a8a;white-space:normal;}.selecao-correcao input{flex:none;width:15px;height:15px;margin:1px 0;accent-color:#2563eb;}#modalCorrecoes{position:fixed;inset:0;z-index:12000;background:rgba(15,23,42,.65);padding:3vh 3vw;overflow:auto;}#modalCorrecoes[hidden]{display:none;}.correcoes-painel{max-width:1100px;margin:auto;background:white;padding:20px;border-radius:14px;}.correcoes-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:12px;}.correcoes-cabecalho h2{margin:0 0 12px;font-size:19px;}#itensCorrecoes{max-height:22vh;overflow:auto;margin:12px 0;}.item-correcao-previa{border-bottom:1px solid #dbeafe;padding:8px 0;font-size:12px;}.item-correcao-previa label{display:block;}.item-correcao-previa input[type=text]{width:100%;margin-top:5px;box-sizing:border-box;}#textoRelatorioCorrecoes{display:block;width:100%;height:40vh;box-sizing:border-box;margin:8px 0;font-family:inherit;font-size:13px;}.abrir-relatorio-correcoes{align-self:flex-start;margin:8px 0;}
 </style>
 </head>
 <body>
@@ -921,6 +922,7 @@
     <div style="font-size:11px;color:#475569;margin-top:5px">O filtro atualiza o relatório enquanto você digita ou cola, sem precisar gerar novamente.</div>
     <div id="statusFiltroEventos" class="auditoria-info" aria-live="polite"></div>
 </div>
+<button type="button" class="btn-primary abrir-relatorio-correcoes no-print" onclick="abrirRelatorioCorrecoes()">Relatório de correções (0)</button>
 <div id="saida"></div>
 <div id="tourExemploAnalise" class="tour-exemplo-analise no-print" hidden><span>Exemplo demonstrativo · beneficiário oculto</span><button id="tourBotaoAnaliseExemplo" type="button" class="botao-regra-beneficiario" tabindex="-1">Analisar 100–70 · 1 evento</button></div>
 </section>
@@ -928,7 +930,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.22</p>
+    <p class="versao-relatorio">Versão 5.24</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1019,6 +1021,7 @@
     </div>
 </div>
 
+<div id="modalCorrecoes" class="no-print" role="dialog" aria-modal="true" aria-labelledby="tituloCorrecoes" hidden><div class="correcoes-painel"><div class="correcoes-cabecalho"><h2 id="tituloCorrecoes">Relatório de correções</h2><button type="button" onclick="document.getElementById('modalCorrecoes').hidden=true">Fechar ×</button></div><div><button type="button" onclick="selecionarDivergenciasCorrecoes()">Selecionar divergências confirmadas</button> <button type="button" onclick="atualizarPreviaCorrecoes()">Atualizar texto</button> <button type="button" onclick="SELECOES_CORRECOES.set(document.getElementById('modalCorrecoes').dataset.peg,{});gravarCorrecoesPeg(document.getElementById('modalCorrecoes').dataset.peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===document.getElementById('modalCorrecoes').dataset.peg)el.checked=false;});atualizarPreviaCorrecoes()">Limpar seleção deste PEG</button></div><div id="itensCorrecoes"></div><label for="textoRelatorioCorrecoes">Texto para encaminhar no SEI (editável)</label><textarea id="textoRelatorioCorrecoes"></textarea><button type="button" class="btn-primary" onclick="copiarRelatorioCorrecoes()">Copiar texto para o SEI</button><p id="statusCorrecoes" role="status" aria-live="polite"></p></div></div>
 <div id="modalAuditoriaBeneficiario" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="tituloPopupAuditoriaBeneficiario" aria-hidden="true">
     <div class="modal-content">
         <div class="popup-auditoria-cabecalho">
@@ -1302,6 +1305,8 @@ function abrirPopupEmJanelaSeparada(tipo) {
     janela.aplicarPercentualEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarPercentualEventoAuditoria');
     janela.aplicarCondicaoEventoAuditoria = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarCondicaoEventoAuditoria');
     janela.aplicarBilateralidadeOftalmo = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'aplicarBilateralidadeOftalmo');
+    janela.marcarCorrecao = campo => { marcarCorrecao(campo); };
+    janela.abrirRelatorioCorrecoes = () => { window.focus();abrirRelatorioCorrecoes(); };
     janela.alterarHorarioEspecialHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarHorarioEspecialHospitalar');
     janela.alterarTipoHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarTipoHospitalar');
     janela.alterarViaHospitalar = elemento => sincronizarControleJanelaSeparada(tipo, elemento, 'alterarViaHospitalar');
@@ -1476,15 +1481,115 @@ function statusConsultaSQL(texto,erro=false) {
     const area=document.getElementById('statusConsultaSQL');area.hidden=false;
     area.textContent=texto;area.className='no-print '+(erro?'importacao-erro':'importacao-sucesso');
 }
+const SELECOES_CORRECOES = new Map();
+function identidadeGuiaCorrecao(g){return [g.peg,g.ordem,g.matricula,g.beneficiario,g.data].join('|');}
+function identidadeEventoCorrecao(e){return [identidadeGuiaCorrecao(e.guia),e.ordem,e.codigo,e.grau,e.data].join('|');}
+function selecoesCorrecoesPeg(peg){
+    if(!SELECOES_CORRECOES.has(peg)){let itens={};try{itens=JSON.parse(localStorage.getItem('relatorio-peg-correcoes:'+peg)||'{}');}catch{}SELECOES_CORRECOES.set(peg,itens&&typeof itens==='object'&&!Array.isArray(itens)?itens:{});}
+    return SELECOES_CORRECOES.get(peg);
+}
+function gravarCorrecoesPeg(peg){try{localStorage.setItem('relatorio-peg-correcoes:'+peg,JSON.stringify(selecoesCorrecoesPeg(peg)));}catch{document.getElementById('statusCorrecoes').textContent='Marcações mantidas nesta sessão; armazenamento do navegador indisponível.';}}
+function checkboxCorrecao(tipo,g,e=null,motivo=''){
+    const guia=identidadeGuiaCorrecao(g),evento=e?identidadeEventoCorrecao(e):'',chave=tipo+'|'+(evento||guia);
+    const item=selecoesCorrecoesPeg(g.peg)[chave];
+    return `<label class="selecao-correcao no-print"><input type="checkbox" data-correcao-chave="${escAuditoria(chave)}" data-correcao-peg="${escAuditoria(g.peg)}" data-correcao-tipo="${escAuditoria(tipo)}" data-correcao-guia="${escAuditoria(guia)}" data-correcao-evento="${escAuditoria(evento)}" data-correcao-motivo="${escAuditoria(motivo)}" ${item?'checked':''} onchange="marcarCorrecao(this)">Incluir no relatório de correções${motivo?' · '+escAuditoria(motivo):''}</label>`;
+}
+function marcarCorrecao(campo){
+    const peg=campo.dataset.correcaoPeg,chave=campo.dataset.correcaoChave,itens=selecoesCorrecoesPeg(peg);
+    if(campo.checked)itens[chave]={tipo:campo.dataset.correcaoTipo,guia:campo.dataset.correcaoGuia,evento:campo.dataset.correcaoEvento,motivo:campo.dataset.correcaoMotivo,nota:itens[chave]?.nota||''};else delete itens[chave];
+    gravarCorrecoesPeg(peg);
+    document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg&&el.dataset.correcaoChave===chave)el.checked=campo.checked;});
+    atualizarContadoresCorrecoes();
+}
+function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes();const n=peg?Object.keys(selecoesCorrecoesPeg(peg)).length:0;document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
+function valoresCorrecao(l){
+    if(l.permitido===null||!Number.isFinite(l.limiteReferencia))return null;
+    const retirar=Math.min(centavosTabela(l.benner),Math.max(centavosTabela(Math.min(l.solicitado,l.limiteReferencia))-centavosTabela(numeroAuditoria(l.evento.valorPago)),0));
+    const adicionar=centavosTabela(l.adicional || 0);
+    return {retirar:retirar>1?retirar/100:0,adicionar:adicionar>1?adicionar/100:0};
+}
+function controleCorrecaoEvento(l){const v=valoresCorrecao(l);return v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,'Divergência após aplicação da regra'):'';}
+function montarSeletoresCorrecoesGuias(linhas){
+    document.querySelectorAll('#saida .seletores-correcao-guia,#saida .selecao-correcao-evento').forEach(e=>e.remove());
+    for(const g of GLOBAL_MODELO_AUDITORIA.guias){
+        const card=[...document.querySelectorAll('#saida .card')].find(c=>c.dataset.peg===g.peg&&c.dataset.guia===g.ordem);if(!card)continue;
+        const dado=GLOBAL_DADOS_RESUMO[g.peg]?.beneficiarios?.find(b=>b.guia===g.ordem&&b.matricula===g.matricula&&b.nome===g.beneficiario);
+        const criticas=[];if(dado?.eps)criticas.push(['eps','Beneficiário EPS']);if(dado?.exercicioDistinto)criticas.push(['exercicio','Exercício distinto']);if(dado?.maisDeUmAno)criticas.push(['prazo','Guia expirada']);
+        const destino=card.querySelector('.linha-beneficiario td');
+        if(destino&&criticas.length){const div=document.createElement('div');div.className='seletores-correcao-guia';div.innerHTML=criticas.map(([tipo,motivo])=>checkboxCorrecao(tipo,g,null,motivo)).join('');destino.append(div);}
+        for(const e of g.eventos){const row=[...card.querySelectorAll('tr[data-auditoria-id]')].find(r=>r.dataset.auditoriaId===e.id);if(!row)continue;
+            const l=linhas.find(l=>l.evento.id===e.id);const div=document.createElement('div');div.className='selecao-correcao-evento';
+            div.innerHTML=l?controleCorrecaoEvento(l):'';
+            let next=row.nextElementSibling;while(next&&!next.dataset.auditoriaId){if(next.classList.contains('alerta-parecer-sei')){div.innerHTML+=checkboxCorrecao('parecer',g,e,'Sem glosa: conferir parecer técnico no SEI');break;}next=next.nextElementSibling;}
+            if(div.innerHTML)row.cells[3]?.append(div);
+        }
+    }
+    atualizarContadoresCorrecoes();
+}
+function itensAtuaisCorrecoes(peg){
+    return Object.entries(selecoesCorrecoesPeg(peg)).map(([chave,item])=>{
+        const guia=GLOBAL_MODELO_AUDITORIA.guias.find(g=>g.peg===peg&&identidadeGuiaCorrecao(g)===item.guia);
+        const evento=item.evento?guia?.eventos.find(e=>identidadeEventoCorrecao(e)===item.evento):null;
+        const linha=evento?GLOBAL_TODAS_LINHAS_AUDITORIA.find(l=>l.evento.id===evento.id):null;
+        return {chave,item,guia,evento,linha};
+    });
+}
+function textoRelatorioCorrecoes(peg){
+    const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
+    const texto=['SOLICITAÇÃO DE CORREÇÕES À EQUIPE DE AUDITORIA',`PEG: ${peg}`,`Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`,'','Solicito a conferência e correção dos itens selecionados abaixo.'];
+    const pendencias=[];let ordem=0;
+    for(const {item,guia,evento,linha} of itens){
+        if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
+        const critAtual=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios?.find(b=>b.guia===guia.ordem&&b.matricula===guia.matricula&&b.nome===guia.beneficiario);
+        if((item.tipo==='eps'&&!critAtual?.eps)||(item.tipo==='exercicio'&&!critAtual?.exercicioDistinto)||(item.tipo==='prazo'&&!critAtual?.maisDeUmAno)||(item.tipo==='parecer'&&(evento?.qtdGlosa>0||evento?.valorGlosadoBenner>0||evento?.glosas?.length))){pendencias.push(`Guia ${guia.ordem}: ${item.motivo} não mais identificado na extração atual. Conferir a seleção.`);continue;}
+        const v=item.tipo==='regra'?valoresCorrecao(linha||{}):null;
+        if(item.tipo==='regra'&&(!v||(!v.retirar&&!v.adicionar))){pendencias.push(`Guia ${guia.ordem}, item ${evento.ordem}: regra pendente ou divergência não mais existente. Não incluída como pedido de correção.`);continue;}
+        texto.push('',`${++ordem}. ${item.motivo}`,`Beneficiário: ${guia.beneficiario} · Matrícula: ${guia.matricula}`,`Guia: ${guia.ordem} · Atendimento: ${guia.data}`);
+        if(!evento)texto.push(`Valores da guia: apresentado ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorApresentado),0))} · liberado pelo Benner ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorPago),0))} · glosa Benner ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorGlosadoBenner),0))}`);
+        if(evento)texto.push(`Item: ${evento.ordem} · Código: ${formatarCodigoAuditoria(evento.codigo)} · ${evento.descricao}`,`Grau: ${evento.grau} · Quantidade: ${evento.quantidade}`,`Valor apresentado: ${valorBRL(evento.valorApresentado)} · Liberado pelo Benner: ${valorBRL(evento.valorPago)} · Glosa Benner: ${valorBRL(evento.valorGlosadoBenner)}`);
+        if(item.tipo==='regra'){texto.push(`Regra aplicada: ${linha.regra}`,`Limite do relatório: ${valorBRL(linha.limiteReferencia)}`);if(v.adicionar)texto.push(`Correção solicitada: lançar glosa adicional de ${valorBRL(v.adicionar)}.`);if(v.retirar)texto.push(`Correção solicitada: retirar glosa do Benner de ${valorBRL(v.retirar)}.`);}
+        else if(item.tipo==='parecer')texto.push('Solicitação: verificar o parecer técnico no SEI e corrigir a ausência de glosa, se indicada pelo parecer.');
+        else texto.push(`Solicitação: conferir e corrigir o apontamento de ${item.motivo.toLowerCase()} desta guia.`);
+        if(item.nota?.trim())texto.push(`Observação do item: ${item.nota.trim()}`);
+    }
+    let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}
+    if(notas.trim())texto.push('','ANOTAÇÕES DO PEG',notas.trim());
+    if(pendencias.length)texto.push('','PENDÊNCIAS PARA CONFERÊNCIA (SEM PEDIDO DE CORREÇÃO DEFINITIVO)',...pendencias);
+    if(!ordem)texto.push('','Nenhum item válido selecionado para correção.');
+    return texto.join('\n');
+}
+function abrirRelatorioCorrecoes(){
+    const peg=pegDasAnotacoes();if(!peg){alert('Selecione um PEG para preparar o relatório de correções.');return;}
+    const modal=document.getElementById('modalCorrecoes');modal.dataset.peg=peg;modal.hidden=false;
+    document.getElementById('tituloCorrecoes').textContent='Relatório de correções · PEG '+peg;
+    atualizarPreviaCorrecoes();document.getElementById('textoRelatorioCorrecoes').focus();
+}
+function atualizarPreviaCorrecoes(){
+    const peg=document.getElementById('modalCorrecoes').dataset.peg;
+    document.getElementById('itensCorrecoes').innerHTML=itensAtuaisCorrecoes(peg).map(({chave,item,guia,evento})=>`<div class="item-correcao-previa"><label><input type="checkbox" checked data-correcao-chave="${escAuditoria(chave)}" data-correcao-peg="${escAuditoria(peg)}" onchange="removerItemCorrecao(this)"> ${escAuditoria(item.motivo)} · ${escAuditoria(guia?.beneficiario||'Item não localizado')} · Guia ${escAuditoria(guia?.ordem||'—')}${evento?' / item '+escAuditoria(evento.ordem):''}</label><input type="text" placeholder="Observação específica deste item (opcional)" value="${escAuditoria(item.nota||'')}" data-chave="${escAuditoria(chave)}" oninput="salvarNotaCorrecao(this)"></div>`).join('')||'<p>Marque as críticas no relatório ou as divergências no popup de análise.</p>';
+    document.getElementById('textoRelatorioCorrecoes').value=textoRelatorioCorrecoes(peg);
+    document.getElementById('statusCorrecoes').textContent='Confira e edite o texto antes de copiar. As seleções ficam salvas somente neste navegador, por PEG.';
+    atualizarContadoresCorrecoes();
+}
+function removerItemCorrecao(campo){delete selecoesCorrecoesPeg(campo.dataset.correcaoPeg)[campo.dataset.correcaoChave];gravarCorrecoesPeg(campo.dataset.correcaoPeg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoChave===campo.dataset.correcaoChave)el.checked=false;});atualizarPreviaCorrecoes();}
+function salvarNotaCorrecao(campo){const peg=document.getElementById('modalCorrecoes').dataset.peg;selecoesCorrecoesPeg(peg)[campo.dataset.chave].nota=campo.value;gravarCorrecoesPeg(peg);document.getElementById('textoRelatorioCorrecoes').value=textoRelatorioCorrecoes(peg);}
+function selecionarDivergenciasCorrecoes(){
+    const peg=pegDasAnotacoes();if(!peg)return;for(const l of GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>l.guia.peg===peg)){const v=valoresCorrecao(l);if(v&&(v.adicionar||v.retirar)){const chave='regra|'+identidadeEventoCorrecao(l.evento),itens=selecoesCorrecoesPeg(peg);itens[chave]={tipo:'regra',guia:identidadeGuiaCorrecao(l.guia),evento:identidadeEventoCorrecao(l.evento),motivo:'Divergência após aplicação da regra',nota:itens[chave]?.nota||''};}}
+    gravarCorrecoesPeg(peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg)el.checked=!!selecoesCorrecoesPeg(peg)[el.dataset.correcaoChave];});atualizarPreviaCorrecoes();
+}
+async function copiarRelatorioCorrecoes(){const campo=document.getElementById('textoRelatorioCorrecoes');try{if(navigator.clipboard?.writeText&&window.isSecureContext)await navigator.clipboard.writeText(campo.value);else{campo.focus();campo.select();if(!document.execCommand('copy'))throw new Error('Selecione o texto e copie com Ctrl+C.');}document.getElementById('statusCorrecoes').textContent='Texto copiado. Cole no campo do SEI.';}catch(e){campo.focus();campo.select();document.getElementById('statusCorrecoes').textContent=e.message+' Use Ctrl+C para copiar.';}}
+
 function exportarConsultaSQL() {
     const texto=document.getElementById('input').value;
     if(!texto.trim()){statusConsultaSQL('Cole o resultado da consulta antes de exportar.',true);return;}
     const url=URL.createObjectURL(new Blob([texto],{type:'text/plain;charset=utf-8'}));
     const link=document.createElement('a');link.href=url;
-    const peg=document.getElementById('peg').value.replace(/[^0-9;, ]/g,'').trim().replace(/[;, ]+/g,'-');
+    const pegsCampo=document.getElementById('peg').value.split(/[\s;,]+/).map(p=>p.replace(/\D/g,'')).filter(Boolean);
+    const pegsExtracao=texto.split(/\r?\n/).map(l=>l.split('\t')).filter(c=>c[39]==='0').map(c=>String(c[34]||'').replace(/\D/g,'')).filter(Boolean);
+    const peg=[...new Set(pegsCampo.length?pegsCampo:pegsExtracao)].join('-');
     const partes=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(p=>[p.type,p.value]));
-    const dataSalva=`${partes.year}-${partes.month}-${partes.day}_${partes.hour}-${partes.minute}-${partes.second}`;
-    link.download='consulta-SQL'+(peg?'-PEG-'+peg.slice(0,100):'')+'_'+dataSalva+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const dataSalva=`${partes.day}-${partes.month}-${partes.year}`;
+    link.download='Consulta-'+dataSalva+(peg?'-PEG-'+peg:'')+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
     statusConsultaSQL('Consulta exportada em TXT.');
 }
 async function importarConsultaSQL(campo) {
@@ -4422,7 +4527,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td class="valor ${acima ? 'auditoria-excesso' : ''}">${linha.excessoTabela === null ? '—' : valorBRL(linha.excessoTabela)}${acima && !calculado ? '<small>Apenas alerta de preço</small>' : ''}</td>
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${retirarGlosa>0?`<small class="auditoria-retirar-glosa">Retirar glosa do Benner: ${valorBRL(retirarGlosa)}</small>`:''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
-                ${hospitalar ? controleTipoHospitalar(linha,prefixoId)+controleHorarioEspecialHospitalar(linha,prefixoId) : ''}${controleOftalmo}${percentualControle}
+                ${controleCorrecaoEvento(linha)}${hospitalar ? controleTipoHospitalar(linha,prefixoId)+controleHorarioEspecialHospitalar(linha,prefixoId) : ''}${controleOftalmo}${percentualControle}
                 ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
@@ -4840,7 +4945,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const apenasPreco = itens.filter(item => item.excessoTabela > 0 && item.permitido === null);
     const pendentes = itens.filter(item => item.permitido === null || item.alerta);
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
-    conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
+    conteudo.innerHTML = `<button type="button" class="abrir-relatorio-correcoes btn-secondary" onclick="abrirRelatorioCorrecoes()">Relatório de correções (${Object.keys(selecoesCorrecoesPeg(guia.peg)).length})</button><p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
         ${SUCESSO_ORIENTACAO_PERITO?`<p class="importacao-retorno importacao-sucesso" role="status">${escAuditoria(SUCESSO_ORIENTACAO_PERITO)}</p>`:''}
         <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. Para taxas de sala, use um bloco separado: Porte 3: 100%, Porte 3: 50%, Porte 2: 25% (uma linha por ocorrência, incluindo cada unidade da quantidade). Portes repetidos são associados por número da guia e item; confira a prévia. A orientação alcança os eventos elegíveis deste caso, inclusive os ocultos pelos filtros. Radiologia e taxas hospitalares mantêm suas regras próprias e não recebem os percentuais do parecer. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
@@ -4966,6 +5071,7 @@ function atualizarAuditoria() {
     }
     const linhasDoPeg = linhas.filter(linha => linha.guia.peg === pegAtivo && linha.referencia);
     GLOBAL_TODAS_LINHAS_AUDITORIA = linhasDoPeg;
+    montarSeletoresCorrecoesGuias(linhas);
     atualizarBotoesAuditoriaBeneficiarios(linhasDoPeg);
     atualizarResumoAreasAuditoria(linhasDoPeg);
     GLOBAL_LINHAS_AUDITORIA = filtrarLinhasAuditoria(linhasDoPeg);
