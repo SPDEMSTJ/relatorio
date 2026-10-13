@@ -931,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.31</p>
+    <p class="versao-relatorio">Versão 5.33</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1516,9 +1516,24 @@ function linhaEfetivaCorrecao(l){
 function elegivelCorrecaoVias(l){
     if(!l?.evento||!linhasRegraBeneficiarioAuditoria([l]).length)return false;
     const motivos=(l.evento.glosas||[]).map(g=>normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`));
-    if(motivos.some(t=>/VALOR.*(?:COBRAD|APRESENTAD).*(?:MAIOR|ACIMA|SUPERIOR)|VALOR\s+(?:MAIOR|ACIMA|SUPERIOR).*COBRAD/.test(t)))return false;
+    if(motivos.some(t=>/TIPO HOSPITALAR.*(?:INCORRET|DIFERENT)|TABELA.*(?:OUTRO TIPO|TIPO INCORRETO)|VIGENCIA.*(?:PASSADA|ANTERIOR|INCORRET|VENCIDA)/.test(t)))return false;
+    const data=l.evento.data||l.guia.data;
+    if(l.referencia?.hospitalar){
+        const tabela=tabelaHospitalarEvento(l.evento);
+        if(!tabela?.registros[l.evento.codigo]||l.referencia.tipoHospital!==tipoHospitalPrestador(l.guia))return false;
+        if(l.referencia.vigencia&&tabela.vigencia&&dataAuditoria(l.referencia.vigencia)?.getTime()!==dataAuditoria(tabela.vigencia)?.getTime())return false;
+    }else{
+        const tipo=l.categoria==='Radiologia'?'radiologia':l.categoria==='Oftalmologia'?'oftalmologia':'honoraria';
+        const ref=obterReferencia(tipo,anoAuditoria(data),l.evento.codigo,data);
+        if(!ref||(l.referencia?.anoFonte&&ref.anoFonte&&String(l.referencia.anoFonte)!==String(ref.anoFonte)))return false;
+        if(l.categoria==='Anestesia'&&!(obterEscalaAnestesia(anoAuditoria(data),numeroOuNulo(ref.an),data)>0))return false;
+    }
+    const reducaoPorRegra=[25,50,70,170].includes(l.percentual)||(l.referencia?.hospitalar&&/\b(?:25|50|70)%/.test(l.regra));
+    const glosaDePreco=motivos.some(t=>/VALOR.*(?:COBRAD|APRESENTAD).*(?:MAIOR|ACIMA|SUPERIOR)|VALOR\s+(?:MAIOR|ACIMA|SUPERIOR).*COBRAD/.test(t));
+    const retirar=l.permitido!==null&&Number.isFinite(l.limiteReferencia)?Math.min(centavosTabela(l.benner),Math.max(centavosTabela(Math.min(l.solicitado,l.limiteReferencia))-centavosTabela(numeroAuditoria(l.evento.valorPago)),0)):0;
+    if(glosaDePreco&&!(retirar>1||reducaoPorRegra&&numeroAuditoria(l.adicional)>0.01))return false;
     // A 100%, excesso sem ajuste por via é uma divergência de preço.
-    if(l.percentual===100&&numeroAuditoria(l.adicional)>0)return false;
+    if(l.percentual===100&&numeroAuditoria(l.adicional)>0&&retirar<=1)return false;
     return true;
 }
 function valoresCorrecao(l){
