@@ -931,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.33</p>
+    <p class="versao-relatorio">Versão 5.34</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1577,6 +1577,7 @@ function itensAtuaisCorrecoes(peg){
         return {chave,item,guia,evento,linha};
     }).filter(r=>r.item.tipo!=='regra'||!r.linha||elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha)));
 }
+function normalizarTextoSEI(texto){return String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ');}
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
     const texto=['À EQUIPE DE AUDITORIA — SOLICITAÇÃO DE CORREÇÕES',`PEG: ${peg} · Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`];
@@ -1595,19 +1596,19 @@ function textoRelatorioCorrecoes(peg){
         if(item.tipo==='regra'){
             const partes=linha.referencia?.hospitalar?PERCENTUAIS_PORTES_PERITO.get(evento.id):null;
             const percentual=partes?.length ? partes.map(p=>`${p}%`).join(' + ') : linha.percentual===170 ? '100% + 70%' : linha.percentual!==null ? `${linha.percentual}%` : [...linha.regra.matchAll(/(\d+)\s*×\s*(\d+)%/g)].map(m=>`${m[1]} × ${m[2]}%`).join(' + ') || linha.regra;
-            texto.push(linha.referencia?.hospitalar ? `Aplicar regra: ${percentual} — conforme parecer médico.` : 'Aplicar regra 100-70/50, conforme parecer médico.',`Liberado: ${valorBRL(evento.valorPago)} · Valor da tabela: ${valorBRL(linha.limiteReferencia)}.`);
+            texto.push('',linha.referencia?.hospitalar ? `CORREÇÃO: Aplicar regra: ${percentual} - conforme parecer médico.` : 'CORREÇÃO: Aplicar regra 100-70/50, conforme parecer médico.','',`Liberado: ${valorBRL(evento.valorPago)} · Valor da tabela: ${valorBRL(linha.limiteReferencia)}.`);
             if(v.adicionar)texto.push(`Lançar glosa adicional de ${valorBRL(v.adicionar)}.`);
             if(v.retirar)texto.push(`Retirar glosa do Benner de ${valorBRL(v.retirar)}.`);
         }
-        else if(item.tipo==='parecer')texto.push('Sem glosa: verificar o parecer técnico no SEI e corrigir, se indicado.');
-        else texto.push(`${item.motivo}: conferir e corrigir o faturamento.`);
+        else if(item.tipo==='parecer')texto.push('','CORREÇÃO: Evento sem glosa. Verificar o parecer técnico no SEI e corrigir, se indicado.','');
+        else texto.push('',`CORREÇÃO: ${item.motivo}. Conferir e corrigir o faturamento.`,'');
         if(item.nota?.trim())texto.push(`Observação do item: ${item.nota.trim()}`);
     }
     let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}
     if(notas.trim())texto.push('','ANOTAÇÕES ADICIONAIS:',notas.trim());
     if(pendencias.length)texto.push('','PENDÊNCIAS PARA CONFERÊNCIA (SEM PEDIDO DE CORREÇÃO DEFINITIVO)',...pendencias);
     if(!ordem)texto.push('','Nenhum item válido selecionado para correção.');
-    return texto.join('\n');
+    return normalizarTextoSEI(texto.join('\n'));
 }
 function abrirRelatorioCorrecoes(){
     const peg=pegDasAnotacoes();if(!peg){alert('Selecione um PEG para preparar o relatório de correções.');return;}
@@ -1628,7 +1629,7 @@ function selecionarDivergenciasCorrecoes(){
     const peg=pegDasAnotacoes();if(!peg)return;for(const l of GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>l.guia.peg===peg&&!guiaIntegralmenteGlosada(l.guia))){const v=valoresCorrecao(l);if(v&&(v.adicionar||v.retirar)){const chave='regra|'+identidadeEventoCorrecao(l.evento),itens=selecoesCorrecoesPeg(peg);itens[chave]={tipo:'regra',guia:identidadeGuiaCorrecao(l.guia),evento:identidadeEventoCorrecao(l.evento),motivo:'Divergência após aplicação da regra',nota:itens[chave]?.nota||''};}}
     gravarCorrecoesPeg(peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg)el.checked=!!selecoesCorrecoesPeg(peg)[el.dataset.correcaoChave];});atualizarPreviaCorrecoes();
 }
-async function copiarRelatorioCorrecoes(){const campo=document.getElementById('textoRelatorioCorrecoes');try{if(navigator.clipboard?.writeText&&window.isSecureContext)await navigator.clipboard.writeText(campo.value);else{campo.focus();campo.select();if(!document.execCommand('copy'))throw new Error('Selecione o texto e copie com Ctrl+C.');}document.getElementById('statusCorrecoes').textContent='Texto copiado. Cole no campo do SEI.';}catch(e){campo.focus();campo.select();document.getElementById('statusCorrecoes').textContent=e.message+' Use Ctrl+C para copiar.';}}
+async function copiarRelatorioCorrecoes(){const campo=document.getElementById('textoRelatorioCorrecoes');campo.value=normalizarTextoSEI(campo.value);try{if(navigator.clipboard?.writeText&&window.isSecureContext)await navigator.clipboard.writeText(campo.value);else{campo.focus();campo.select();if(!document.execCommand('copy'))throw new Error('Selecione o texto e copie com Ctrl+C.');}document.getElementById('statusCorrecoes').textContent='Texto copiado. Cole no campo do SEI.';}catch(e){campo.focus();campo.select();document.getElementById('statusCorrecoes').textContent=e.message+' Use Ctrl+C para copiar.';}}
 
 function exportarConsultaSQL() {
     const texto=document.getElementById('input').value;
