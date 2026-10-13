@@ -931,7 +931,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.29</p>
+    <p class="versao-relatorio">Versão 5.30</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1520,7 +1520,7 @@ function valoresCorrecao(l){
     const adicionar=centavosTabela(l.adicional || 0);
     return {retirar:retirar>1?retirar/100:0,adicionar:adicionar>1?adicionar/100:0};
 }
-function controleCorrecaoEvento(l){const v=valoresCorrecao(l);return v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,'Divergência após aplicação da regra'):'';}
+function controleCorrecaoEvento(l){if(guiaIntegralmenteGlosada(l.guia))return '';const v=valoresCorrecao(l);return v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,'Divergência após aplicação da regra'):'';}
 function guiaIntegralmenteGlosada(g){
     const dado=GLOBAL_DADOS_RESUMO[g.peg]?.beneficiarios?.find(b=>b.guia===g.ordem&&b.matricula===g.matricula&&b.nome===g.beneficiario);
     const valor=dado?.valor??g.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorApresentado),0);
@@ -1560,7 +1560,7 @@ function textoRelatorioCorrecoes(peg){
     for(const {item,guia,evento,linha:linhaOriginal} of itens){
         const linha=linhaEfetivaCorrecao(linhaOriginal);
         if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
-        if(['eps','exercicio','prazo','parecer'].includes(item.tipo)&&guiaIntegralmenteGlosada(guia)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
+        if(guiaIntegralmenteGlosada(guia)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
         const critAtual=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios?.find(b=>b.guia===guia.ordem&&b.matricula===guia.matricula&&b.nome===guia.beneficiario);
         if((item.tipo==='eps'&&!critAtual?.eps)||(item.tipo==='exercicio'&&!critAtual?.exercicioDistinto)||(item.tipo==='prazo'&&!critAtual?.maisDeUmAno)||(item.tipo==='parecer'&&(evento?.qtdGlosa>0||evento?.valorGlosadoBenner>0||evento?.glosas?.length))){pendencias.push(`Guia ${guia.ordem}: ${item.motivo} não mais identificado na extração atual. Conferir a seleção.`);continue;}
         const v=item.tipo==='regra'?valoresCorrecao(linha||{}):null;
@@ -1600,7 +1600,7 @@ function atualizarPreviaCorrecoes(){
 function removerItemCorrecao(campo){delete selecoesCorrecoesPeg(campo.dataset.correcaoPeg)[campo.dataset.correcaoChave];gravarCorrecoesPeg(campo.dataset.correcaoPeg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoChave===campo.dataset.correcaoChave)el.checked=false;});atualizarPreviaCorrecoes();}
 function salvarNotaCorrecao(campo){const peg=document.getElementById('modalCorrecoes').dataset.peg;selecoesCorrecoesPeg(peg)[campo.dataset.chave].nota=campo.value;gravarCorrecoesPeg(peg);document.getElementById('textoRelatorioCorrecoes').value=textoRelatorioCorrecoes(peg);}
 function selecionarDivergenciasCorrecoes(){
-    const peg=pegDasAnotacoes();if(!peg)return;for(const l of GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>l.guia.peg===peg)){const v=valoresCorrecao(l);if(v&&(v.adicionar||v.retirar)){const chave='regra|'+identidadeEventoCorrecao(l.evento),itens=selecoesCorrecoesPeg(peg);itens[chave]={tipo:'regra',guia:identidadeGuiaCorrecao(l.guia),evento:identidadeEventoCorrecao(l.evento),motivo:'Divergência após aplicação da regra',nota:itens[chave]?.nota||''};}}
+    const peg=pegDasAnotacoes();if(!peg)return;for(const l of GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>l.guia.peg===peg&&!guiaIntegralmenteGlosada(l.guia))){const v=valoresCorrecao(l);if(v&&(v.adicionar||v.retirar)){const chave='regra|'+identidadeEventoCorrecao(l.evento),itens=selecoesCorrecoesPeg(peg);itens[chave]={tipo:'regra',guia:identidadeGuiaCorrecao(l.guia),evento:identidadeEventoCorrecao(l.evento),motivo:'Divergência após aplicação da regra',nota:itens[chave]?.nota||''};}}
     gravarCorrecoesPeg(peg);document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg)el.checked=!!selecoesCorrecoesPeg(peg)[el.dataset.correcaoChave];});atualizarPreviaCorrecoes();
 }
 async function copiarRelatorioCorrecoes(){const campo=document.getElementById('textoRelatorioCorrecoes');try{if(navigator.clipboard?.writeText&&window.isSecureContext)await navigator.clipboard.writeText(campo.value);else{campo.focus();campo.select();if(!document.execCommand('copy'))throw new Error('Selecione o texto e copie com Ctrl+C.');}document.getElementById('statusCorrecoes').textContent='Texto copiado. Cole no campo do SEI.';}catch(e){campo.focus();campo.select();document.getElementById('statusCorrecoes').textContent=e.message+' Use Ctrl+C para copiar.';}}
