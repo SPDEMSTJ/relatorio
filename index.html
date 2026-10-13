@@ -930,7 +930,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.24</p>
+    <p class="versao-relatorio">Versão 5.25</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1536,7 +1536,7 @@ function itensAtuaisCorrecoes(peg){
 }
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
-    const texto=['SOLICITAÇÃO DE CORREÇÕES À EQUIPE DE AUDITORIA',`PEG: ${peg}`,`Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`,'','Solicito a conferência e correção dos itens selecionados abaixo.'];
+    const texto=['À EQUIPE DE AUDITORIA — SOLICITAÇÃO DE CORREÇÕES',`PEG: ${peg} · Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`];
     const pendencias=[];let ordem=0;
     for(const {item,guia,evento,linha} of itens){
         if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
@@ -1544,16 +1544,21 @@ function textoRelatorioCorrecoes(peg){
         if((item.tipo==='eps'&&!critAtual?.eps)||(item.tipo==='exercicio'&&!critAtual?.exercicioDistinto)||(item.tipo==='prazo'&&!critAtual?.maisDeUmAno)||(item.tipo==='parecer'&&(evento?.qtdGlosa>0||evento?.valorGlosadoBenner>0||evento?.glosas?.length))){pendencias.push(`Guia ${guia.ordem}: ${item.motivo} não mais identificado na extração atual. Conferir a seleção.`);continue;}
         const v=item.tipo==='regra'?valoresCorrecao(linha||{}):null;
         if(item.tipo==='regra'&&(!v||(!v.retirar&&!v.adicionar))){pendencias.push(`Guia ${guia.ordem}, item ${evento.ordem}: regra pendente ou divergência não mais existente. Não incluída como pedido de correção.`);continue;}
-        texto.push('',`${++ordem}. ${item.motivo}`,`Beneficiário: ${guia.beneficiario} · Matrícula: ${guia.matricula}`,`Guia: ${guia.ordem} · Atendimento: ${guia.data}`);
-        if(!evento)texto.push(`Valores da guia: apresentado ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorApresentado),0))} · liberado pelo Benner ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorPago),0))} · glosa Benner ${valorBRL(guia.eventos.reduce((s,e)=>s+numeroAuditoria(e.valorGlosadoBenner),0))}`);
-        if(evento)texto.push(`Item: ${evento.ordem} · Código: ${formatarCodigoAuditoria(evento.codigo)} · ${evento.descricao}`,`Grau: ${evento.grau} · Quantidade: ${evento.quantidade}`,`Valor apresentado: ${valorBRL(evento.valorApresentado)} · Liberado pelo Benner: ${valorBRL(evento.valorPago)} · Glosa Benner: ${valorBRL(evento.valorGlosadoBenner)}`);
-        if(item.tipo==='regra'){texto.push(`Regra aplicada: ${linha.regra}`,`Limite do relatório: ${valorBRL(linha.limiteReferencia)}`);if(v.adicionar)texto.push(`Correção solicitada: lançar glosa adicional de ${valorBRL(v.adicionar)}.`);if(v.retirar)texto.push(`Correção solicitada: retirar glosa do Benner de ${valorBRL(v.retirar)}.`);}
-        else if(item.tipo==='parecer')texto.push('Solicitação: verificar o parecer técnico no SEI e corrigir a ausência de glosa, se indicada pelo parecer.');
-        else texto.push(`Solicitação: conferir e corrigir o apontamento de ${item.motivo.toLowerCase()} desta guia.`);
+        texto.push('',`${++ordem}. ${guia.beneficiario} — Guia ${guia.ordem}${evento ? `, item ${evento.ordem}` : ''}`);
+        if(evento)texto.push(`${formatarCodigoAuditoria(evento.codigo)} — ${evento.descricao}`);
+        if(item.tipo==='regra'){
+            const partes=linha.referencia?.hospitalar?PERCENTUAIS_PORTES_PERITO.get(evento.id):null;
+            const percentual=partes?.length ? partes.map(p=>`${p}%`).join(' + ') : linha.percentual===170 ? '100% + 70%' : linha.percentual!==null ? `${linha.percentual}%` : [...linha.regra.matchAll(/(\d+)\s*×\s*(\d+)%/g)].map(m=>`${m[1]} × ${m[2]}%`).join(' + ') || linha.regra;
+            texto.push(`Aplicar regra: ${percentual} — conforme parecer médico.`,`Liberado: ${valorBRL(evento.valorPago)} · Valor da tabela: ${valorBRL(linha.limiteReferencia)}.`);
+            if(v.adicionar)texto.push(`Lançar glosa adicional de ${valorBRL(v.adicionar)}.`);
+            if(v.retirar)texto.push(`Retirar glosa do Benner de ${valorBRL(v.retirar)}.`);
+        }
+        else if(item.tipo==='parecer')texto.push('Sem glosa: verificar o parecer técnico no SEI e corrigir, se indicado.');
+        else texto.push(`${item.motivo}: conferir e corrigir o faturamento.`);
         if(item.nota?.trim())texto.push(`Observação do item: ${item.nota.trim()}`);
     }
     let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}
-    if(notas.trim())texto.push('','ANOTAÇÕES DO PEG',notas.trim());
+    if(notas.trim())texto.push('','ANOTAÇÕES ADICIONAIS:',notas.trim());
     if(pendencias.length)texto.push('','PENDÊNCIAS PARA CONFERÊNCIA (SEM PEDIDO DE CORREÇÃO DEFINITIVO)',...pendencias);
     if(!ordem)texto.push('','Nenhum item válido selecionado para correção.');
     return texto.join('\n');
