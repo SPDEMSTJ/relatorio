@@ -761,6 +761,13 @@
 .auditoria-pesquisa input{display:block;box-sizing:border-box;min-width:0;}
 #abaRegras .beneficiario-identidade-auditoria > strong{color:#1d4ed8;font-weight:700;}
 .auditoria-retirar-glosa{display:block;margin-top:4px;padding:5px 8px;border-left:3px solid #16a34a;border-radius:4px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;}
+.sql-cabecalho{display:flex;align-items:center;gap:8px;}.sql-cabecalho .dados-label{flex:1;min-width:0;}.sql-cabecalho #opcoesConsultaSQL{flex:none;padding:2px 9px;min-height:26px;font-size:18px;line-height:1;}
+#acoesConsultaSQL{padding:8px 0;}#acoesConsultaSQL p{font-size:12px;margin:6px 0;color:var(--muted);}#statusConsultaSQL{font-size:12px;padding:7px 10px;border-radius:6px;}
+.resumo-card h3:not(.titulo-dados){background:linear-gradient(105deg,#991b1b,#dc2626);color:#fff;padding:8px 10px;border-radius:7px;}
+#conteudoPopupAuditoriaBeneficiario{overflow:auto;}
+#conteudoPopupAuditoriaBeneficiario > :not(.auditoria-tabela-wrap){flex-shrink:0;}
+#conteudoPopupAuditoriaBeneficiario #orientacaoPerito{max-height:42vh;overflow:auto;}
+#conteudoPopupAuditoriaBeneficiario > .auditoria-tabela-wrap{min-height:200px;flex:1 0 200px;}
 </style>
 </head>
 <body>
@@ -793,7 +800,8 @@
     </div>
 </div>
 
-<label for="input" class="dados-label">2. Resultado da consulta SQL <span>Cole aqui os dados copiados do Benner</span></label>
+<div class="sql-cabecalho"><label for="input" class="dados-label">2. Resultado da consulta SQL <span>Cole aqui os dados copiados do Benner</span></label><button type="button" id="opcoesConsultaSQL" class="btn-secondary no-print" aria-expanded="false" aria-controls="acoesConsultaSQL" aria-label="Opções de exportar e importar consulta SQL" onclick="alternarOpcoesConsultaSQL(this)">+</button></div>
+<div id="acoesConsultaSQL" class="no-print" hidden><button type="button" onclick="exportarConsultaSQL()">Salvar consulta (exportar TXT)</button> <button type="button" onclick="document.getElementById('arquivoConsultaSQL').click()">Importar consulta</button><input type="file" id="arquivoConsultaSQL" accept=".txt,.tsv,.csv,text/plain,text/tab-separated-values,text/csv" hidden onchange="importarConsultaSQL(this)"><p>Salva e recupera o resultado da consulta colado no campo abaixo.</p></div><p id="statusConsultaSQL" class="no-print" role="status" aria-live="polite" hidden></p>
 <textarea id="input" class="no-print" placeholder="Cole aqui o resultado do SELECT gerado..." oninput="invalidarRelatorioAnterior()"></textarea>
 
 <div class="botoes-acao no-print">
@@ -834,7 +842,7 @@
 <details id="painelAuditoria" class="painel-auditoria" open>
     <summary>🔎 Detalhamento da auditoria</summary>
     <div class="no-print auditoria-pesquisa"><label for="buscarBeneficiarioAuditoria">Pesquisar na auditoria</label><input id="buscarBeneficiarioAuditoria" type="search" style="width:100%" placeholder="Beneficiário, matrícula, evento, código ou valor" oninput="atualizarAuditoria()"></div>
-    <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados. Quando o código principal se repete, só a ocorrência de maior valor recebe seu percentual; as demais recebem “Demais”.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
+    <details class="painel-tabelas" id="painelParecerCompleto" open><summary><strong>Aplicar parecer médico completo ao PEG</strong></summary><p>Cole o parecer completo. Folhas e textos adicionais são ignorados. Cada código principal identifica os casos do PEG ativo. Eventos de radiologia mantêm sua regra própria e não recebem os percentuais do parecer. Quando há principais diferentes no mesmo dia e grupo, a aplicação é separada por guia; “Demais” acompanha a orientação daquela guia. O nome do beneficiário será mostrado nas correspondências abaixo. Percentuais próprios dos auxiliares são preservados. Quando o código principal se repete, só a ocorrência de maior valor recebe seu percentual; as demais recebem “Demais”.</p><textarea id="parecerMedicoCompleto" rows="6" style="width:100%;height:140px;box-sizing:border-box" placeholder="Observações:&#10;Folhas:&#10;4:&#10;31303188: 100%&#10;Demais: 50%" onpaste="setTimeout(aplicarParecerCompleto,0)"></textarea><button type="button" onclick="aplicarParecerCompleto()">Aplicar parecer ao PEG</button><p class="auditoria-info">Ao colar, o parecer é aplicado automaticamente aos casos compatíveis. Se editar o texto, clique em Aplicar parecer ao PEG. Quando mais de um principal aparece na mesma guia, prevalece o maior porte e, em portes iguais, o maior valor de referência. Códigos principais sem ajuste de vias permanecem a 100%, com “Demais” aplicado somente aos elegíveis do caso. Empates, códigos não encontrados e orientações incompatíveis permanecem para conferência.</p><div id="resultadoParecerCompleto" role="status" aria-live="polite"></div></details>
     <div id="auditoriaSaida" class="auditoria-saida"><div class="auditoria-vazia">Gere o relatório para executar a auditoria técnica.</div></div>
 </details>
 <div class="painel-regras">
@@ -917,7 +925,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.08</p>
+    <p class="versao-relatorio">Versão 5.09</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1441,6 +1449,35 @@ function normalizarCampoPeg(campo) {
     if (normalizado === original) return;
     campo.value = normalizado;
     if (inicio !== null && fim !== null) campo.setSelectionRange(limpar(original.slice(0, inicio)).length, limpar(original.slice(0, fim)).length);
+}
+
+function alternarOpcoesConsultaSQL(botao) {
+    const area=document.getElementById('acoesConsultaSQL');area.hidden=!area.hidden;
+    botao.setAttribute('aria-expanded',String(!area.hidden));botao.textContent=area.hidden?'+':'−';
+}
+function statusConsultaSQL(texto,erro=false) {
+    const area=document.getElementById('statusConsultaSQL');area.hidden=false;
+    area.textContent=texto;area.className='no-print '+(erro?'importacao-erro':'importacao-sucesso');
+}
+function exportarConsultaSQL() {
+    const texto=document.getElementById('input').value;
+    if(!texto.trim()){statusConsultaSQL('Cole o resultado da consulta antes de exportar.',true);return;}
+    const url=URL.createObjectURL(new Blob([texto],{type:'text/plain;charset=utf-8'}));
+    const link=document.createElement('a');link.href=url;
+    const peg=document.getElementById('peg').value.replace(/[^0-9;, ]/g,'').trim().replace(/[;, ]+/g,'-');
+    link.download='consulta-SQL'+(peg?'-PEG-'+peg.slice(0,100):'')+'.txt';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    statusConsultaSQL('Consulta exportada em TXT.');
+}
+async function importarConsultaSQL(campo) {
+    const arquivo=campo.files?.[0];if(!arquivo)return;
+    try {
+        const texto=(await arquivo.text()).replace(/^\uFEFF/,'');
+        if(!texto.trim())throw new Error('O arquivo está vazio.');
+        if(!/^BENEFICIARIO[\t ;]/im.test(texto))throw new Error('Selecione uma extração SQL com o cabeçalho BENEFICIARIO.');
+        document.getElementById('input').value=texto;invalidarRelatorioAnterior();
+        statusConsultaSQL('Consulta importada com sucesso. Clique em Gerar Relatório para analisar.');
+    } catch(erro){statusConsultaSQL('Não foi possível importar: '+erro.message,true);}
+    finally{campo.value='';}
 }
 
 function copiarSQL() {
@@ -4433,7 +4470,7 @@ function percentuaisOrientacaoPorOcorrencia(linhas,regras,demais) {
 function aplicarParecerCompleto() {
     const area=document.getElementById('resultadoParecerCompleto');
     const {blocos,avisos}=interpretarParecerCompleto(document.getElementById('parecerMedicoCompleto').value);
-    const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA),grupos=new Map(),resultados=[];
+    const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).filter(l=>l.categoria!=='Radiologia'),grupos=new Map(),resultados=[];
     const idsElegiveis=new Set(elegiveis.map(l=>l.evento.id));
     const principaisIntegrais=GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>!idsElegiveis.has(l.evento.id)&&codigoSempreIntegral(l.evento.codigo)&&l.referencia&&CATEGORIAS_REGRA_BENEFICIARIO.has(l.categoria)&&!ehEventoPacoteAuditoria(l.evento,l.referencia)&&blocos.some(b=>b.codigo===codigoAuditoria(l.evento.codigo)&&b.principal===100));
     const linhasAssociacao=[...elegiveis,...principaisIntegrais];
@@ -4486,7 +4523,7 @@ function interpretarOrientacaoPerito(texto) {
 }
 function previaOrientacaoPerito() {
     const interpretacao=interpretarOrientacaoPerito(TEXTO_ORIENTACAO_PERITO);
-    const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
+    const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO).filter(l=>l.categoria!=='Radiologia');
     const erros=[...interpretacao.erros];
     for(const codigo of interpretacao.regras.keys())if(!linhas.some(l=>codigoAuditoria(l.evento.codigo)===codigo))erros.push(`Código ${formatarCodigoAuditoria(codigo)} não encontrado neste caso.`);
     const alteracoes=[];
@@ -4690,7 +4727,7 @@ function renderizarPopupAuditoriaBeneficiario() {
     const glosa = possiveis.reduce((soma, item) => soma + item.glosaTecnica, 0);
     conteudo.innerHTML = `<p class="auditoria-legenda">Os mesmos cálculos e controles da aba de auditoria para este beneficiário, reunindo eventos elegíveis do mesmo dia e grupo, inclusive quando estão em guias separadas. “Acima do limite” é um alerta para conferência, não uma glosa automática.</p>
         ${SUCESSO_ORIENTACAO_PERITO?`<p class="importacao-retorno importacao-sucesso" role="status">${escAuditoria(SUCESSO_ORIENTACAO_PERITO)}</p>`:''}
-        <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. A orientação alcança todos os eventos deste caso, inclusive os ocultos pelos filtros. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
+        <details class="help-details" id="orientacaoPerito" ${ORIENTACAO_PERITO_ABERTA?'open':''} ontoggle="registrarAberturaOrientacaoPerito(this.open)"><summary><strong>Aplicar orientação do perito neste caso</strong></summary><p>Informe um bloco do parecer. Exemplo: Código: 100% e Demais: 50%. A orientação alcança os eventos elegíveis deste caso, inclusive os ocultos pelos filtros. Eventos de radiologia mantêm sua regra própria e não recebem os percentuais do parecer. Os percentuais próprios dos auxiliares são preservados. Códigos repetidos: a ocorrência principal de maior valor recebe o percentual indicado; as outras recebem “Demais”.</p><textarea id="textoOrientacaoPerito" rows="3" style="width:100%;height:80px;box-sizing:border-box" placeholder="31102360: 100%&#10;Demais: 50%" oninput="atualizarPreviaOrientacaoPerito(this)">${escAuditoria(TEXTO_ORIENTACAO_PERITO)}</textarea><div id="previaOrientacaoPerito"></div><button id="aplicarOrientacaoPerito" type="button" disabled onclick="aplicarOrientacaoPerito()">Aplicar orientação</button></details>
         <div class="auditoria-filtros-linha">
         <div class="auditoria-filtros-codigos"><strong>Filtrar por código</strong><span>Selecione um ou mais códigos para mostrar somente seus eventos.</span><div class="auditoria-fila-codigos"><button type="button" class="auditoria-filtro-codigo ${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size ? 'ativo' : ''}" data-codigo="" aria-pressed="${!CODIGOS_SELECIONADOS_POPUP_AUDITORIA.size}" onclick="selecionarCodigoPopupAuditoria('')">Todos (${todosItens.length})</button>${codigos.map(codigo => `<button type="button" class="auditoria-filtro-codigo ${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo) ? 'ativo' : ''}" data-codigo="${escAuditoria(codigo)}" aria-pressed="${CODIGOS_SELECIONADOS_POPUP_AUDITORIA.has(codigo)}" onclick="selecionarCodigoPopupAuditoria('${codigo}')">${escAuditoria(formatarCodigoAuditoria(codigo))} <small>${todosItens.filter(linha => codigoAuditoria(linha.evento.codigo) === codigo).length}</small></button>`).join('')}</div></div>
         <div class="auditoria-filtros-codigos"><label for="filtroGrauPopupAuditoria"><strong>Filtrar por grau</strong></label><select id="filtroGrauPopupAuditoria" onchange="selecionarGrauPopupAuditoria(this)" style="width:100%;min-width:0;margin-top:4px"><option value="">Todos os graus (${todosItens.length})</option>${graus.map(grau=>`<option value="${escAuditoria(grau)}" ${GRAU_SELECIONADO_POPUP_AUDITORIA===grau?'selected':''}>${escAuditoria(grau)} (${todosItens.filter(linha=>grupoGrauPopupAuditoria(linha)===grau).length})</option>`).join('')}</select></div>
