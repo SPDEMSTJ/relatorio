@@ -776,6 +776,7 @@
 #itensCorrecoes .item-correcao-previa label{display:flex;align-items:center;gap:7px;}#itensCorrecoes input[type=checkbox]{width:15px;height:15px;min-width:15px;min-height:15px;max-width:15px;max-height:15px;flex:0 0 15px;padding:0;margin:0;accent-color:#2563eb;}
 #btnCorrecoesFlutuante{position:fixed;right:30px;bottom:150px;z-index:11000;border:1px solid #991b1b;border-radius:22px;background:#b91c1c;color:white;font-size:12px;font-weight:700;padding:10px 13px;box-shadow:0 3px 12px #0003;}#btnCorrecoesFlutuante[hidden]{display:none;}
 .pesquisa-guia-anotacoes{display:block;font-size:11px;margin-top:9px;}.pesquisa-guia-anotacoes input{display:block;box-sizing:border-box;width:100%;height:30px;min-height:30px;padding:4px 8px;font-size:12px;margin-top:3px;}.ajuda-mencoes{font-size:11px;line-height:1.4;color:#475569;margin:6px 0;}#sugestoesGuiasAnotacoes{max-height:150px;overflow:auto;margin:6px 0;font-size:12px;}#sugestoesGuiasAnotacoes[hidden]{display:none;}#sugestoesGuiasAnotacoes button{display:block;text-align:left;width:100%;padding:6px;font-size:11px;white-space:normal;margin:3px 0;height:auto;}
+.peg-select-original{display:none!important;}.seletor-pegs-tp{position:relative;min-width:190px;max-width:100%;}#botaoSeletorPegTP{background:#fff;border:1px solid #c6d6ef;border-radius:9px;color:#173b82;padding:9px 12px;min-height:40px;text-align:left;min-width:190px;}#botaoSeletorPegTP:after{content:" ▾";margin-left:9px;}#listaSeletorPegsTP{position:absolute;top:calc(100% + 4px);left:0;z-index:1500;background:white;border:1px solid #c6d6ef;border-radius:9px;box-shadow:0 6px 20px #0002;min-width:100%;max-height:300px;overflow:auto;}#listaSeletorPegsTP[hidden]{display:none;}#listaSeletorPegsTP button{display:block;white-space:nowrap;width:100%;text-align:left;border:0;border-radius:0;background:white;color:#173b82;padding:8px 12px;font-size:13px;}#listaSeletorPegsTP button:hover,#listaSeletorPegsTP button:focus,#listaSeletorPegsTP button[aria-selected=true]{background:#eff6ff;}.tag-peg-tp{color:#b91c1c;font-weight:800;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -831,10 +832,10 @@
 </details>
 
 <div id="painelFiltro" class="painel-filtro no-print">
-    <label for="filtroPegSelect">📂 <b>Trabalhando no PEG:</b></label>
-    <select id="filtroPegSelect" onchange="atualizarFiltroVisual(); if (typeof atualizarAuditoria === 'function') atualizarAuditoria()">
+    <label id="rotuloSeletorPegTP" for="botaoSeletorPegTP">📂 <b>Trabalhando no PEG:</b></label>
+    <select id="filtroPegSelect" class="peg-select-original" tabindex="-1" aria-hidden="true" onchange="atualizarFiltroVisual(); if (typeof atualizarAuditoria === 'function') atualizarAuditoria()">
         <option value="todos">Mostrar Todos</option>
-    </select>
+    </select><div class="seletor-pegs-tp"><button type="button" id="botaoSeletorPegTP" aria-haspopup="listbox" aria-expanded="false" aria-controls="listaSeletorPegsTP" aria-labelledby="rotuloSeletorPegTP botaoSeletorPegTP" onclick="alternarListaPegsTP()">Selecione um PEG</button><div id="listaSeletorPegsTP" role="listbox" aria-label="PEGs do relatório" hidden></div></div>
     <button id="proximoPegBtn" class="btn-primary btn-proximo-peg" type="button" onclick="proximoPeg()" title="Avança para o próximo PEG e avisa ao chegar ao último">Próximo PEG →</button>
     <span style="font-size: 11px; color: #1e3a8a;">(Selecione um PEG para ver somente o relatório dele)</span>
 </div>
@@ -935,7 +936,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.42</p>
+    <p class="versao-relatorio">Versão 5.43</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1509,7 +1510,7 @@ function marcarCorrecao(campo){
     document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg&&el.dataset.correcaoChave===chave)el.checked=campo.checked;});
     atualizarContadoresCorrecoes();
 }
-function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;const n=peg?itensAtuaisCorrecoes(peg).length:0;let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}const anotadas=peg?separarAnotacoesGuias(notas,peg).porGuia.size:0;const flutuante=document.getElementById('btnCorrecoesFlutuante');let importado=RELATORIOS_TXT_IMPORTADOS.has(peg);try{importado=importado||localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1';}catch{}if(flutuante){flutuante.hidden=n===0&&!importado&&anotadas===0;flutuante.dataset.peg=peg;flutuante.textContent=n?`Correções (${n})`:anotadas?`Correções (${anotadas} guia${anotadas===1?'':'s'} com anotação)`:'Correções (texto)';}document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
+function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;const n=peg?itensAtuaisCorrecoes(peg).length:0;let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}const anotadas=peg?separarAnotacoesGuias(notas,peg).porGuia.size:0;const flutuante=document.getElementById('btnCorrecoesFlutuante');let importado=RELATORIOS_TXT_IMPORTADOS.has(peg);try{importado=importado||localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1';}catch{}if(flutuante){flutuante.hidden=n===0&&!importado&&anotadas===0;flutuante.dataset.peg=peg;flutuante.textContent=n?`Correções (${n})`:anotadas?`Correções (${anotadas} guia${anotadas===1?'':'s'} com anotação)`:'Correções (texto)';}document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);atualizarIndicadoresAnotacoesPeg();}
 function linhaEfetivaCorrecao(l){
     if(!l?.evento||l.referencia?.hospitalar)return l;
     const manual=PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id);
@@ -2587,6 +2588,24 @@ function inserirMencaoGuia(botao){
 function teclasMencaoGuia(evento){const lista=evento.target.ownerDocument.getElementById('sugestoesGuiasAnotacoes');if(evento.key==='Escape'){lista.hidden=true;}else if(evento.key==='ArrowDown'&&!lista.hidden){const botao=lista.querySelector('button');if(botao){evento.preventDefault();botao.focus();}}}
 
 const ANOTACOES_PEG_SESSAO = new Map();
+function pegTemCorrecoes(peg){
+    if(itensAtuaisCorrecoes(peg).some(r=>!r.guia||!guiaIntegralmenteGlosada(r.guia)))return true;
+    let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;if(localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1')return true;}catch{}
+    return RELATORIOS_TXT_IMPORTADOS.has(peg)||separarAnotacoesGuias(notas,peg).porGuia.size>0;
+}
+function rotuloPegTP(opcao){
+    if(!opcao.value||opcao.value==='todos')return escAuditoria(opcao.textContent);
+    return `PEG ${escAuditoria(opcao.value)}${opcao.dataset.temAnotacao==='true'?' 📝':''}${opcao.dataset.temCorrecao==='true'?' <span class="tag-peg-tp">TP</span>':''}`;
+}
+function renderizarSeletorPegsTP(){
+    const select=document.getElementById('filtroPegSelect'),botao=document.getElementById('botaoSeletorPegTP'),lista=document.getElementById('listaSeletorPegsTP');if(!botao||!lista)return;
+    botao.innerHTML=select.selectedOptions[0]?rotuloPegTP(select.selectedOptions[0]):'Selecione um PEG';lista.innerHTML='';
+    for(const opcao of select.options){const item=document.createElement('button');item.type='button';item.role='option';item.dataset.peg=opcao.value;item.setAttribute('aria-selected',String(opcao.selected));item.innerHTML=rotuloPegTP(opcao);item.onclick=()=>{select.value=opcao.value;fecharListaPegsTP();atualizarFiltroVisual();atualizarAuditoria();botao.focus();};item.onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();(e.key==='ArrowDown'?item.nextElementSibling:item.previousElementSibling)?.focus();}else if(e.key==='Escape'){e.preventDefault();fecharListaPegsTP();botao.focus();}};lista.append(item);}
+}
+function fecharListaPegsTP(){document.getElementById('listaSeletorPegsTP').hidden=true;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded','false');}
+function alternarListaPegsTP(){const lista=document.getElementById('listaSeletorPegsTP');lista.hidden=!lista.hidden;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded',String(!lista.hidden));if(!lista.hidden)lista.querySelector('[aria-selected="true"]')?.focus();}
+document.addEventListener('click',e=>{if(!e.target.closest('.seletor-pegs-tp'))fecharListaPegsTP();});
+
 function atualizarIndicadoresAnotacoesPeg() {
     for (const opcao of document.getElementById('filtroPegSelect').options) {
         const peg = opcao.value;
@@ -2594,9 +2613,11 @@ function atualizarIndicadoresAnotacoesPeg() {
         let anotacao = ANOTACOES_PEG_SESSAO.get(peg) || '';
         try { anotacao = localStorage.getItem(`relatorio-peg-anotacoes:${peg}`) ?? anotacao; } catch {}
         const temAnotacao = Boolean(anotacao.trim());
-        opcao.textContent = `PEG ${peg}${temAnotacao ? ' 📝' : ''}`;
-        opcao.title = temAnotacao ? 'Este PEG tem anotação salva' : '';
+        const temCorrecao=pegTemCorrecoes(peg);opcao.dataset.temAnotacao=String(temAnotacao);opcao.dataset.temCorrecao=String(temCorrecao);
+        opcao.textContent = `PEG ${peg}${temAnotacao ? ' 📝' : ''}${temCorrecao?' TP':''}`;
+        opcao.title = [temAnotacao?'Este PEG tem anotação salva':'',temCorrecao?'TP: relatório de correções para acompanhamento':''].filter(Boolean).join(' · ');
     }
+    renderizarSeletorPegsTP();
 }
 function pegDasAnotacoes() {
     const selecionado = document.getElementById('filtroPegSelect')?.value;
