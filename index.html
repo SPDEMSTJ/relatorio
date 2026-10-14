@@ -775,6 +775,7 @@
 .eps .selecao-correcao{color:#fde047!important;}.eps .selecao-correcao input{accent-color:#fde047;}
 #itensCorrecoes .item-correcao-previa label{display:flex;align-items:center;gap:7px;}#itensCorrecoes input[type=checkbox]{width:15px;height:15px;min-width:15px;min-height:15px;max-width:15px;max-height:15px;flex:0 0 15px;padding:0;margin:0;accent-color:#2563eb;}
 #btnCorrecoesFlutuante{position:fixed;right:30px;bottom:150px;z-index:11000;border:1px solid #991b1b;border-radius:22px;background:#b91c1c;color:white;font-size:12px;font-weight:700;padding:10px 13px;box-shadow:0 3px 12px #0003;}#btnCorrecoesFlutuante[hidden]{display:none;}
+.pesquisa-guia-anotacoes{display:block;font-size:11px;margin-top:9px;}.pesquisa-guia-anotacoes input{display:block;box-sizing:border-box;width:100%;height:30px;min-height:30px;padding:4px 8px;font-size:12px;margin-top:3px;}.ajuda-mencoes{font-size:11px;line-height:1.4;color:#475569;margin:6px 0;}#sugestoesGuiasAnotacoes{max-height:150px;overflow:auto;margin:6px 0;font-size:12px;}#sugestoesGuiasAnotacoes[hidden]{display:none;}#sugestoesGuiasAnotacoes button{display:block;text-align:left;width:100%;padding:6px;font-size:11px;white-space:normal;margin:3px 0;height:auto;}
 </style>
 </head>
 <body>
@@ -934,7 +935,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.38</p>
+    <p class="versao-relatorio">Versão 5.39</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -959,7 +960,7 @@
 
 <input id="arquivoRelatorioCorrecoes" type="file" accept=".txt,text/plain" hidden onchange="importarRelatorioCorrecoes(this)"><button type="button" id="btnCorrecoesFlutuante" class="no-print" hidden onclick="abrirRelatorioCorrecoes(this.dataset.peg)" title="Acompanhar itens incluídos no relatório de correções">Correções (0)</button>
 <button id="btnAnotacoesPeg" class="no-print" type="button" onclick="alternarAnotacoesPeg()" aria-label="Abrir anotações do PEG" title="Anotações do PEG" aria-expanded="false">📝</button>
-<section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Fechar anotações">✕</button></header><textarea id="textoAnotacoesPeg" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
+<section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Fechar anotações">✕</button></header><label class="pesquisa-guia-anotacoes" for="pesquisaGuiaAnotacoes">Marcar guia<input id="pesquisaGuiaAnotacoes" type="search" placeholder="Nome ou número da guia" oninput="atualizarSugestoesGuias(this)"></label><p class="ajuda-mencoes">Digite @nome ou @número e escolha a guia. Pode marcar várias. Separe anotações com uma linha em branco; sem marcação, valem para o PEG inteiro.</p><div id="sugestoesGuiasAnotacoes" hidden aria-label="Sugestões de guias"></div><textarea id="textoAnotacoesPeg" onkeydown="teclasMencaoGuia(event)" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
 <button id="btnTopo" class="btn-topo no-print" onclick="subirTopo()">
     ⬆ Voltar ao topo
 </button>
@@ -1301,6 +1302,8 @@ function abrirPopupEmJanelaSeparada(tipo) {
     janela.document.getElementById('btnAnotacoesPeg').setAttribute('aria-expanded', 'false');
     janela.alternarAnotacoesPeg = () => alternarAnotacoesPeg(janela.document);
     janela.salvarAnotacoesPeg = campo => salvarAnotacoesPeg(campo);
+    janela.atualizarSugestoesGuias = campo => atualizarSugestoesGuias(campo);
+    janela.teclasMencaoGuia = evento => teclasMencaoGuia(evento);
     atualizarAnotacoesPeg(janela.document);
     janela.atualizarPreviaOrientacaoPerito = campo => { atualizarPreviaOrientacaoPerito(campo); const alvo=janela.document.getElementById('previaOrientacaoPerito');if(alvo)alvo.innerHTML=document.getElementById('previaOrientacaoPerito').innerHTML;janela.document.getElementById('aplicarOrientacaoPerito').disabled=document.getElementById('aplicarOrientacaoPerito').disabled; };
     janela.aplicarOrientacaoPerito = () => aplicarOrientacaoPerito();
@@ -1609,7 +1612,7 @@ function textoRelatorioCorrecoes(peg){
         if(item.nota?.trim())texto.push(`Observação do item: ${item.nota.trim()}`);
     }
     let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}
-    if(notas.trim())texto.push('','ANOTAÇÕES ADICIONAIS:',notas.trim());
+    if(notas.trim())texto.push('','ANOTAÇÕES ADICIONAIS:',textoAnotacoesPorGuias(notas,peg));
     if(pendencias.length)texto.push('','PENDÊNCIAS PARA CONFERÊNCIA (SEM PEDIDO DE CORREÇÃO DEFINITIVO)',...pendencias);
     if(!ordem)texto.push('','Nenhum item válido selecionado para correção.');
     return normalizarTextoSEI(texto.join('\n'));
@@ -2529,6 +2532,60 @@ function render(preservarPeg = false) {
 window.onscroll = function() { const btn = document.getElementById("btnTopo"); if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) btn.classList.add("mostrar"); else btn.classList.remove("mostrar"); };
 function subirTopo() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
+function sincronizarAnotacoesNoRascunho(peg){
+    const anterior=rascunhoCorrecoes(peg);if(anterior===null)return;
+    const notas=ANOTACOES_PEG_SESSAO.get(peg)||'';
+    const trecho=notas.trim()?'\n\nANOTAÇÕES ADICIONAIS:\n'+textoAnotacoesPorGuias(notas,peg):'';
+    const padrao=/\n\nANOTAÇÕES ADICIONAIS:\n[\s\S]*?(?=\n\nPENDÊNCIAS PARA CONFERÊNCIA|$)/;
+    let texto=padrao.test(anterior)?anterior.replace(padrao,()=>trecho):trecho?anterior.replace(/(?=\n\nPENDÊNCIAS PARA CONFERÊNCIA|$)/,()=>trecho):anterior;
+    texto=normalizarTextoSEI(texto);RASCUNHOS_CORRECOES.set(peg,texto);try{localStorage.setItem('relatorio-peg-correcoes-texto:'+peg,texto);}catch{}
+    if(document.getElementById('modalCorrecoes').dataset.peg===peg)document.getElementById('textoRelatorioCorrecoes').value=texto;
+}
+function guiasParaAnotacoes(peg){
+    const lista=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios;
+    return lista?.length?lista:GLOBAL_MODELO_AUDITORIA.guias.filter(g=>g.peg===peg).map(g=>({guia:g.ordem,nome:g.beneficiario,matricula:g.matricula,data:g.data}));
+}
+function separarAnotacoesGuias(texto,peg){
+    const guias=guiasParaAnotacoes(peg),gerais=[],porGuia=new Map(),pendentes=[];
+    for(const bloco of String(texto).split(/\n\s*\n/).map(t=>t.trim()).filter(Boolean)){
+        const marcadas=new Map(),normalizado=normalizarAuditoria(bloco),naoEncontradas=[];
+        for(const m of bloco.matchAll(/(?:^|\s)@(?:guia\s*)?(\d+)\b/gi)){const encontradas=guias.filter(g=>Number(g.guia)===Number(m[1]));if(!encontradas.length)naoEncontradas.push('@'+m[1]);for(const g of encontradas)marcadas.set(String(g.guia),g);}
+        for(const g of guias){const nome=normalizarAuditoria(g.nome);if(nome&&normalizado.includes('@'+nome)&&(!/[\p{L}\p{N}]/u.test(normalizado[normalizado.indexOf('@'+nome)+nome.length+1]||'')))marcadas.set(String(g.guia),g);}
+        if(!marcadas.size){if(/(?:^|\s)@\S/.test(bloco))pendentes.push(bloco);else gerais.push(bloco);continue;}
+        if(naoEncontradas.length)pendentes.push(`Marcações ${naoEncontradas.join(', ')} não localizadas: ${bloco}`);
+        let corpo=bloco.replace(/(^|\s)@(?:guia\s*)?\d+\b/gi,'$1');
+        for(const g of marcadas.values()){const nome=String(g.nome).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');corpo=corpo.replace(new RegExp('@'+nome,'gi'),'');}
+        corpo=corpo.replace(/[ \t]+/g,' ').trim();if(!corpo)continue;
+        for(const [numero,guia] of marcadas){if(!porGuia.has(numero))porGuia.set(numero,{guia,textos:[]});porGuia.get(numero).textos.push(corpo);}
+    }
+    return {gerais,porGuia,pendentes};
+}
+function textoAnotacoesPorGuias(texto,peg){
+    const {gerais,porGuia,pendentes}=separarAnotacoesGuias(texto,peg),partes=[];
+    if(gerais.length)partes.push('PEG inteiro:\n'+gerais.join('\n\n'));
+    for(const {guia,textos} of [...porGuia.values()].sort((a,b)=>String(a.guia.guia).localeCompare(String(b.guia.guia),'pt-BR',{numeric:true})))partes.push(`Guia ${guia.guia} - ${guia.nome}:\n${textos.join('\n\n')}`);
+    if(pendentes.length)partes.push('MARCAÇÕES NÃO LOCALIZADAS - CONFERIR:\n'+pendentes.join('\n\n'));
+    return partes.join('\n\n-----\n\n');
+}
+function atualizarSugestoesGuias(campo){
+    const doc=campo.ownerDocument,notas=doc.getElementById('textoAnotacoesPeg'),lista=doc.getElementById('sugestoesGuiasAnotacoes');if(!lista)return;
+    const pesquisa=campo.id==='pesquisaGuiaAnotacoes',prefixo=notas.value.slice(0,notas.selectionStart),match=prefixo.match(/(?:^|\s)@([^\n@]*)$/);
+    const termo=pesquisa?campo.value:match&&/^\d+\s/.test(match[1])?undefined:match?.[1];lista.innerHTML='';lista.hidden=termo===undefined||!notas.dataset.peg;if(lista.hidden)return;
+    lista.dataset.origem=pesquisa?'pesquisa':'mencao';
+    const busca=normalizarAuditoria(termo).replace(/^GUIA\s*/,'');
+    const guias=guiasParaAnotacoes(notas.dataset.peg).filter(g=>!busca||String(g.guia).startsWith(busca)||normalizarAuditoria(g.nome).includes(busca)).slice(0,10);
+    if(!guias.length){lista.textContent='Nenhuma guia encontrada neste PEG.';return;}
+    for(const g of guias){const botao=doc.createElement('button');botao.type='button';botao.textContent=`Guia ${g.guia} - ${g.nome}`;botao.dataset.guia=g.guia;botao.onclick=()=>inserirMencaoGuia(botao);lista.append(botao);}
+}
+function inserirMencaoGuia(botao){
+    const doc=botao.ownerDocument,campo=doc.getElementById('textoAnotacoesPeg'),lista=doc.getElementById('sugestoesGuiasAnotacoes'),inicio=campo.selectionStart,fim=campo.selectionEnd,prefixo=campo.value.slice(0,inicio),match=lista.dataset.origem==='mencao'?prefixo.match(/(?:^|\s)@([^\n@]*)$/):null;
+    const pos=match?prefixo.lastIndexOf('@'):inicio;
+    const antes=campo.value.slice(0,pos),tag=(antes&&!/\s$/.test(antes)?' ':'')+'@'+botao.dataset.guia+' ';
+    campo.value=antes+tag+campo.value.slice(fim);campo.focus();campo.setSelectionRange(antes.length+tag.length,antes.length+tag.length);
+    doc.getElementById('pesquisaGuiaAnotacoes').value='';salvarAnotacoesPeg(campo);lista.hidden=true;
+}
+function teclasMencaoGuia(evento){const lista=evento.target.ownerDocument.getElementById('sugestoesGuiasAnotacoes');if(evento.key==='Escape'){lista.hidden=true;}else if(evento.key==='ArrowDown'&&!lista.hidden){const botao=lista.querySelector('button');if(botao){evento.preventDefault();botao.focus();}}}
+
 const ANOTACOES_PEG_SESSAO = new Map();
 function atualizarIndicadoresAnotacoesPeg() {
     for (const opcao of document.getElementById('filtroPegSelect').options) {
@@ -2557,6 +2614,8 @@ function atualizarAnotacoesPeg(contexto = document) {
     let anotacao = ANOTACOES_PEG_SESSAO.get(peg) || '';
     try { anotacao = localStorage.getItem(`relatorio-peg-anotacoes:${peg}`) ?? anotacao; } catch {}
     campo.value = peg ? anotacao : '';
+    const buscaGuia=contexto.getElementById('pesquisaGuiaAnotacoes');if(buscaGuia){buscaGuia.value='';buscaGuia.disabled=!peg;}
+    const sugestoes=contexto.getElementById('sugestoesGuiasAnotacoes');if(sugestoes){sugestoes.hidden=true;sugestoes.innerHTML='';}
     contexto.getElementById('statusAnotacoesPeg').textContent = peg ? 'Salvamento automático neste navegador, por PEG.' : 'Selecione um PEG para fazer anotações.';
 }
 function alternarAnotacoesPeg(contexto = document) {
@@ -2572,8 +2631,10 @@ function salvarAnotacoesPeg(campo) {
     let status = 'Anotação salva neste navegador.';
     try { localStorage.setItem(`relatorio-peg-anotacoes:${peg}`, campo.value); }
     catch { status = 'Armazenamento indisponível: anotação mantida apenas nesta sessão.'; }
-    atualizarIndicadoresAnotacoesPeg();
-    campo.ownerDocument.getElementById('statusAnotacoesPeg').textContent = status;
+    atualizarIndicadoresAnotacoesPeg();sincronizarAnotacoesNoRascunho(peg);
+    const agrupadas=separarAnotacoesGuias(campo.value,peg);
+    campo.ownerDocument.getElementById('statusAnotacoesPeg').textContent = status+(agrupadas.pendentes.length?' Há marcações de guia não localizadas; confira.':'');
+    atualizarSugestoesGuias(campo);
     for (const contexto of [document, ...Object.values(JANELAS_POPUP_SEPARADAS).filter(janela => janela && !janela.closed).map(janela => janela.document)]) {
         const outro = contexto.getElementById('textoAnotacoesPeg');
         if (outro && outro !== campo && outro.dataset.peg === peg) outro.value = campo.value;
