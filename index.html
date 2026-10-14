@@ -935,7 +935,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.40</p>
+    <p class="versao-relatorio">Versão 5.42</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -960,7 +960,7 @@
 
 <input id="arquivoRelatorioCorrecoes" type="file" accept=".txt,text/plain" hidden onchange="importarRelatorioCorrecoes(this)"><button type="button" id="btnCorrecoesFlutuante" class="no-print" hidden onclick="abrirRelatorioCorrecoes(this.dataset.peg)" title="Acompanhar itens incluídos no relatório de correções">Correções (0)</button>
 <button id="btnAnotacoesPeg" class="no-print" type="button" onclick="alternarAnotacoesPeg()" aria-label="Abrir anotações do PEG" title="Anotações do PEG" aria-expanded="false">📝</button>
-<section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Fechar anotações">✕</button></header><label class="pesquisa-guia-anotacoes" for="pesquisaGuiaAnotacoes">Marcar guia<input id="pesquisaGuiaAnotacoes" type="search" placeholder="Nome ou número da guia" oninput="atualizarSugestoesGuias(this)"></label><p class="ajuda-mencoes">Digite @nome ou @número e escolha a guia. Pode marcar várias. Separe anotações com uma linha em branco; sem marcação, valem para o PEG inteiro.</p><div id="sugestoesGuiasAnotacoes" hidden aria-label="Sugestões de guias"></div><textarea id="textoAnotacoesPeg" onkeydown="teclasMencaoGuia(event)" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
+<section id="painelAnotacoesPeg" class="no-print" hidden aria-labelledby="tituloAnotacoesPeg"><header><strong id="tituloAnotacoesPeg">Anotações do PEG</strong><button type="button" onclick="alternarAnotacoesPeg()" aria-label="Minimizar anotações" title="Minimizar anotações">−</button></header><label class="pesquisa-guia-anotacoes" for="pesquisaGuiaAnotacoes">Marcar guia<input id="pesquisaGuiaAnotacoes" type="search" placeholder="Nome ou número da guia" oninput="atualizarSugestoesGuias(this)"></label><p class="ajuda-mencoes">Digite @nome ou @número e escolha a guia. Pode marcar várias. Separe anotações com uma linha em branco; sem marcação, valem para o PEG inteiro.</p><div id="sugestoesGuiasAnotacoes" hidden aria-label="Sugestões de guias"></div><textarea id="textoAnotacoesPeg" onkeydown="teclasMencaoGuia(event)" aria-label="Anotações do PEG" placeholder="Escreva suas anotações…" oninput="salvarAnotacoesPeg(this)"></textarea><small id="statusAnotacoesPeg"></small></section>
 <button id="btnTopo" class="btn-topo no-print" onclick="subirTopo()">
     ⬆ Voltar ao topo
 </button>
@@ -1584,7 +1584,7 @@ function itensAtuaisCorrecoes(peg){
         return {chave,item,guia,evento,linha};
     }).filter(r=>r.item.tipo!=='regra'||!r.linha||elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha)));
 }
-function normalizarTextoSEI(texto){return String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ');}
+function normalizarTextoSEI(texto){return String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:');}
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
     const texto=['À EQUIPE DE AUDITORIA — SOLICITAÇÃO DE CORREÇÕES',`PEG: ${peg} · Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`];
@@ -1612,7 +1612,7 @@ function textoRelatorioCorrecoes(peg){
         if(item.nota?.trim())texto.push(`Observação do item: ${item.nota.trim()}`);
     }
     let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}
-    if(notas.trim())texto.push('','ANOTAÇÕES ADICIONAIS:',textoAnotacoesPorGuias(notas,peg));
+    if(notas.trim())texto.push('','OBSERVAÇÕES:',textoAnotacoesPorGuias(notas,peg));
     if(pendencias.length)texto.push('','PENDÊNCIAS PARA CONFERÊNCIA (SEM PEDIDO DE CORREÇÃO DEFINITIVO)',...pendencias);
     if(!ordem)texto.push('','Nenhum item válido selecionado para correção.');
     return normalizarTextoSEI(texto.join('\n'));
@@ -1658,7 +1658,7 @@ function atualizarPreviaCorrecoes(preservarTexto=false){
     const peg=document.getElementById('modalCorrecoes').dataset.peg;
     if(!preservarTexto)invalidarTextoCorrecoes(peg);
     document.getElementById('itensCorrecoes').innerHTML=itensAtuaisCorrecoes(peg).map(({chave,item,guia,evento})=>`<div class="item-correcao-previa"><label><input type="checkbox" checked data-correcao-chave="${escAuditoria(chave)}" data-correcao-peg="${escAuditoria(peg)}" onchange="removerItemCorrecao(this)"> ${escAuditoria(item.motivo)} · ${escAuditoria(guia?.beneficiario||item.resumo||'Item não localizado')} · Guia ${escAuditoria(guia?.ordem||'—')}${evento?' / item '+escAuditoria(evento.ordem):''}</label><input type="text" placeholder="Observação específica deste item (opcional)" value="${escAuditoria(item.nota||'')}" data-chave="${escAuditoria(chave)}" oninput="salvarNotaCorrecao(this)"></div>`).join('')||'<p>Marque as críticas no relatório ou as divergências no popup de análise.</p>';
-    document.getElementById('textoRelatorioCorrecoes').value=preservarTexto&&rascunhoCorrecoes(peg)!==null?rascunhoCorrecoes(peg):textoRelatorioCorrecoes(peg);
+    document.getElementById('textoRelatorioCorrecoes').value=normalizarTextoSEI(preservarTexto&&rascunhoCorrecoes(peg)!==null?rascunhoCorrecoes(peg):textoRelatorioCorrecoes(peg));
     salvarTextoCorrecoes();
     document.getElementById('statusCorrecoes').textContent='Confira e edite o texto antes de copiar. As seleções ficam salvas somente neste navegador, por PEG.';
     atualizarContadoresCorrecoes();
@@ -2535,8 +2535,8 @@ function subirTopo() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function sincronizarAnotacoesNoRascunho(peg){
     const anterior=rascunhoCorrecoes(peg);if(anterior===null)return;
     const notas=ANOTACOES_PEG_SESSAO.get(peg)||'';
-    const trecho=notas.trim()?'\n\nANOTAÇÕES ADICIONAIS:\n'+textoAnotacoesPorGuias(notas,peg):'';
-    const padrao=/\n\nANOTAÇÕES ADICIONAIS:\n[\s\S]*?(?=\n\nPENDÊNCIAS PARA CONFERÊNCIA|$)/;
+    const trecho=notas.trim()?'\n\nOBSERVAÇÕES:\n'+textoAnotacoesPorGuias(notas,peg):'';
+    const padrao=/\n\n(?:ANOTAÇÕES ADICIONAIS|OBSERVAÇÕES):\n[\s\S]*?(?=\n\nPENDÊNCIAS PARA CONFERÊNCIA|$)/;
     let texto=padrao.test(anterior)?anterior.replace(padrao,()=>trecho):trecho?anterior.replace(/(?=\n\nPENDÊNCIAS PARA CONFERÊNCIA|$)/,()=>trecho):anterior;
     texto=normalizarTextoSEI(texto);RASCUNHOS_CORRECOES.set(peg,texto);try{localStorage.setItem('relatorio-peg-correcoes-texto:'+peg,texto);}catch{}
     if(document.getElementById('modalCorrecoes').dataset.peg===peg)document.getElementById('textoRelatorioCorrecoes').value=texto;
