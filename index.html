@@ -938,7 +938,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.47</p>
+    <p class="versao-relatorio">Versão 5.48</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1083,7 +1083,7 @@ function limparResumosComplementares() {
 function abrirPopupBeneficiariosProcesso(peg) {
     const mudouPeg = ULTIMO_PEG_LISTA_BENEFICIARIOS !== peg;
     ULTIMO_PEG_LISTA_BENEFICIARIOS = peg;
-    if (mudouPeg) document.getElementById('pesquisaBeneficiariosProcesso').value = '';
+    if (mudouPeg) { document.getElementById('pesquisaBeneficiariosProcesso').value = ''; document.getElementById('ordemBeneficiariosProcesso').value = 'guia'; document.getElementById('direcaoBeneficiariosProcesso').value = 'asc'; }
     PEG_BENEFICIARIOS_POPUP = peg;
     const modal = document.getElementById('modalBeneficiariosProcesso');
     modal.style.display = 'block';
