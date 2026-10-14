@@ -941,7 +941,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.51</p>
+    <p class="versao-relatorio">Versão 5.53</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -3493,7 +3493,7 @@ function limparAuditoria(preservarPercentuais = false) {
     GLOBAL_MODELO_AUDITORIA = { guias: [], eventos: [], internacoes: [] };
     GLOBAL_LINHAS_AUDITORIA = [];
     GLOBAL_TODAS_LINHAS_AUDITORIA = [];
-    if (!preservarPercentuais) { SECOES_GUIAS_FILTRADAS.clear(); PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); PERCENTUAIS_PORTES_PERITO.clear(); }
+    if (!preservarPercentuais) { SECOES_GUIAS_FILTRADAS.clear(); PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); AJUSTES_HORARIO_GUIA.clear(); PERCENTUAIS_PORTES_PERITO.clear(); }
     if (!preservarPercentuais) CONDICOES_EVENTOS_AUDITORIA.clear();
     if (!preservarPercentuais) BILATERALIDADE_OFTALMO_AUDITORIA.clear();
     const area = document.getElementById('auditoriaSaida');
@@ -3954,7 +3954,7 @@ function classificarEquipe(eventos) {
 }
 
 function condicoesEventoAuditoria(evento) {
-    const { urgencia = '' } = CONDICOES_EVENTOS_AUDITORIA.get(evento.id) || {};
+    const urgencia=AJUSTES_HORARIO_GUIA.get(chaveHorarioGuia(evento.guia))??CONDICOES_EVENTOS_AUDITORIA.get(evento.id)?.urgencia??'';
     return { urgencia };
 }
 
@@ -4022,7 +4022,7 @@ function avaliarCirurgia(eventos) {
         // pode informar a via do mesmo procedimento quando a linha do cirurgião não foi marcada.
         [...cirurgioes, ...items.filter(item => item.equipe.tipo !== 'Cirurgião')].forEach(item => {
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
-            if ((!codigoSempreIntegral(item.evento.codigo) || ehEndoscopiaIntervencionista(item.evento.codigo)) && !percentuaisPorAto.has(item.chaveAto) && (ehEndoscopiaIntervencionista(item.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
+            if ((!codigoSempreIntegral(item.evento.codigo) || ehEndoscopiaIntervencionista(item.evento.codigo)) && !percentuaisPorAto.has(item.chaveAto) && [50, 70, 100].includes(manual)) percentuaisPorAto.set(item.chaveAto, manual);
         });
         const ocorrenciasAtos=new Map();items.forEach(item=>ocorrenciasAtos.set(item.chaveAto,Math.max(ocorrenciasAtos.get(item.chaveAto)||0,numeroAuditoria(item.evento.quantidade))));
         const atoUnico=[...ocorrenciasAtos.values()].reduce((s,q)=>s+q,0)===1;
@@ -4042,7 +4042,7 @@ function avaliarCirurgia(eventos) {
             const auxExcedido = item.equipe.numero > 0 && maxAuxiliares !== null && item.equipe.numero > maxAuxiliares;
             const video = /VIDEO/.test(normalizarAuditoria(item.evento.descricao));
             const observacoes = [item.equipe.tipo];
-            if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia intervencionista: 100% por ocorrência, sem redução por via de acesso. Internação e urgência incidem apenas no porte; custo operacional integral.');
+            if (ehEndoscopiaIntervencionista(item.evento.codigo)) observacoes.push('Endoscopia: 100% por padrão, com ajuste confirmado de 70% por outra via ou 50% pela mesma via. Internação e urgência incidem apenas no porte; custo operacional integral.');
             if (percentual === null) observacoes.push('Confirmação necessária para aplicar 100%, 70% ou 50% sobre o porte/honorários. Escolha o percentual ou aplique o parecer médico.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe completa identificada; a via de acesso ainda exige confirmação.');
             if (!principal && auxiliar) observacoes.push('Porte do cirurgião obtido na tabela para calcular o auxiliar, mesmo sem linha do cirurgião na extração.');
@@ -4091,7 +4091,8 @@ function avaliarAnestesia(eventos) {
             || numeroAuditoria(b.evento.valorApresentado) - numeroAuditoria(a.evento.valorApresentado));
         items.forEach((item, posicao) => {
             const interna = /INTERNACAO/.test(normalizarAuditoria(item.evento.guia.regime));
-            const urgencia = acrescimoPorteAutomatico(item.evento);
+            const ajusteUrgencia=condicoesEventoAuditoria(item.evento).urgencia;
+            const urgencia = ajusteUrgencia==='sim'||(ajusteUrgencia!=='nao'&&acrescimoPorteAutomatico(item.evento));
             const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
             const integral = codigoSempreIntegral(item.evento.codigo);
             const sugestao = integral || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || posicao === 0 ? 100 : 70;
@@ -4152,15 +4153,25 @@ function controleTipoHospitalar(linha,prefixo) {
 }
 const PERCENTUAIS_PORTES_PERITO = new Map();
 const HORARIOS_ESPECIAIS_HOSPITALARES = new Map();
+const AJUSTES_HORARIO_GUIA = new Map();
+function chaveHorarioGuia(g){return `${g.peg}|${g.ordem||g.id}|${g.matricula}`;}
+function ajustarHorarioGuia(evento,valor){
+    const chave=chaveHorarioGuia(evento.guia);AJUSTES_HORARIO_GUIA.set(chave,valor);
+    for(const e of GLOBAL_MODELO_AUDITORIA.eventos.filter(e=>chaveHorarioGuia(e.guia)===chave)){
+        if(valor)CONDICOES_EVENTOS_AUDITORIA.set(e.id,{...(CONDICOES_EVENTOS_AUDITORIA.get(e.id)||{}),urgencia:valor});else CONDICOES_EVENTOS_AUDITORIA.delete(e.id);
+        if(ehPorteHospitalar(e.codigo)&&valor==='sim')HORARIOS_ESPECIAIS_HOSPITALARES.set(e.id,true);else HORARIOS_ESPECIAIS_HOSPITALARES.delete(e.id);
+    }
+}
+function horarioEspecialHospitalarAplicado(evento){return AJUSTES_HORARIO_GUIA.has(chaveHorarioGuia(evento.guia))?AJUSTES_HORARIO_GUIA.get(chaveHorarioGuia(evento.guia))==='sim':HORARIOS_ESPECIAIS_HOSPITALARES.has(evento.id);}
 function alterarHorarioEspecialHospitalar(campo) {
-    if(campo.value==='sim')HORARIOS_ESPECIAIS_HOSPITALARES.set(campo.dataset.eventoId,true);
-    else HORARIOS_ESPECIAIS_HOSPITALARES.delete(campo.dataset.eventoId);
+    const evento=GLOBAL_MODELO_AUDITORIA.eventos.find(e=>e.id===campo.dataset.eventoId);if(!evento)return;
+    ajustarHorarioGuia(evento,campo.value==='sim'?'sim':'nao');
     atualizarAuditoria();atualizarConteudoJanelaSeparada('auditoria');
 }
 function controleHorarioEspecialHospitalar(linha,prefixo) {
     if(!ehPorteHospitalar(linha.evento.codigo))return '';
-    const aplicado=HORARIOS_ESPECIAIS_HOSPITALARES.has(linha.evento.id);
-    return `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar horário especial</summary><label for="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}">Horário especial: +30% na taxa de sala</label><select id="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="alterarHorarioEspecialHospitalar(this)"><option value="" ${!aplicado?'selected':''}>Não aplicar — ajuste manual</option><option value="sim" ${aplicado?'selected':''}>Aplicar +30%</option></select><small>Aplica-se somente a este evento, após os percentuais da via de acesso.</small></details>`;
+    const aplicado=horarioEspecialHospitalarAplicado(linha.evento);
+    return `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar horário especial</summary><label for="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}">Horário especial: +30% na taxa de sala</label><select id="${prefixo}horario-especial-${escAuditoria(linha.evento.id)}" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="alterarHorarioEspecialHospitalar(this)"><option value="" ${!aplicado?'selected':''}>Não aplicar — ajuste manual</option><option value="sim" ${aplicado?'selected':''}>Aplicar +30%</option></select><small>Aplica-se aos eventos elegíveis de toda esta guia, após os percentuais da via de acesso.</small></details>`;
 }
 const VIAS_HOSPITALARES = new Map();
 function chaveViaHospitalar(evento) { return `${evento.guia.id}|${chaveDataAuditoria(evento.data || evento.guia.data)}`; }
@@ -4327,7 +4338,7 @@ function avaliarServicosHospitalares(eventos) {
         const segundo = via === 'mesma' ? 50 : 70;
         const partes = orientado ? percentuaisPerito.map(p=>`${p}%`).join(' + ')+' (orientação do perito)' : !porte ? '100%' : [n100 ? '1 × 100%' : '', nSegunda ? `1 × ${via ? segundo+'%' : '50% ou 70% (via pendente)'}` : '', n25 ? `${n25} × 25%` : ''].filter(Boolean).join(' + ');
         const percentual = orientado ? new Set(percentuaisPerito).size===1 ? percentuaisPerito[0] : null : !porte ? 100 : pendente ? null : n25 === qtd ? 25 : qtd > 1 ? null : n100 ? 100 : nSegunda ? segundo : 25;
-        const horarioEspecial = porte && HORARIOS_ESPECIAIS_HOSPITALARES.has(evento.id);
+        const horarioEspecial = porte && horarioEspecialHospitalarAplicado(evento);
         const limite = valido && !pendente ? arredondarTabela(registro.t * (orientado ? percentuaisPerito.reduce((soma,p)=>soma+p/100,0) : porte ? n100 + nSegunda * segundo/100 + n25 * 0.25 : qtd) * (horarioEspecial ? 1.3 : 1)) : null;
         const alerta = !tipo ? 'Tipo hospitalar não identificado. Confira o prestador antes de comparar preços.'
             : !vigente ? 'Sem tabela hospitalar vigente para esta data e tipo de prestador; importe a tabela ou cadastre o reajuste do novo ano.'
@@ -4638,19 +4649,16 @@ function aplicarPercentualEventoAuditoria(seletor) {
     const valor = Number(seletor.value);
     const linhaAtual = GLOBAL_TODAS_LINHAS_AUDITORIA.find(linha => linha.evento.id === id);
     const categoria = linhaAtual?.categoria;
-    if ((categoria === 'Radiologia' ? [70, 100, 170] : categoria === 'Oftalmologia' || ehEndoscopiaIntervencionista(linhaAtual?.evento.codigo) ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
+    if ((categoria === 'Radiologia' ? [70, 100, 170] : categoria === 'Oftalmologia' ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
     else PERCENTUAIS_EVENTOS_AUDITORIA.delete(id);
     atualizarAuditoria();
 }
 
 function aplicarCondicaoEventoAuditoria(campo) {
     if (campo.dataset.campo !== 'urgencia') return;
-    const id = campo.dataset.eventoId;
-    const anterior = CONDICOES_EVENTOS_AUDITORIA.get(id) || {};
-    const novo = { ...anterior, urgencia: campo.value };
-    if (!novo.urgencia) CONDICOES_EVENTOS_AUDITORIA.delete(id);
-    else CONDICOES_EVENTOS_AUDITORIA.set(id, novo);
-    atualizarAuditoria();
+    const evento=GLOBAL_MODELO_AUDITORIA.eventos.find(e=>e.id===campo.dataset.eventoId);if(!evento)return;
+    ajustarHorarioGuia(evento,campo.value);
+    atualizarAuditoria();atualizarConteudoJanelaSeparada('auditoria');
 }
 
 function atualizarPercentuaisVisiveisAuditoria() {
@@ -4719,7 +4727,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const bilateralidade = oftalmologia ? BILATERALIDADE_OFTALMO_AUDITORIA.get(chaveBilateral) || '' : '';
         const percentualControle = hospitalar && ehPorteHospitalar(linha.evento.codigo) ? controleViaHospitalar(linha,prefixoId) : hospitalar && linha.referencia.t === null ? `<small>Conferir tipo, vigência e preço antes do cálculo.</small>` : hospitalarIntegral ? `<small>Comparação integral de preço. Sem regra 100–70.</small>` : (codigoSempreIntegral(linha.evento.codigo) && !ehEndoscopiaIntervencionista(linha.evento.codigo)) || laboratorial || pacote ? `<div class="auditoria-controle-percentual"><small class="percentual-resultado-auditoria">${codigoSempreIntegral(linha.evento.codigo) ? 'Prefixo sem análise 100–70–50' : pacote ? 'Pacote' : 'Exame laboratorial'}: 100% por ocorrência.</small></div>` : `<div class="auditoria-controle-percentual"><label class="percentual-label-auditoria" for="${prefixoId}percentual-${escAuditoria(linha.evento.id)}">${hospitalar ? 'Taxa de porte: 100%, 70% ou 50%' : cirurgia ? 'Via de acesso / porte' : radiologia ? 'UCO aplicada: alterar 100% ou 70%' : honorariosGerais ? 'Percentual aplicado: alterar 100%, 70% ou 50%' : ehOftalmologia ? 'UCO aplicada: alterar 100% ou 70% (porte integral)' : 'Percentual aplicado: alterar 100%, 70% ou 50%'}</label>
                 <select id="${prefixoId}percentual-${escAuditoria(linha.evento.id)}" class="percentual-evento-auditoria" data-evento-id="${escAuditoria(linha.evento.id)}" onchange="aplicarPercentualEventoAuditoria(this)" aria-label="Percentual do código ${escAuditoria(formatarCodigoAuditoria(linha.evento.codigo))}, guia ${escAuditoria(linha.guia.ordem)}, item ${escAuditoria(linha.evento.ordem)}">
-                    <option value="" ${!informado ? 'selected' : ''}>${ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Automático: 100% — alterar' : linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Confirme o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia && !ehEndoscopiaIntervencionista(linha.evento.codigo) ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
+                    <option value="" ${!informado ? 'selected' : ''}>${ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Automático: 100% — alterar' : linha.percentual ? `Automático: ${linha.percentual === 170 ? '100% + 70%' : `${linha.percentual}%`} — alterar` : 'Confirme o percentual'}</option><option value="100" ${informado === 100 ? 'selected' : ''}>${cirurgia ? '100% — principal/equipe distinta' : radiologia || ehOftalmologia ? '100% da UCO' : '100%'}</option><option value="70" ${informado === 70 ? 'selected' : ''}>${cirurgia ? '70% — outra via' : radiologia ? '70% da UCO' : ehOftalmologia ? '70% da UCO no 2º olho' : '70%'}</option>${radiologia && linha.evento.quantidade > 1 ? `<option value="170" ${informado === 170 ? 'selected' : ''}>1 unidade a 100% + demais a 70% da UCO</option>` : ''}${!ehOftalmologia && !radiologia ? `<option value="50" ${informado === 50 ? 'selected' : ''}>${cirurgia ? '50% — mesma via' : '50%'}</option>` : ''}
                 </select><small class="percentual-resultado-auditoria ${calculo?.simulacao ? 'simulacao' : ''}">${escAuditoria(calculo?.texto || '')}</small></div>`;
         const controleOftalmo = oftalmologia ? `<label class="percentual-label-auditoria" for="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}">Exame monocular em dois olhos?</label>
             <select id="${prefixoId}bilateral-${escAuditoria(linha.evento.id)}" class="bilateral-oftalmo-auditoria" data-chave-bilateral="${escAuditoria(chaveBilateral)}" onchange="aplicarBilateralidadeOftalmo(this)">
@@ -4739,7 +4747,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
             <td><span class="auditoria-situacao ${acima && calculado ? 'situacao-glosa' : calculado ? 'situacao-ok' : 'situacao-pendente'}">${situacao}</span>${explicacao ? `<small>${escAuditoria(explicacao)}</small>` : ''}${linha.benner > 0 ? `<small class="auditoria-glosa-benner">Benner já glosou ${valorBRL(linha.benner)}</small>` : ''}${retirarGlosa>0?`<small class="auditoria-retirar-glosa">Retirar glosa do Benner: ${valorBRL(retirarGlosa)}</small>`:''}${linha.glosaTecnica !== null && (linha.benner > 0 || linha.glosaTecnica > 0) ? `<small class="auditoria-diferenca-lancar">Diferença a ser lançada: ${valorBRL(linha.adicional)}</small>` : ''}</td>
             <td class="auditoria-acoes-linha"><div class="regra-automatica-auditoria">${escAuditoria(linha.regra)}</div>
                 ${controleCorrecaoEvento(linha)}${hospitalar ? controleTipoHospitalar(linha,prefixoId)+controleHorarioEspecialHospitalar(linha,prefixoId) : ''}${controleOftalmo}${percentualControle}
-                ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label></details>` : ''}
+                ${cirurgia || radiologia ? `<details class="condicoes-cirurgia-auditoria"><summary>Ajustar urgência</summary><label>Urgência/emergência: +30% ${radiologia ? 'na UCO' : 'no porte'}<select data-evento-id="${escAuditoria(linha.evento.id)}" data-campo="urgencia" onchange="aplicarCondicaoEventoAuditoria(this)"><option value="" ${!condicoes.urgencia ? 'selected' : ''}>${radiologia || ehEndoscopiaIntervencionista(linha.evento.codigo) ? 'Não aplicar — ajuste manual' : 'Automático por condição e data/horário'}</option><option value="sim" ${condicoes.urgencia === 'sim' ? 'selected' : ''}>Aplicar +30%</option><option value="nao" ${condicoes.urgencia === 'nao' ? 'selected' : ''}>Não aplicar</option></select></label><small>O ajuste vale para os eventos elegíveis de toda esta guia.</small></details>` : ''}
                 <details class="auditoria-detalhes"><summary>Detalhes técnicos</summary><div><span>Glosa Benner: ${valorBRL(linha.benner)}</span><span>Aprovado técnico: ${linha.aprovado === null ? 'pendente' : valorBRL(linha.aprovado)}</span><span>Glosa técnica: ${linha.glosaTecnica === null ? 'pendente' : valorBRL(linha.glosaTecnica)}</span><span>Glosa adicional: ${linha.adicional === null ? 'pendente' : valorBRL(linha.adicional)}</span><span>${escAuditoria(linha.observacao || 'Sem observação adicional.')}</span></div></details>
             </td>
         </tr>${alerta ? `<tr class="auditoria-alerta-linha ${linha.alerta.includes('Conferir RX') ? 'alerta-regiao-conferencia' : ''} ${acima ? 'auditoria-alerta-excesso' : ''}"><td colspan="8"><strong>Alerta:</strong> ${escAuditoria(alerta)}</td></tr>` : ''}`;
@@ -4894,7 +4902,7 @@ function aplicarParecerCompleto() {
         if(!principalEscolhido){avisos.push(`${linhas[0].guia.beneficiario} · guia ${linhas[0].guia.ordem}: empate de porte e valor entre ${correspondencias.map(b=>formatarCodigoAuditoria(b.codigo)).join(' e ')}; escolha o principal no popup de análise de vias.`);continue;}
         const propostas=percentuaisOrientacaoPorOcorrencia(linhas,new Map([[principalEscolhido.codigo,principalEscolhido.principal]]),principalEscolhido.demais);
         const alteracoes=linhas.filter(l=>idsElegiveis.has(l.evento.id)).map(l=>({linha:l,percentual:propostas.get(l.evento.id)}));
-        const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(l.evento.codigo))&&p===50));
+        const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia')&&p===50));
         if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(principalEscolhido.codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
         for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
         total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,guias:[...new Set(linhas.map(l=>l.guia.ordem))].join(', '),codigo:principalEscolhido.codigo,principal:principalEscolhido.principal,demais:principalEscolhido.demais,quantidade:alteracoes.length});
@@ -4953,7 +4961,7 @@ function previaOrientacaoPerito() {
     for(const linha of linhas) {
         const percentual=propostas.get(linha.evento.id);
         if(percentual===null||percentual===undefined)continue;
-        const permitidos=linha.referencia?.hospitalar?[]:linha.categoria==='Radiologia'||linha.categoria==='Oftalmologia'||ehEndoscopiaIntervencionista(linha.evento.codigo)?[70,100]:[50,70,100];
+        const permitidos=linha.referencia?.hospitalar?[]:linha.categoria==='Radiologia'||linha.categoria==='Oftalmologia'?[70,100]:[50,70,100];
         if(!permitidos.includes(percentual)){erros.push(`Guia ${linha.guia.ordem}, item ${linha.evento.ordem}, código ${formatarCodigoAuditoria(linha.evento.codigo)}: ${percentual}% incompatível com os ajustes desta categoria; conferir manualmente.`);continue;}
         alteracoes.push({linha,percentual});
     }
