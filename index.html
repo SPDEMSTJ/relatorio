@@ -935,7 +935,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.39</p>
+    <p class="versao-relatorio">Versão 5.40</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1509,7 +1509,7 @@ function marcarCorrecao(campo){
     document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg&&el.dataset.correcaoChave===chave)el.checked=campo.checked;});
     atualizarContadoresCorrecoes();
 }
-function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;const n=peg?itensAtuaisCorrecoes(peg).length:0;const flutuante=document.getElementById('btnCorrecoesFlutuante');let importado=RELATORIOS_TXT_IMPORTADOS.has(peg);try{importado=importado||localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1';}catch{}if(flutuante){flutuante.hidden=n===0&&!importado;flutuante.dataset.peg=peg;flutuante.textContent=n?`Correções (${n})`:'Correções (texto)';}document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
+function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;const n=peg?itensAtuaisCorrecoes(peg).length:0;let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}const anotadas=peg?separarAnotacoesGuias(notas,peg).porGuia.size:0;const flutuante=document.getElementById('btnCorrecoesFlutuante');let importado=RELATORIOS_TXT_IMPORTADOS.has(peg);try{importado=importado||localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1';}catch{}if(flutuante){flutuante.hidden=n===0&&!importado&&anotadas===0;flutuante.dataset.peg=peg;flutuante.textContent=n?`Correções (${n})`:anotadas?`Correções (${anotadas} guia${anotadas===1?'':'s'} com anotação)`:'Correções (texto)';}document.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>b.textContent=`Relatório de correções (${n})`);}
 function linhaEfetivaCorrecao(l){
     if(!l?.evento||l.referencia?.hospitalar)return l;
     const manual=PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id);
@@ -2617,6 +2617,7 @@ function atualizarAnotacoesPeg(contexto = document) {
     const buscaGuia=contexto.getElementById('pesquisaGuiaAnotacoes');if(buscaGuia){buscaGuia.value='';buscaGuia.disabled=!peg;}
     const sugestoes=contexto.getElementById('sugestoesGuiasAnotacoes');if(sugestoes){sugestoes.hidden=true;sugestoes.innerHTML='';}
     contexto.getElementById('statusAnotacoesPeg').textContent = peg ? 'Salvamento automático neste navegador, por PEG.' : 'Selecione um PEG para fazer anotações.';
+    atualizarContadoresCorrecoes();
 }
 function alternarAnotacoesPeg(contexto = document) {
     const painel = contexto.getElementById('painelAnotacoesPeg');
@@ -2631,7 +2632,7 @@ function salvarAnotacoesPeg(campo) {
     let status = 'Anotação salva neste navegador.';
     try { localStorage.setItem(`relatorio-peg-anotacoes:${peg}`, campo.value); }
     catch { status = 'Armazenamento indisponível: anotação mantida apenas nesta sessão.'; }
-    atualizarIndicadoresAnotacoesPeg();sincronizarAnotacoesNoRascunho(peg);
+    atualizarIndicadoresAnotacoesPeg();sincronizarAnotacoesNoRascunho(peg);atualizarContadoresCorrecoes();
     const agrupadas=separarAnotacoesGuias(campo.value,peg);
     campo.ownerDocument.getElementById('statusAnotacoesPeg').textContent = status+(agrupadas.pendentes.length?' Há marcações de guia não localizadas; confira.':'');
     atualizarSugestoesGuias(campo);
