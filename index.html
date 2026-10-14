@@ -938,7 +938,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.46</p>
+    <p class="versao-relatorio">Versão 5.47</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4995,7 +4995,7 @@ function chaveBeneficiarioAuditoria(beneficiario, matricula) {
 }
 
 function ehEndoscopiaIntervencionista(codigo) { return /^40202\d{3}$/.test(codigoAuditoria(codigo)); }
-function codigoSempreIntegral(codigo) { return /^(101|201|202|301|40[1-7]|412)/.test(codigoAuditoria(codigo)); }
+function codigoSempreIntegral(codigo) { const normalizado=codigoAuditoria(codigo);return normalizado==='40808130'||/^(101|201|202|301|40[1-7]|412)/.test(normalizado); }
 
 const CODIGOS_PACOTES_CORRESPONDENTES = new Set([
     '90031199','90031202','90031210','90031229','90031237','90031253','90031261','90031270','90031288','90031296','90031300','90031318','90031326','90031334','90031342','90031350','90031369','90031377','90031385','90031393','90031407','90031415','90031423','90031431','90031440','90031458','90031466','90031474','90031482','90031490','90031504','90031512','90031520','90031539','90031547','90031555','90031571','90031580','90031598','90031601','90031610','90031628','90031636','90031644',
