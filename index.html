@@ -937,7 +937,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 5.44</p>
+    <p class="versao-relatorio">Versão 5.45</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1586,7 +1586,17 @@ function itensAtuaisCorrecoes(peg){
         return {chave,item,guia,evento,linha};
     }).filter(r=>r.item.tipo!=='regra'||!r.linha||elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha)));
 }
-function normalizarTextoSEI(texto){return String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:');}
+function separarGuiasNoTextoCorrecoes(texto){
+    const linhas=[];let anterior='',itens=true;
+    for(const linha of String(texto).split('\n')){
+        if(/^(?:OBSERVAÇÕES:|PENDÊNCIAS PARA CONFERÊNCIA)/.test(linha))itens=false;
+        const guia=itens?linha.match(/^\d+\.\s+.*?\s-\sGuia\s+(\d+)\b/)?.[1]:null;
+        if(guia&&anterior&&guia!==anterior){while(linhas.length&&!linhas[linhas.length-1].trim())linhas.pop();if(linhas[linhas.length-1]!=='-----')linhas.push('','-----');linhas.push('');}
+        if(guia)anterior=guia;linhas.push(linha);
+    }
+    return linhas.join('\n');
+}
+function normalizarTextoSEI(texto){return separarGuiasNoTextoCorrecoes(String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:'));}
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
     const texto=['À EQUIPE DE AUDITORIA — SOLICITAÇÃO DE CORREÇÕES',`PEG: ${peg} · Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`];
