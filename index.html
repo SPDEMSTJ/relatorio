@@ -1046,7 +1046,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.04</p>
+    <p class="versao-relatorio">Versão 6.05</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -5947,7 +5947,8 @@ document.addEventListener('keydown', event => {
 
 function temGlosaAuditoriaMedica(evento){return (evento?.glosas||[]).some(g=>/\bGLOSA DE AUDITORIA MEDICA\b/.test(normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ')));}
 function possivelEventoFracionado(evento){
-    if(normalizarAuditoria(evento?.unidadeMedida||'').trim()!=='FRASCO')return false;
+    const unidade=normalizarAuditoria(evento?.unidadeMedida||'').replace(/[^A-Z0-9]+/g,' ').trim();
+    if(!unidade||/^(?:ML|MILILITROS?|MG|MILIGRAMAS?|M|MT|METROS?|CM|CENTIMETROS?)$/.test(unidade))return false;
     if(temGlosaAuditoriaMedica(evento))return false;
     const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
     if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
