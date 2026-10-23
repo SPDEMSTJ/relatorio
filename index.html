@@ -1046,7 +1046,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.06</p>
+    <p class="versao-relatorio">Versão 6.07</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1759,11 +1759,12 @@ function valoresCorrecao(l){
     return {retirar:retirar>1?retirar/100:0,adicionar:adicionar>1?adicionar/100:0};
 }
 function controleCorrecaoEvento(l){
+    const fracionado=possivelEventoFracionado(l.evento)?checkboxCorrecao('fracionado',l.guia,l.evento,'Possível evento fracionado: conferir unidade, quantidade e glosa'):'';
     const cbo=alertaCboCarimbo(l.evento)?checkboxCorrecao('cbo',l.guia,l.evento,'Verificar CBO do executante e possível retirada da glosa'):'';
     const he=valoresCorrecaoHE(l),temHE=he&&(he.retirar||he.adicionar);
     const controleHE=temHE?checkboxCorrecao('he',l.guia,l.evento,he.retirar?'HE confirmado: retirar glosa do Benner':'HE confirmado: lançar diferença'):'',v=valoresCorrecao(l);
-    if(guiaIntegralmenteGlosada(l.guia)&&!v?.retirar)return cbo+controleHE;
-    return cbo+controleHE+(!temHE&&v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,v.retirar?'Retirar glosa do Benner':'Divergência após aplicação da regra'):'');
+    if(guiaIntegralmenteGlosada(l.guia)&&!v?.retirar)return fracionado+cbo+controleHE;
+    return fracionado+cbo+controleHE+(!temHE&&v&&(v.retirar||v.adicionar)?checkboxCorrecao('regra',l.guia,l.evento,v.retirar?'Retirar glosa do Benner':'Divergência após aplicação da regra'):'');
 }
 
 function guiaIntegralmenteGlosada(g){
@@ -1783,7 +1784,7 @@ function montarSeletoresCorrecoesGuias(linhas){
         if(destino&&criticas.length&&!guiaIntegralmenteGlosada(g)){const div=document.createElement('div');div.className='seletores-correcao-guia';div.innerHTML=criticas.map(([tipo,motivo])=>checkboxCorrecao(tipo,g,null,motivo)).join('');destino.append(div);}
         for(const e of g.eventos){const row=[...card.querySelectorAll('tr[data-auditoria-id]')].find(r=>r.dataset.auditoriaId===e.id);if(!row)continue;
             const l=linhas.find(l=>l.evento.id===e.id);const div=document.createElement('div');div.className='selecao-correcao-evento';
-            div.innerHTML=l?controleCorrecaoEvento(l):'';
+            div.innerHTML=l?controleCorrecaoEvento(l):possivelEventoFracionado(e)?checkboxCorrecao('fracionado',g,e,'Possível evento fracionado: conferir unidade, quantidade e glosa'):'';
             let next=row.nextElementSibling;while(next&&!next.dataset.auditoriaId){if(next.classList.contains('alerta-parecer-grupo')&&!guiaIntegralmenteGlosada(g)){div.innerHTML+=checkboxCorrecao('parecer-grupo',g,e,next.classList.contains('alerta-parecer-parcial')?'Glosa parcial: conferir parecer técnico no SEI':'Sem glosa: conferir parecer técnico no SEI');break;}if(next.classList.contains('alerta-parecer-sei')&&!guiaIntegralmenteGlosada(g)){div.innerHTML+=checkboxCorrecao('parecer',g,e,'Sem glosa: conferir parecer técnico no SEI');break;}next=next.nextElementSibling;}
             if(div.innerHTML)row.cells[3]?.append(div);
         }
@@ -1796,7 +1797,7 @@ function itensAtuaisCorrecoes(peg){
         const evento=item.evento?guia?.eventos.find(e=>identidadeEventoCorrecao(e)===item.evento):null;
         const linha=evento?GLOBAL_TODAS_LINHAS_AUDITORIA.find(l=>l.evento.id===evento.id):null;
         return {chave,item,guia,evento,linha};
-    }).filter(r=>r.item.tipo!=='he'||(valoresCorrecaoHE(r.linha)?.retirar||valoresCorrecaoHE(r.linha)?.adicionar)).filter(r=>r.item.tipo!=='regra'||!r.linha||(!(valoresCorrecaoHE(r.linha)?.retirar||valoresCorrecaoHE(r.linha)?.adicionar)&&elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha))));
+    }).filter(r=>r.item.tipo!=='fracionado'||possivelEventoFracionado(r.evento)).filter(r=>r.item.tipo!=='he'||(valoresCorrecaoHE(r.linha)?.retirar||valoresCorrecaoHE(r.linha)?.adicionar)).filter(r=>r.item.tipo!=='regra'||!r.linha||(!(valoresCorrecaoHE(r.linha)?.retirar||valoresCorrecaoHE(r.linha)?.adicionar)&&elegivelCorrecaoVias(linhaEfetivaCorrecao(r.linha))));
 }
 function separarGuiasNoTextoCorrecoes(texto){
     const linhas=[];let anterior='',itens=true;
@@ -1817,7 +1818,7 @@ function textoRelatorioCorrecoes(peg){
         const linha=linhaEfetivaCorrecao(linhaOriginal);
         if(item.tipo==='regra'&&linha&&!elegivelCorrecaoVias(linha))continue;
         if(!guia||(item.evento&&!evento)){pendencias.push(`${item.motivo}: item não localizado na extração atual. Confira antes de encaminhar.`);continue;}
-        if(guiaIntegralmenteGlosada(guia)&&item.tipo!=='cbo'&&!(item.tipo==='he'&&valoresCorrecaoHE(linha)?.retirar)&&!(item.tipo==='regra'&&valoresCorrecao(linha)?.retirar)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
+        if(guiaIntegralmenteGlosada(guia)&&item.tipo!=='fracionado'&&item.tipo!=='cbo'&&!(item.tipo==='he'&&valoresCorrecaoHE(linha)?.retirar)&&!(item.tipo==='regra'&&valoresCorrecao(linha)?.retirar)){pendencias.push(`Guia ${guia.ordem}: integralmente glosada. Apontamento de ${item.motivo.toLowerCase()} não incluído como novo pedido de correção.`);continue;}
         const critAtual=GLOBAL_DADOS_RESUMO[peg]?.beneficiarios?.find(b=>b.guia===guia.ordem&&b.matricula===guia.matricula&&b.nome===guia.beneficiario);
         if((item.tipo==='cbo'&&!alertaCboCarimbo(evento))||(item.tipo==='eps'&&!critAtual?.eps)||(item.tipo==='exercicio'&&!critAtual?.exercicioDistinto)||(item.tipo==='prazo'&&!critAtual?.maisDeUmAno)||(item.tipo==='parecer'&&!eventoSemGlosaAnotacao(evento,linha)&&(evento?.qtdGlosa>0||evento?.valorGlosadoBenner>0||evento?.glosas?.length))){pendencias.push(`Guia ${guia.ordem}: ${item.motivo} não mais identificado na extração atual. Conferir a seleção.`);continue;}
         if(item.tipo==='parecer-grupo'&&!pendenciaGrupoParecer(evento)){pendencias.push(`Guia ${guia.ordem}, item ${evento.ordem}: pendência de glosa por grupo não mais identificada. Confira a seleção.`);continue;}
@@ -1844,6 +1845,11 @@ function textoRelatorioCorrecoes(peg){
             const identificacao=identificacaoCbosConferencia(guia);
             correcao=`CORREÇÃO: Verificar o CBO do médico no Benner (${identificacao}) e, se cabível, retirar a glosa por especialidade cobrada divergente do carimbo médico.`;
             plural=correcao.replace('retirar a glosa','retirar as glosas');
+        }
+        else if(item.tipo==='fracionado'){
+            correcao='CORREÇÃO: Possível evento fracionado. Verificar a unidade de medida, a quantidade utilizada e a glosa aplicada no Benner e corrigir, se indicado.';
+            plural='CORREÇÃO: Possíveis eventos fracionados. Verificar as unidades de medida, as quantidades utilizadas e as glosas aplicadas no Benner e corrigir, se indicado.';
+            detalhes.push(`Unidade no Benner: ${evento.unidadeMedida} · Quantidade: ${evento.quantidade}.`, `Valor apresentado: ${valorBRL(evento.valorApresentado)} · Valor glosado: ${valorBRL(evento.valorGlosadoBenner)} · Valor pago: ${valorBRL(evento.valorPago)}.`);
         }
         else if(item.tipo==='parecer-grupo'){
             const parcial=estadoGlosaGrupo(evento.valorApresentado,evento.valorGlosadoBenner,evento.valorPago)==='parcial';
