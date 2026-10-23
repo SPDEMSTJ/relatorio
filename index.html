@@ -1046,7 +1046,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.05</p>
+    <p class="versao-relatorio">Versão 6.06</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -5948,11 +5948,19 @@ document.addEventListener('keydown', event => {
 function temGlosaAuditoriaMedica(evento){return (evento?.glosas||[]).some(g=>/\bGLOSA DE AUDITORIA MEDICA\b/.test(normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ')));}
 function possivelEventoFracionado(evento){
     const unidade=normalizarAuditoria(evento?.unidadeMedida||'').replace(/[^A-Z0-9]+/g,' ').trim();
-    if(!unidade||/^(?:ML|MILILITROS?|MG|MILIGRAMAS?|M|MT|METROS?|CM|CENTIMETROS?)$/.test(unidade))return false;
+    if(!unidade)return false;
+    const descricao=normalizarAuditoria(evento.descricao||'');
+    const medidas=[...descricao.matchAll(/(?:^|[^A-Z0-9])(\d+(?:[.,]\d+)?)\s*(ML|MT|CM)(?=$|[^A-Z])/g)];
+    const unidades={ML:/^(?:ML|MILILITROS?)$/,MT:/^(?:M|MT|METROS?)$/,CM:/^(?:CM|CENTIMETROS?)$/};
+    const termos=[...descricao.matchAll(/(?:^|[^A-Z])(ML|MT|CM)(?=$|[^A-Z])/g)].map(m=>m[1]);
+    if(!termos.length)return false;
+    const unidadeCorreta=termos.every(termo=>unidades[termo].test(unidade));
+    const medidasUnicas=[...new Set(medidas.map(m=>Number(m[1].replace(',','.'))))];
+    const quantidadeDivergente=medidasUnicas.length===1&&Math.abs(numeroAuditoria(evento.quantidade)-medidasUnicas[0])>0.000001;
+    if(unidadeCorreta&&!quantidadeDivergente)return false;
     if(temGlosaAuditoriaMedica(evento))return false;
     const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
     if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
-    if(!/(?:^|[^A-Z])(?:ML|MT|CM)(?=$|[^A-Z])/.test(normalizarAuditoria(evento.descricao||'')))return false;
     const apresentado=centavosTabela(numeroAuditoria(evento.valorApresentado)),glosa=centavosTabela(numeroAuditoria(evento.valorGlosadoBenner));
     return apresentado>0&&glosa>0&&glosa*10>=apresentado;
 }
