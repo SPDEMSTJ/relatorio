@@ -837,6 +837,9 @@
 #selecaoPegsImportacao{width:min(1250px,96vw);}
 #popupPegsValidados{width:min(1200px,96vw);}
 #selecaoPegsImportacao .tabela-selecao-pegs table{min-width:1050px;}
+#saida .oculto-filtro-sem-glosa,#saida .oculto-filtro-fracionado{display:none!important;}
+#selecionarTodosFracionados,#saida .selecao-correcao input[type="checkbox"]{width:14px!important;height:14px!important;min-width:14px!important;min-height:14px!important;padding:0!important;margin:0 5px 0 0!important;vertical-align:middle;flex:0 0 14px;}
+#listaEventosFracionados label{display:inline-flex;align-items:center;width:auto;font-size:12px;font-weight:400;}
 #btnVerFracionados[hidden],#listaEventosFracionados[hidden]{display:none!important;}
 #botaoPegsValidados{position:fixed;right:22px;bottom:76px;z-index:1000;background:#166534;color:white;box-shadow:0 5px 16px rgba(0,0,0,.18);border-radius:999px;}
 #listaPegsImportacao tr.peg-validado td:not(:last-child),#listaSeletorPegsTP .peg-validado{text-decoration:line-through;color:#78818d;}
@@ -1044,7 +1047,6 @@
 <section id="listaEventosFracionados" class="no-print" hidden style="margin:12px 0;padding:16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px" aria-label="Possíveis eventos fracionados">
 <strong>Possíveis eventos fracionados</strong><p data-total-fracionados></p>
 <label><input id="selecionarTodosFracionados" type="checkbox" onchange="marcarTodosEventosFracionados(this.checked)"> Incluir todos no relatório de correções</label>
-<div style="overflow:auto;max-height:60vh;margin-top:12px"><table><thead><tr><th>Beneficiário</th><th>Guia</th><th>Item</th><th>Evento</th><th>Unidade no Benner</th><th>Quantidade</th><th>Apresentado</th><th>Glosado</th><th>Pago</th><th>Correções</th></tr></thead><tbody></tbody></table></div>
 </section>
 <div id="saida"></div>
 <div id="tourExemploAnalise" class="tour-exemplo-analise no-print" hidden><span>Exemplo demonstrativo · beneficiário oculto</span><button id="tourBotaoAnaliseExemplo" type="button" class="botao-regra-beneficiario" tabindex="-1">Analisar 100–70 · 1 evento</button></div>
@@ -1053,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.10</p>
+    <p class="versao-relatorio">Versão 6.11</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2778,6 +2780,7 @@ function render(preservarPeg = false) {
                 const estados=[...eventosConferenciaGrupo.values()],resumoGrupo=document.createElement('div');resumoGrupo.className='resumo-conferencia-grupos';
                 const n=t=>estados.filter(e=>e===t).length;
                 resumoGrupo.textContent=`Conferência pelo Grau do Benner: ${estados.length} evento(s) — ${n('sem')} sem glosa; ${n('parcial')} com glosa parcial; ${n('integral')} com glosa integral.${n('sem-valor')?' '+n('sem-valor')+' sem valor apresentado: conferir.':''}`;statusFiltroEventos.append(resumoGrupo);
+                if(n('sem')){const b=document.createElement('button');b.type='button';b.className='btn-secondary no-print';b.dataset.filtroSemGlosa=String(n('sem'));b.textContent=`Ver ${n('sem')} itens sem glosa`;b.onclick=alternarItensSemGlosa;resumoGrupo.append(' ',b);}
             }
             const naoEncontrados=termosEventos.filter(t=>!termosEncontrados.has(t));
             if(naoEncontrados.length){
@@ -5982,30 +5985,66 @@ function eventosFracionadosAtuais(){
     const peg=pegDasAnotacoes();
     return (GLOBAL_MODELO_AUDITORIA?.guias||[]).filter(g=>g.peg===peg).flatMap(g=>g.eventos.filter(possivelEventoFracionado).map(evento=>({guia:g,evento})));
 }
+let FILTRO_ITENS_SEM_GLOSA=false;
+function atualizarFiltroItensSemGlosa(){
+    const botao=document.querySelector('[data-filtro-sem-glosa]');
+    if(!botao)FILTRO_ITENS_SEM_GLOSA=false;
+    if(botao){botao.textContent=FILTRO_ITENS_SEM_GLOSA?'Mostrar todos os eventos do parecer':`Ver ${botao.dataset.filtroSemGlosa} itens sem glosa`;botao.setAttribute('aria-pressed',String(FILTRO_ITENS_SEM_GLOSA));}
+    document.querySelectorAll('#saida .oculto-filtro-sem-glosa').forEach(el=>el.classList.remove('oculto-filtro-sem-glosa'));
+    if(!FILTRO_ITENS_SEM_GLOSA)return;
+    document.querySelectorAll('#saida .card').forEach(card=>{
+        const rows=[...card.querySelectorAll('tr[data-auditoria-id]')];if(!rows.length)return;
+        let total=0;
+        rows.forEach(row=>{
+            const detalhes=[];let next=row.nextElementSibling;
+            while(next&&!next.dataset.auditoriaId&&!next.classList.contains('linha-beneficiario')){detalhes.push(next);next=next.nextElementSibling;}
+            const mostrar=detalhes.some(el=>el.classList.contains('alerta-parecer-grupo')&&el.classList.contains('alerta-parecer-sei'));
+            if(mostrar)total++;
+            [row,...detalhes].forEach(el=>el.classList.toggle('oculto-filtro-sem-glosa',!mostrar));
+        });
+        card.classList.toggle('oculto-filtro-sem-glosa',!total);
+    });
+}
+function alternarItensSemGlosa(){
+    FILTRO_ITENS_SEM_GLOSA=!FILTRO_ITENS_SEM_GLOSA;
+    if(FILTRO_ITENS_SEM_GLOSA){FILTRO_EVENTOS_FRACIONADOS=false;atualizarListaEventosFracionados();}
+    atualizarFiltroItensSemGlosa();
+}
+let FILTRO_EVENTOS_FRACIONADOS=false;
+function camposCorrecoesFracionados(){return [...document.querySelectorAll('#saida input[data-correcao-tipo="fracionado"]')];}
 function atualizarSelecaoMassaFracionados(){
-    const painel=document.getElementById('listaEventosFracionados'),master=document.getElementById('selecionarTodosFracionados');
-    if(!painel||!master)return;
-    const campos=[...painel.querySelectorAll('tbody input[data-correcao-tipo="fracionado"]')],marcados=campos.filter(c=>c.checked).length;
+    const master=document.getElementById('selecionarTodosFracionados');if(!master)return;
+    const campos=camposCorrecoesFracionados(),marcados=campos.filter(c=>c.checked).length;
     master.checked=campos.length>0&&marcados===campos.length;master.indeterminate=marcados>0&&marcados<campos.length;master.disabled=!campos.length;
 }
 function marcarTodosEventosFracionados(marcado){
-    document.querySelectorAll('#listaEventosFracionados tbody input[data-correcao-tipo="fracionado"]').forEach(c=>{if(c.checked!==marcado){c.checked=marcado;marcarCorrecao(c);}});
+    camposCorrecoesFracionados().forEach(c=>{if(c.checked!==marcado){c.checked=marcado;marcarCorrecao(c);}});
     atualizarSelecaoMassaFracionados();
 }
 function atualizarListaEventosFracionados(){
     const itens=eventosFracionadosAtuais(),botao=document.getElementById('btnVerFracionados'),painel=document.getElementById('listaEventosFracionados');
     if(!botao||!painel)return;
-    botao.hidden=!itens.length;botao.textContent=`Ver eventos fracionados (${itens.length})`;
-    if(!itens.length){painel.hidden=true;botao.setAttribute('aria-expanded','false');}
-    painel.querySelector('[data-total-fracionados]').textContent=`PEG ${pegDasAnotacoes()||'—'} · ${itens.length} possível(is) evento(s) fracionado(s) nos eventos carregados. A lista acompanha os filtros do relatório.`;
-    painel.querySelector('tbody').innerHTML=itens.map(({guia:g,evento:e})=>`<tr><td>${escAuditoria(g.beneficiario)}</td><td>${escAuditoria(g.ordem)}</td><td>${escAuditoria(e.ordem)}</td><td>${escAuditoria(e.codigo)} — ${escAuditoria(e.descricao)}</td><td>${escAuditoria(e.unidadeMedida)}</td><td>${escAuditoria(e.quantidade)}</td><td>${valorBRL(e.valorApresentado)}</td><td>${valorBRL(e.valorGlosadoBenner)}</td><td>${valorBRL(e.valorPago)}</td><td>${checkboxCorrecao('fracionado',g,e,'Possível evento fracionado: conferir unidade, quantidade e glosa')}</td></tr>`).join('');
+    if(!itens.length)FILTRO_EVENTOS_FRACIONADOS=false;
+    botao.hidden=!itens.length;botao.textContent=FILTRO_EVENTOS_FRACIONADOS?`Mostrar todos os eventos (${itens.length} fracionados)`:`Ver eventos fracionados (${itens.length})`;
+    botao.setAttribute('aria-expanded',String(FILTRO_EVENTOS_FRACIONADOS));painel.hidden=!FILTRO_EVENTOS_FRACIONADOS;
+    painel.querySelector('[data-total-fracionados]').textContent=`PEG ${pegDasAnotacoes()||'—'} · ${itens.length} possível(is) evento(s) fracionado(s), listados nas guias abaixo. A lista acompanha os filtros do relatório.`;
+    const ids=new Set(itens.map(i=>i.evento.id));
+    document.querySelectorAll('#saida .oculto-filtro-fracionado').forEach(el=>el.classList.remove('oculto-filtro-fracionado'));
+    if(FILTRO_EVENTOS_FRACIONADOS)document.querySelectorAll('#saida .card').forEach(card=>{
+        const rows=[...card.querySelectorAll('tr[data-auditoria-id]')];if(!rows.length)return;
+        card.classList.toggle('oculto-filtro-fracionado',!rows.some(row=>ids.has(row.dataset.auditoriaId)));
+        rows.forEach(row=>{
+            const ocultar=!ids.has(row.dataset.auditoriaId);row.classList.toggle('oculto-filtro-fracionado',ocultar);
+            let proxima=row.nextElementSibling;
+            while(proxima&&!proxima.dataset.auditoriaId&&!proxima.classList.contains('linha-beneficiario')){proxima.classList.toggle('oculto-filtro-fracionado',ocultar);proxima=proxima.nextElementSibling;}
+        });
+    });
     atualizarSelecaoMassaFracionados();
 }
 function abrirEventosFracionados(){
+    FILTRO_EVENTOS_FRACIONADOS=!FILTRO_EVENTOS_FRACIONADOS;
+    if(FILTRO_EVENTOS_FRACIONADOS){FILTRO_ITENS_SEM_GLOSA=false;atualizarFiltroItensSemGlosa();}
     atualizarListaEventosFracionados();
-    const painel=document.getElementById('listaEventosFracionados'),botao=document.getElementById('btnVerFracionados');
-    if(botao.hidden)return;
-    painel.hidden=!painel.hidden;botao.setAttribute('aria-expanded',String(!painel.hidden));
 }
 function avisoEventoFracionado(evento){return possivelEventoFracionado(evento)?'<span class="alerta-evento-fracionado">Possível evento fracionado. Verificar a unidade de medida e a quantidade utilizada.</span>':'';}
 
@@ -6327,6 +6366,7 @@ function atualizarAuditoria() {
     GLOBAL_TODAS_LINHAS_AUDITORIA = linhasDoPeg;
     montarSeletoresCorrecoesGuias(linhas);
     atualizarListaEventosFracionados();
+    atualizarFiltroItensSemGlosa();
     montarPaineisAnotacoesGuias();
     atualizarBotoesAuditoriaBeneficiarios(linhasDoPeg);
     atualizarResumoAreasAuditoria(linhasDoPeg);
