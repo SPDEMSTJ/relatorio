@@ -1055,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.12</p>
+    <p class="versao-relatorio">Versão 6.13</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1819,7 +1819,31 @@ function separarGuiasNoTextoCorrecoes(texto){
     }
     return linhas.join('\n');
 }
-function normalizarTextoSEI(texto){return separarGuiasNoTextoCorrecoes(String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:').replace(/^([ \t]*)(?:\*\*[ \t]*)?CORREÇÃO[ \t]*(?:\*\*)?[ \t]*:/gm,'$1** CORREÇÃO **:'));}
+function agruparFracionadosNoTextoSalvo(texto){
+    const original=String(texto),linhas=original.replace(/\r\n/g,'\n').split('\n'),saida=[];let trecho=[];
+    function concluir(){
+        if(!trecho.length)return;
+        const partes=trecho.join('\n').split(/(\n[ \t]*\n)/),grupos=new Map();
+        for(let i=0;i<partes.length;i+=2){
+            const bloco=partes[i].trim(),ls=bloco.split('\n');
+            if(ls.length!==3||!/^\d[\d.]* - .+/.test(ls[0])||!/^Unidade no Benner: .+ · Quantidade: .+\.$/.test(ls[1])||!/^Valor apresentado: .+ · Valor glosado: .+ · Valor pago: .+\.$/.test(ls[2]))continue;
+            if(!grupos.has(bloco))grupos.set(bloco,[]);grupos.get(bloco).push(i);
+        }
+        for(const [bloco,indices] of grupos){
+            if(indices.length<2)continue;
+            const [evento,...detalhes]=bloco.split('\n');
+            partes[indices[0]]=[evento,`${indices.length} itens do mesmo evento nesta guia.`,'Dados por item:',...detalhes].join('\n');
+            for(const indice of indices.slice(1)){partes[indice]='';if(indice>0)partes[indice-1]='';}
+        }
+        saida.push(partes.join(''));trecho=[];
+    }
+    for(const linha of linhas){
+        if(/^\d+\.\s+.*? - Guia \d+\b/.test(linha)||/^(?:\*\*\s*)?CORREÇÃO\b/.test(linha)||/^-{1,5}\s*$/.test(linha)||/^(?:OBSERVAÇÕES|PENDÊNCIAS PARA CONFERÊNCIA)/.test(linha)){concluir();saida.push(linha);}else trecho.push(linha);
+    }
+    concluir();const resultado=saida.join('\n');
+    return resultado===linhas.join('\n')?original:resultado;
+}
+function normalizarTextoSEI(texto){return separarGuiasNoTextoCorrecoes(agruparFracionadosNoTextoSalvo(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:').replace(/^([ \t]*)(?:\*\*[ \t]*)?CORREÇÃO[ \t]*(?:\*\*)?[ \t]*:/gm,'$1** CORREÇÃO **:'));}
 function listarEventosAgrupadosCorrecao(registros){
     const grupos=new Map(),texto=[];
     for(const r of registros){
