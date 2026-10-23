@@ -837,6 +837,7 @@
 #selecaoPegsImportacao{width:min(1250px,96vw);}
 #popupPegsValidados{width:min(1200px,96vw);}
 #selecaoPegsImportacao .tabela-selecao-pegs table{min-width:1050px;}
+#btnVerFracionados[hidden],#listaEventosFracionados[hidden]{display:none!important;}
 #botaoPegsValidados{position:fixed;right:22px;bottom:76px;z-index:1000;background:#166534;color:white;box-shadow:0 5px 16px rgba(0,0,0,.18);border-radius:999px;}
 #listaPegsImportacao tr.peg-validado td:not(:last-child),#listaSeletorPegsTP .peg-validado{text-decoration:line-through;color:#78818d;}
 #listaPegsImportacao tr.peg-validado{background:#f1f3f5;}
@@ -1039,6 +1040,12 @@
 </div>
 <button type="button" class="btn-primary abrir-relatorio-correcoes no-print" onclick="abrirRelatorioCorrecoes()">Relatório de correções (0)</button>
 <button type="button" class="btn-secondary no-print" onclick="document.getElementById('arquivoRelatorioCorrecoes').click()">Importar relatório de correções</button>
+<button id="btnVerFracionados" type="button" class="no-print" hidden aria-expanded="false" aria-controls="listaEventosFracionados" onclick="abrirEventosFracionados()" style="background:linear-gradient(135deg,#ffb347,#f97316);color:#351800;border:1px solid #ea880c;border-radius:12px;padding:13px 16px;font-weight:600">Ver eventos fracionados</button>
+<section id="listaEventosFracionados" class="no-print" hidden style="margin:12px 0;padding:16px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px" aria-label="Possíveis eventos fracionados">
+<strong>Possíveis eventos fracionados</strong><p data-total-fracionados></p>
+<label><input id="selecionarTodosFracionados" type="checkbox" onchange="marcarTodosEventosFracionados(this.checked)"> Incluir todos no relatório de correções</label>
+<div style="overflow:auto;max-height:60vh;margin-top:12px"><table><thead><tr><th>Beneficiário</th><th>Guia</th><th>Item</th><th>Evento</th><th>Unidade no Benner</th><th>Quantidade</th><th>Apresentado</th><th>Glosado</th><th>Pago</th><th>Correções</th></tr></thead><tbody></tbody></table></div>
+</section>
 <div id="saida"></div>
 <div id="tourExemploAnalise" class="tour-exemplo-analise no-print" hidden><span>Exemplo demonstrativo · beneficiário oculto</span><button id="tourBotaoAnaliseExemplo" type="button" class="botao-regra-beneficiario" tabindex="-1">Analisar 100–70 · 1 evento</button></div>
 </section>
@@ -1046,7 +1053,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.09</p>
+    <p class="versao-relatorio">Versão 6.10</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1702,6 +1709,7 @@ function marcarCorrecao(campo){
     gravarCorrecoesPeg(peg);invalidarTextoCorrecoes(peg);
     document.querySelectorAll('input[data-correcao-chave]').forEach(el=>{if(el.dataset.correcaoPeg===peg&&el.dataset.correcaoChave===chave)el.checked=campo.checked;});
     atualizarContadoresCorrecoes();
+    atualizarSelecaoMassaFracionados();
 }
 function atualizarContadoresCorrecoes(){const peg=pegDasAnotacoes()||ULTIMO_PEG_CORRECOES_IMPORTADO;const n=peg?itensAtuaisCorrecoes(peg).length:0;let notas=ANOTACOES_PEG_SESSAO.get(peg)||'';try{notas=localStorage.getItem('relatorio-peg-anotacoes:'+peg)??notas;}catch{}const anotadas=peg?separarAnotacoesGuias(notas,peg).porGuia.size:0;const flutuante=document.getElementById('btnCorrecoesFlutuante');let importado=RELATORIOS_TXT_IMPORTADOS.has(peg);try{importado=importado||localStorage.getItem('relatorio-peg-correcoes-txt:'+peg)==='1';}catch{}if(flutuante){flutuante.hidden=n===0&&!importado&&anotadas===0;flutuante.dataset.peg=peg;flutuante.textContent=n?`Correções (${n})`:anotadas?`Correções (${anotadas} guia${anotadas===1?'':'s'} com anotação)`:'Correções (texto)';}[document,...Object.values(JANELAS_POPUP_SEPARADAS).filter(j=>j&&!j.closed).map(j=>j.document)].forEach(doc=>doc.querySelectorAll('.abrir-relatorio-correcoes').forEach(b=>{b.textContent=`Relatório de correções (${n})`;b.classList.toggle('com-correcoes',n>0||anotadas>0||importado);}));atualizarIndicadoresAnotacoesPeg();}
 function linhaEfetivaCorrecao(l){
@@ -2185,7 +2193,7 @@ function renderizarConteudoResumo(chavePeg) {
 
     let html = `<div class="resumo-grid">`;
     // Card Dados
-    html += `<div class="resumo-card"><div class="cabecalho-validacao-processo"><h3 class="titulo-dados">📌 Dados do Processo (PEG ${tituloPeg})</h3><label class="tag-validacao-processo no-print ${pegValidado(tituloPeg)?'confirmado':''}" data-validacao-processo="${escAuditoria(tituloPeg)}"><input type="checkbox" aria-label="Confirmar validação do PEG ${escAuditoria(tituloPeg)}" ${pegValidado(tituloPeg)?'checked':''} onchange="alterarValidacaoPeg(this.parentElement.dataset.validacaoProcesso,this.checked)"><span>${pegValidado(tituloPeg)?'PEG validado':'Validar PEG'}</span></label><button class="no-print" type="button" onclick="abrirPegsValidados()">Ver PEGs validados</button><button class="no-print" type="button" data-lista-fracionados onclick="abrirEventosFracionados()">Eventos fracionados</button></div>
+    html += `<div class="resumo-card"><div class="cabecalho-validacao-processo"><h3 class="titulo-dados">📌 Dados do Processo (PEG ${tituloPeg})</h3><label class="tag-validacao-processo no-print ${pegValidado(tituloPeg)?'confirmado':''}" data-validacao-processo="${escAuditoria(tituloPeg)}"><input type="checkbox" aria-label="Confirmar validação do PEG ${escAuditoria(tituloPeg)}" ${pegValidado(tituloPeg)?'checked':''} onchange="alterarValidacaoPeg(this.parentElement.dataset.validacaoProcesso,this.checked)"><span>${pegValidado(tituloPeg)?'PEG validado':'Validar PEG'}</span></label><button class="no-print" type="button" onclick="abrirPegsValidados()">Ver PEGs validados</button></div>
              <div class="linha"><b>Data Recebimento:</b> ${info.dataReceb || '-'}</div>
              <div class="linha linha-copiavel"><b>PEG:</b> <span class="valor-copiavel">${info.peg || '-'}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar PEG" title="Copiar PEG" onclick="copiarValorProcesso(this)">📋</button></div>
              <div class="linha linha-copiavel"><b>Processo:</b> <span class="valor-copiavel">${info.processo || '-'}</span><button type="button" class="botao-copiar no-print" aria-label="Copiar Processo" title="Copiar Processo" onclick="copiarValorProcesso(this)">📋</button></div>
@@ -5974,24 +5982,30 @@ function eventosFracionadosAtuais(){
     const peg=pegDasAnotacoes();
     return (GLOBAL_MODELO_AUDITORIA?.guias||[]).filter(g=>g.peg===peg).flatMap(g=>g.eventos.filter(possivelEventoFracionado).map(evento=>({guia:g,evento})));
 }
+function atualizarSelecaoMassaFracionados(){
+    const painel=document.getElementById('listaEventosFracionados'),master=document.getElementById('selecionarTodosFracionados');
+    if(!painel||!master)return;
+    const campos=[...painel.querySelectorAll('tbody input[data-correcao-tipo="fracionado"]')],marcados=campos.filter(c=>c.checked).length;
+    master.checked=campos.length>0&&marcados===campos.length;master.indeterminate=marcados>0&&marcados<campos.length;master.disabled=!campos.length;
+}
+function marcarTodosEventosFracionados(marcado){
+    document.querySelectorAll('#listaEventosFracionados tbody input[data-correcao-tipo="fracionado"]').forEach(c=>{if(c.checked!==marcado){c.checked=marcado;marcarCorrecao(c);}});
+    atualizarSelecaoMassaFracionados();
+}
 function atualizarListaEventosFracionados(){
-    const itens=eventosFracionadosAtuais();
-    document.querySelectorAll('[data-lista-fracionados]').forEach(b=>b.textContent=`Eventos fracionados (${itens.length})`);
-    const popup=document.getElementById('popupEventosFracionados');
-    if(!popup?.open)return;
-    popup.querySelector('[data-total-fracionados]').textContent=`PEG ${pegDasAnotacoes()||'—'} · ${itens.length} possível(is) evento(s) fracionado(s) nos eventos carregados. A lista acompanha os filtros do relatório.`;
-    popup.querySelector('tbody').innerHTML=itens.length?itens.map(({guia:g,evento:e})=>`<tr><td>${escAuditoria(g.beneficiario)}</td><td>${escAuditoria(g.ordem)}</td><td>${escAuditoria(e.ordem)}</td><td>${escAuditoria(e.codigo)} — ${escAuditoria(e.descricao)}</td><td>${escAuditoria(e.unidadeMedida)}</td><td>${escAuditoria(e.quantidade)}</td><td>${valorBRL(e.valorApresentado)}</td><td>${valorBRL(e.valorGlosadoBenner)}</td><td>${valorBRL(e.valorPago)}</td><td>${checkboxCorrecao('fracionado',g,e,'Possível evento fracionado: conferir unidade, quantidade e glosa')}</td></tr>`).join(''):'<tr><td colspan="10">Nenhum possível evento fracionado identificado nos eventos carregados.</td></tr>';
+    const itens=eventosFracionadosAtuais(),botao=document.getElementById('btnVerFracionados'),painel=document.getElementById('listaEventosFracionados');
+    if(!botao||!painel)return;
+    botao.hidden=!itens.length;botao.textContent=`Ver eventos fracionados (${itens.length})`;
+    if(!itens.length){painel.hidden=true;botao.setAttribute('aria-expanded','false');}
+    painel.querySelector('[data-total-fracionados]').textContent=`PEG ${pegDasAnotacoes()||'—'} · ${itens.length} possível(is) evento(s) fracionado(s) nos eventos carregados. A lista acompanha os filtros do relatório.`;
+    painel.querySelector('tbody').innerHTML=itens.map(({guia:g,evento:e})=>`<tr><td>${escAuditoria(g.beneficiario)}</td><td>${escAuditoria(g.ordem)}</td><td>${escAuditoria(e.ordem)}</td><td>${escAuditoria(e.codigo)} — ${escAuditoria(e.descricao)}</td><td>${escAuditoria(e.unidadeMedida)}</td><td>${escAuditoria(e.quantidade)}</td><td>${valorBRL(e.valorApresentado)}</td><td>${valorBRL(e.valorGlosadoBenner)}</td><td>${valorBRL(e.valorPago)}</td><td>${checkboxCorrecao('fracionado',g,e,'Possível evento fracionado: conferir unidade, quantidade e glosa')}</td></tr>`).join('');
+    atualizarSelecaoMassaFracionados();
 }
 function abrirEventosFracionados(){
-    let popup=document.getElementById('popupEventosFracionados');
-    if(!popup){
-        popup=document.createElement('dialog');popup.id='popupEventosFracionados';popup.className='no-print';
-        popup.style.cssText='width:1400px;max-width:95vw;max-height:90vh;border:1px solid #bfcee5;border-radius:12px;padding:20px;color:#172d50;';
-        popup.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">Possíveis eventos fracionados</h2><button type="button" onclick="document.getElementById(&quot;popupEventosFracionados&quot;).close()">Fechar ✕</button></div><p data-total-fracionados></p><div style="overflow:auto;max-height:65vh"><table><thead><tr><th>Beneficiário</th><th>Guia</th><th>Item</th><th>Evento</th><th>Unidade no Benner</th><th>Quantidade</th><th>Apresentado</th><th>Glosado</th><th>Pago</th><th>Correções</th></tr></thead><tbody></tbody></table></div>';
-        document.body.append(popup);
-    }
-    if(!popup.open)popup.showModal();
     atualizarListaEventosFracionados();
+    const painel=document.getElementById('listaEventosFracionados'),botao=document.getElementById('btnVerFracionados');
+    if(botao.hidden)return;
+    painel.hidden=!painel.hidden;botao.setAttribute('aria-expanded',String(!painel.hidden));
 }
 function avisoEventoFracionado(evento){return possivelEventoFracionado(evento)?'<span class="alerta-evento-fracionado">Possível evento fracionado. Verificar a unidade de medida e a quantidade utilizada.</span>':'';}
 
