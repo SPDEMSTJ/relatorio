@@ -1055,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.11</p>
+    <p class="versao-relatorio">Versão 6.12</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1820,6 +1820,29 @@ function separarGuiasNoTextoCorrecoes(texto){
     return linhas.join('\n');
 }
 function normalizarTextoSEI(texto){return separarGuiasNoTextoCorrecoes(String(texto).replace(/[\u2010-\u2015]/g,'-').replace(/\u00a0/g,' ').replace(/^ANOTAÇÕES ADICIONAIS:\s*$/gm,'OBSERVAÇÕES:').replace(/^([ \t]*)(?:\*\*[ \t]*)?CORREÇÃO[ \t]*(?:\*\*)?[ \t]*:/gm,'$1** CORREÇÃO **:'));}
+function listarEventosAgrupadosCorrecao(registros){
+    const grupos=new Map(),texto=[];
+    for(const r of registros){
+        const chave=r.evento?JSON.stringify([r.evento.codigo,r.evento.descricao]):Symbol();
+        if(!grupos.has(chave))grupos.set(chave,[]);grupos.get(chave).push(r);
+    }
+    for(const grupo of grupos.values()){
+        const primeiro=grupo[0];
+        if(primeiro.evento){
+            texto.push('',`${formatarCodigoAuditoria(primeiro.evento.codigo)} - ${primeiro.evento.descricao}`);
+            const itens=[...new Set(grupo.map(r=>r.evento.ordem))];
+            if(itens.length>1)texto.push(`${itens.length} itens do mesmo evento nesta guia (itens ${itens.join(', ')}).`);
+        }
+        const detalhes=new Map();
+        for(const r of grupo){const chave=JSON.stringify(r.detalhes);if(!detalhes.has(chave))detalhes.set(chave,{linhas:r.detalhes,itens:new Set()});if(r.evento)detalhes.get(chave).itens.add(r.evento.ordem);}
+        for(const detalhe of detalhes.values()){
+            if(!detalhe.linhas.length)continue;
+            if(grupo.length>1)texto.push(detalhes.size>1?`Dados dos itens ${[...detalhe.itens].join(', ')} (por item):`:'Dados por item:');
+            texto.push(...detalhe.linhas);
+        }
+    }
+    return texto;
+}
 function textoRelatorioCorrecoes(peg){
     const dados=GLOBAL_DADOS_RESUMO[peg]?.info||{},itens=itensAtuaisCorrecoes(peg);
     const texto=['À EQUIPE DE AUDITORIA — SOLICITAÇÃO DE CORREÇÕES',`PEG: ${peg} · Processo: ${dados.processo||'não informado'}`,`Prestador: ${dados.prestador||'não informado'}`];
@@ -1896,10 +1919,7 @@ function textoRelatorioCorrecoes(peg){
         let indiceGrupo=0;
         for(const grupo of grupos.values()){
             if(indiceGrupo++)texto.push('','-','');
-            for(const r of grupo){
-                if(r.evento)texto.push('',`${formatarCodigoAuditoria(r.evento.codigo)} - ${r.evento.descricao}`);
-                if(r.detalhes.length)texto.push(...r.detalhes);
-            }
+            texto.push(...listarEventosAgrupadosCorrecao(grupo));
             const motivo=motivosCompartilhados.get(chaveMotivo(grupo[0])),guiasMotivo=[...motivo.guias.values()];
             if(guiasMotivo.length>1&&identidadeGuiaCorrecao(guia)!==identidadeGuiaCorrecao(guiasMotivo[guiasMotivo.length-1]))continue;
             const quantidade=new Set(motivo.registros.map(r=>r.evento?.id).filter(Boolean)).size;
