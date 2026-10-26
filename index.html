@@ -840,6 +840,11 @@
 #saida .oculto-filtro-sem-glosa,#saida .oculto-filtro-fracionado{display:none!important;}
 #selecionarTodosFracionados,#saida .selecao-correcao input[type="checkbox"]{width:14px!important;height:14px!important;min-width:14px!important;min-height:14px!important;padding:0!important;margin:0 5px 0 0!important;vertical-align:middle;flex:0 0 14px;}
 #listaEventosFracionados label{display:inline-flex;align-items:center;width:auto;font-size:12px;font-weight:400;}
+#acaoValidarPegFinal[hidden]{display:none!important;}
+#acaoValidarPegFinal{display:flex;justify-content:center;padding:24px 0 12px;}
+#btnValidarPegFinal{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 45%,#1e40af 100%);color:#fff;border:1px solid #2563eb;border-radius:14px;padding:15px 30px;min-height:50px;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.25);cursor:pointer;transition:transform .15s,box-shadow .15s;}
+#btnValidarPegFinal:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(37,99,235,.34);}
+#btnValidarPegFinal:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;}
 .alerta-xthm-internacao{display:block;margin-top:6px;padding:6px 8px;border-left:3px solid #d97706;background:#fff7e6;color:#92400e;font-size:12px;font-weight:500;}
 #btnVerFracionados[hidden],#listaEventosFracionados[hidden]{display:none!important;}
 #botaoPegsValidados{position:fixed;right:22px;bottom:76px;z-index:1000;background:#166534;color:white;box-shadow:0 5px 16px rgba(0,0,0,.18);border-radius:999px;}
@@ -1050,13 +1055,14 @@
 <label><input id="selecionarTodosFracionados" type="checkbox" onchange="marcarTodosEventosFracionados(this.checked)"> Incluir todos no relatório de correções</label>
 </section>
 <div id="saida"></div>
+<div id="acaoValidarPegFinal" class="no-print" hidden><button id="btnValidarPegFinal" type="button" onclick="validarPegNoFinal()">✓ Validar PEG</button></div>
 <div id="tourExemploAnalise" class="tour-exemplo-analise no-print" hidden><span>Exemplo demonstrativo · beneficiário oculto</span><button id="tourBotaoAnaliseExemplo" type="button" class="botao-regra-beneficiario" tabindex="-1">Analisar 100–70 · 1 evento</button></div>
 </section>
 </main>
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.17</p>
+    <p class="versao-relatorio">Versão 6.18</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2087,6 +2093,7 @@ function limparTudo() {
     document.getElementById("resumo").innerHTML = ""; document.getElementById("resumo").style.display = "none";
     document.getElementById("peg").value = ""; document.getElementById("painelFiltro").style.display = "none";
     GLOBAL_DADOS_RESUMO = {};
+    atualizarBotaoValidarPegFinal();
     if (typeof limparAuditoria === "function") limparAuditoria();
     if (typeof calcularPercentuaisManuais === "function") calcularPercentuaisManuais();
 }
@@ -2439,7 +2446,19 @@ function atualizarLinhasValidacaoPegs(){
 function atualizarBotaoPegsValidados(){document.getElementById('botaoPegsValidados').textContent=`✓ PEGs validados (${listaCompletaPegsValidados().length})`;}
 function abrirPegsValidados(){renderizarPegsValidados();document.getElementById('popupPegsValidados').showModal();}
 function listaCompletaPegsValidados(){const hoje=diaValidacaoBrasilia();return Object.values(PEGS_VALIDADOS).filter(p=>p?.validadoEm&&diaValidacaoBrasilia(p.validadoEm)===hoje).sort((a,b)=>String(a.peg).localeCompare(String(b.peg),'pt-BR',{numeric:true}));}
+function atualizarBotaoValidarPegFinal(){
+    const area=document.getElementById('acaoValidarPegFinal'),botao=document.getElementById('btnValidarPegFinal');if(!area||!botao)return;
+    const peg=pegDasAnotacoes(),disponivel=Boolean(peg&&CATALOGO_PEGS.has(peg)&&PEGS_TRABALHO.has(peg));
+    area.hidden=!disponivel;
+    botao.textContent=disponivel&&pegValidado(peg)?`✓ PEG ${peg} validado · Voltar ao topo`:`✓ Validar PEG${disponivel?' '+peg:''}`;
+}
+function validarPegNoFinal(){
+    const peg=pegDasAnotacoes();if(!peg||!CATALOGO_PEGS.has(peg)||!PEGS_TRABALHO.has(peg))return;
+    alterarValidacaoPeg(peg,true);
+    if(pegValidado(peg))subirTopo();
+}
 function atualizarConfirmacaoProcesso(){
+    atualizarBotaoValidarPegFinal();
     document.querySelectorAll('[data-validacao-processo]').forEach(label=>{const validado=pegValidado(label.dataset.validacaoProcesso);label.classList.toggle('confirmado',validado);label.querySelector('input').checked=validado;label.querySelector('span').textContent=validado?'PEG validado':'Validar PEG';});
 }
 function textoPegsValidadosExcel(somentePegValor=false){
@@ -2519,7 +2538,7 @@ function atualizarSeletorCatalogo(){
     for(const {peg} of ordenarPegsParaTrabalho([...PEGS_TRABALHO].map(peg=>({peg})))){const p=CATALOGO_PEGS.get(peg);if(!p)continue;const o=document.createElement('option');o.value=peg;o.textContent='PEG '+peg+(pegValidado(peg)?' ✓ Validado':'');o.title=`${p.processo} · ${p.prestador}`;select.append(o);}
     select.value=PEG_ATIVO_CATALOGO;select.dataset.pegPesquisa=PEG_ATIVO_CATALOGO;
     document.getElementById('painelFiltro').style.display=PEGS_TRABALHO.size?'flex':'none';
-    atualizarIndicadoresAnotacoesPeg();estadoCatalogoPegs();
+    atualizarIndicadoresAnotacoesPeg();estadoCatalogoPegs();atualizarBotaoValidarPegFinal();
 }
 function abrirPegCatalogo(peg){
     if(!PEGS_TRABALHO.has(peg)||!CATALOGO_PEGS.has(peg))return;
