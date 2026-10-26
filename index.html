@@ -1055,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.13</p>
+    <p class="versao-relatorio">Versão 6.14</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2613,26 +2613,29 @@ function idEventoAuditoria(guiaId,c){return guiaId+'-e-'+encodeURIComponent(JSON
 let TIMER_COLAGEM_EXTRACAO=null;
 function processarExtracaoColada(campo){
     clearTimeout(TIMER_COLAGEM_EXTRACAO);
-    const texto=campo.value;if(!texto.trim())return;
+    if(!campo.value.trim())return;
     statusConsultaSQL('Processando a extração colada…');
     TIMER_COLAGEM_EXTRACAO=setTimeout(()=>{
         TIMER_COLAGEM_EXTRACAO=null;
-        if(campo.value!==texto)return;
+        const texto=campo.value;if(!texto.trim())return;
+        try{
         const recebida=receberExtracaoCatalogo(texto);
         if(document.getElementById('duplicadosPegs').open)statusConsultaSQL('Extração recebida. Confira os PEGs duplicados antes de continuar.');
         else if(!recebida)statusConsultaSQL('Não foi possível reconhecer a extração colada. Confira o resultado completo da consulta.',true);
         else if(CATALOGO_PEGS.size)statusConsultaSQL(`Extração recebida: ${CATALOGO_PEGS.size} PEG(s) disponíveis.${PEG_ATIVO_CATALOGO?' PEG '+PEG_ATIVO_CATALOGO+' carregado.':' Selecione os PEGs para trabalhar.'}`);
-    },0);
+        }catch(erro){statusConsultaSQL('Não foi possível processar a extração: '+erro.message+'. Clique em Gerar Relatório para tentar novamente.',true);}
+    },80);
 }
 document.getElementById('input').addEventListener('paste',evento=>{
     const campo=evento.currentTarget,texto=evento.clipboardData?.getData('text/plain');
-    if(!texto)return; // Neste caso, aguarda o input nativo da colagem.
+    if(!texto){setTimeout(()=>{if(campo.value.includes('\t')&&/[\r\n]/.test(campo.value))processarExtracaoColada(campo);},0);return;}
     evento.preventDefault();
     campo.setRangeText(texto,campo.selectionStart,campo.selectionEnd,'end');
     invalidarRelatorioAnterior();processarExtracaoColada(campo);
 });
 document.getElementById('input').addEventListener('input',evento=>{
-    if(evento.inputType==='insertFromPaste')processarExtracaoColada(evento.currentTarget);
+    const campo=evento.currentTarget;
+    if(campo.value.includes('\t')&&/[\r\n]/.test(campo.value))processarExtracaoColada(campo);
 });
 
 function render(preservarPeg = false) {
@@ -4577,8 +4580,14 @@ function avaliarRadiologia(eventos) {
     return resultados;
 }
 
+function auxiliarAnestesista(evento){
+    const grau=normalizarAuditoria(evento?.grau||'');
+    return /ANESTES/.test(grau)&&(/AUXIL|AJUDANTE|SEGUND/.test(grau)||/(?:^|[^0-9])2\s*[º°ªOA]?(?=\s|$)/.test(grau));
+}
+function multiplicadorEquipeAnestesia(evento){return auxiliarAnestesista(evento)?0.3:1;}
 function equipeCirurgica(grau) {
     const texto = normalizarAuditoria(grau);
+    if (/ANESTES/.test(texto)) return null;
     if (texto.includes('INSTRUMENT')) return { tipo: 'Instrumentador', numero: 0, multiplicador: 0.1 };
     // "Auxiliar de cirurgia" contém CIRURG, portanto precisa ser reconhecido antes de cirurgião.
     if (/AUXIL|AJUDANTE/.test(texto)) {
@@ -4759,28 +4768,31 @@ function avaliarAnestesia(eventos) {
     });
     const resultados = [];
     grupos.forEach(items => {
-        items.sort((a, b) => b.porte - a.porte || (b.base || 0) - (a.base || 0)
+        items.sort((a, b) => Number(auxiliarAnestesista(a.evento))-Number(auxiliarAnestesista(b.evento)) || b.porte - a.porte || (b.base || 0) - (a.base || 0)
             || numeroAuditoria(b.evento.valorApresentado) - numeroAuditoria(a.evento.valorApresentado));
         items.forEach((item, posicao) => {
             const interna = /INTERNACAO/.test(normalizarAuditoria(item.evento.guia.regime));
             const ajusteUrgencia=condicoesEventoAuditoria(item.evento).urgencia;
             const urgencia = ajusteUrgencia==='sim'||(ajusteUrgencia!=='nao'&&acrescimoPorteAutomatico(item.evento));
-            const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id);
+            const auxiliar=auxiliarAnestesista(item.evento),fatorEquipe=multiplicadorEquipeAnestesia(item.evento);
+            const principal=auxiliar?items.find(outro=>!auxiliarAnestesista(outro.evento)&&chaveEquipeMesmoCodigo(outro.evento)===chaveEquipeMesmoCodigo(item.evento)):null;
+            const manual = PERCENTUAIS_EVENTOS_AUDITORIA.get(item.evento.id)??(principal?PERCENTUAIS_EVENTOS_AUDITORIA.get(principal.evento.id):undefined);
             const integral = codigoSempreIntegral(item.evento.codigo);
             const sugestao = integral || equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento)) || posicao === 0 ? 100 : 70;
-            const percentual = integral ? 100 : [100, 70, 50].includes(manual) ? manual : items.length===1&&numeroAuditoria(item.evento.quantidade)===1 ? 100 : null;
+            const percentual = integral ? 100 : [100, 70, 50].includes(manual) ? manual : new Set(items.map(i=>chaveEquipeMesmoCodigo(i.evento))).size===1&&numeroAuditoria(item.evento.quantidade)===1 ? 100 : null;
             const acesso = percentual / 100;
             const condicao = (interna ? 2 : 1) * (urgencia ? 1.3 : 1);
-            const permitido = item.base === null || percentual === null ? null : item.base * acesso * condicao * Math.max(item.evento.quantidade, 1);
+            const permitido = item.base === null || percentual === null ? null : arredondarTabela(item.base * acesso * condicao * Math.max(item.evento.quantidade, 1) * fatorEquipe);
             const observacoes = [`Porte anestésico ${item.porte}${item.base !== null ? ` · tabela de anestesiologia: ${valorBRL(item.base)}` : ''}`];
             if (item.base === null) observacoes.push(`Escala monetária de anestesia não informada para atendimento em ${item.ano}; percentual sugerido sem cálculo de preço.`);
+            if(auxiliar)observacoes.push('Auxiliar/segundo anestesista: 30% do honorário de referência do anestesista principal para este procedimento, com os ajustes de via, internação e horário especial aplicáveis.');
             if (item.porte === 0) observacoes.push('Porte 0: pagamento condicionado à justificativa para participação do anestesiologista');
             if (integral) observacoes.push('Prefixo sem análise 100–70–50 na tabela de honorários: mantido em 100%.');
             else if (percentual === null) observacoes.push('Confirme 100%, 70% ou 50% no porte anestésico antes do cálculo.');
             if (equipesCompletas.has(chaveEquipeMesmoCodigo(item.evento))) observacoes.push('Equipe do mesmo código identificada; percentual sujeito à confirmação.');
             if (item.porte === 7) observacoes.push('Acréscimo de porte 7 exige conferência manual');
             resultados.push(criarLinhaAuditoria(item.evento, 'Anestesia', permitido, {
-                regra: percentual === null ? 'Confirme 100%, 70% ou 50% no porte anestésico' : `${Math.round(acesso * 100)}% por via${interna ? ' + internação' : ''}${urgencia ? ' + urgência' : ''}`,
+                regra: percentual === null ? 'Confirme 100%, 70% ou 50% no porte anestésico' : `${auxiliar?'Auxiliar de anestesista: 30% do principal · ':''}${Math.round(acesso * 100)}% por via${interna ? ' + internação' : ''}${urgencia ? ' + urgência' : ''}`,
                 observacao: observacoes.join(' — '),
                 referencia: item.referencia,
                 alerta: percentual === null ? 'Confirme o percentual da via de acesso ou aplique o parecer médico. Sem confirmação, não calcular possível glosa.' : item.base === null ? `Escala monetária de anestesia aplicável à data não disponível; confirmar o preço antes de glosar.`
@@ -5393,9 +5405,9 @@ function calcularPercentualEventoAuditoria(linha, percentual) {
         const interna = /INTERNACAO/.test(normalizarAuditoria(linha.guia.regime));
         const ajusteUrgencia = condicoesEventoAuditoria(linha.evento).urgencia;
         const urgencia = ajusteUrgencia === 'sim' || (ajusteUrgencia !== 'nao' && acrescimoPorteAutomatico(linha.evento));
-        const valor = escala * Number(percentual) / 100 * (interna ? 2 : 1) * (urgencia ? 1.3 : 1) * Math.max(quantidade, 1);
+        const valor = escala * multiplicadorEquipeAnestesia(linha.evento) * Number(percentual) / 100 * (interna ? 2 : 1) * (urgencia ? 1.3 : 1) * Math.max(quantidade, 1);
         return { valor:arredondarTabela(valor, codigo), tabela:anoSimulacao || ano, simulacao:Boolean(anoSimulacao),
-            texto:`${anoSimulacao ? 'Simulação' : 'Limite aplicado'} · ${valorBRL(valor, codigo)} (${percentual}%${urgencia ? '; urgência +30%' : ''})` };
+            texto:`${anoSimulacao ? 'Simulação' : 'Limite aplicado'} · ${valorBRL(valor, codigo)} (${percentual}%${auxiliarAnestesista(linha.evento)?'; auxiliar: 30% do principal':''}${urgencia ? '; urgência +30%' : ''})` };
     }
     if (!referencia || referencia.t === null || !Number.isFinite(Number(referencia.t)) || !(quantidade > 0)) {
         return { valor: null, tabela: anoSimulacao || '', simulacao: Boolean(anoSimulacao),
@@ -6131,7 +6143,7 @@ function atualizarAlertasNasGuias(linhas) {
         const unitarioTabela = linha.categoria === 'Anestesia'
             ? obterEscalaAnestesia(anoAuditoria(linha.evento.data || linha.guia.data), numeroOuNulo(linha.referencia?.an), linha.evento.data || linha.guia.data)
             : numeroOuNulo(linha.referencia?.t);
-        const valorTabela = unitarioTabela === null ? linha.limiteReferencia
+        const valorTabela = linha.categoria === 'Anestesia' ? linha.limiteReferencia : unitarioTabela === null ? linha.limiteReferencia
             : arredondarTabela(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1) * multiplicadorInternacaoVisita(linha.evento) * multiplicadorHorarioEspecialConsulta(linha.evento), linha.evento.codigo);
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
         const consulta = /^10101/.test(codigoAuditoria(linha.evento.codigo))
