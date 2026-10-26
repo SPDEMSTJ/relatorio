@@ -849,7 +849,8 @@
 #acaoValidarPegFinal{display:flex;justify-content:center;padding:24px 0 12px;}
 #btnValidarPegFinal{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 45%,#1e40af 100%);color:#fff;border:1px solid #2563eb;border-radius:14px;padding:15px 30px;min-height:50px;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.25);cursor:pointer;transition:transform .15s,box-shadow .15s;}
 #btnValidarPegFinal:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(37,99,235,.34);}
-#btnValidarPegFinal:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;}
+#btnValidarPegFinal:focus-within{outline:3px solid #93c5fd;outline-offset:3px;}
+#checkValidarPegFinal{appearance:auto;width:18px!important;height:18px!important;min-width:18px;min-height:18px;margin:0 3px 0 0!important;padding:0!important;accent-color:#1d4ed8;cursor:pointer;flex:0 0 18px;}
 .alerta-xthm-internacao{display:block;margin-top:6px;padding:6px 8px;border-left:3px solid #d97706;background:#fff7e6;color:#92400e;font-size:12px;font-weight:500;}
 #btnVerFracionados[hidden],#listaEventosFracionados[hidden]{display:none!important;}
 #botaoPegsValidados{position:fixed;right:22px;bottom:76px;z-index:1000;background:#166534;color:white;box-shadow:0 5px 16px rgba(0,0,0,.18);border-radius:999px;}
@@ -1060,14 +1061,14 @@
 <label><input id="selecionarTodosFracionados" type="checkbox" onchange="marcarTodosEventosFracionados(this.checked)"> Incluir todos no relatório de correções</label>
 </section>
 <div id="saida"></div>
-<div id="acaoValidarPegFinal" class="no-print" hidden><button id="btnValidarPegFinal" type="button" onclick="validarPegNoFinal()">✓ Validar PEG</button></div>
+<div id="acaoValidarPegFinal" class="no-print" hidden><label id="btnValidarPegFinal"><input id="checkValidarPegFinal" type="checkbox" onchange="validarPegNoFinal(this.checked)"><span id="textoValidarPegFinal">Validar PEG</span></label></div>
 <div id="tourExemploAnalise" class="tour-exemplo-analise no-print" hidden><span>Exemplo demonstrativo · beneficiário oculto</span><button id="tourBotaoAnaliseExemplo" type="button" class="botao-regra-beneficiario" tabindex="-1">Analisar 100–70 · 1 evento</button></div>
 </section>
 </main>
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.19</p>
+    <p class="versao-relatorio">Versão 6.20</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2470,12 +2471,13 @@ function atualizarBotaoValidarPegFinal(){
     const area=document.getElementById('acaoValidarPegFinal'),botao=document.getElementById('btnValidarPegFinal');if(!area||!botao)return;
     const peg=pegDasAnotacoes(),disponivel=Boolean(peg&&CATALOGO_PEGS.has(peg)&&PEGS_TRABALHO.has(peg));
     area.hidden=!disponivel;
-    botao.textContent=disponivel&&pegValidado(peg)?`✓ PEG ${peg} validado · Voltar ao topo`:`✓ Validar PEG${disponivel?' '+peg:''}`;
+    document.getElementById('checkValidarPegFinal').checked=disponivel&&pegValidado(peg);
+    document.getElementById('textoValidarPegFinal').textContent=disponivel&&pegValidado(peg)?`PEG ${peg} validado`:`Validar PEG${disponivel?' '+peg:''}`;
 }
-function validarPegNoFinal(){
+function validarPegNoFinal(validado=true){
     const peg=pegDasAnotacoes();if(!peg||!CATALOGO_PEGS.has(peg)||!PEGS_TRABALHO.has(peg))return;
-    alterarValidacaoPeg(peg,true);
-    if(pegValidado(peg))subirTopo();
+    alterarValidacaoPeg(peg,validado);
+    if(validado&&pegValidado(peg))subirTopo();
 }
 function atualizarConfirmacaoProcesso(){
     atualizarBotaoValidarPegFinal();
