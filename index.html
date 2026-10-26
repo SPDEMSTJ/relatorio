@@ -1055,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.15</p>
+    <p class="versao-relatorio">Versão 6.16</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4331,7 +4331,8 @@ function periodoAcrescimoPorte(valor) {
 function acrescimoPorteAutomatico(registro) {
     const guia = registro?.guia || registro || {};
     const data = registro?.data || guia.data;
-    return /URGEN|EMERGEN/.test(normalizarAuditoria(guia.condicao)) && periodoAcrescimoPorte(data).aplicavel;
+    const he=registro?.guia?dadosHorarioHE(registro):null;
+    return Boolean(he?.marcado&&he.especial)||/URGEN|EMERGEN/.test(normalizarAuditoria(guia.condicao)) && periodoAcrescimoPorte(data).aplicavel;
 }
 function avisoCalendarioGuia(registro) {
     const guia = registro?.guia || registro || {};
@@ -5123,23 +5124,16 @@ function simularValoresHE(l){
 function glosaRetirandoHorarioEspecial(l){
     if(!dadosHorarioHE(l.evento).especial||conferenciaHEValida(l.guia)?.ajuste==='nao')return null;
     const motivos=(l.evento.glosas||[]).map(g=>normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`)).filter(Boolean);
-    if(motivos.some(m=>!/HORARIO ESPECIAL|ACRESCIMO.*30|30.*ACRESCIMO/.test(m)))return null;
+    if(temGlosaAuditoriaMedica(l.evento)||motivos.some(m=>/GUIA DEVOLVIDA|REFATURAD|FALTA CONTA LIMPA|TIPO HOSPITALAR.*INCORRET|VIGENCIA.*(?:INCORRET|VENCIDA)/.test(m)))return null;
     const valores=simularValoresHE(l);
-    if(!valores){
-        return !suportaConferenciaHE(l)&&numeroAuditoria(l.benner)>0&&motivos.length?{retirar:numeroAuditoria(l.benner),manual:true}:null;
-    }
+    if(!valores)return null;
     const base=centavosTabela(valores.sem),total=centavosTabela(valores.com),acrescimo=total-base;
     if(Math.abs(centavosTabela(l.solicitado)-total)>1||Math.abs(centavosTabela(l.evento.valorPago)-base)>1||Math.abs(centavosTabela(l.benner)-acrescimo)>1)return null;
     return {retirar:acrescimo/100};
 }
 function controleConferenciaHE(l){
-    const d=dadosHorarioHE(l.evento),glosaHE=glosaRetirandoHorarioEspecial(l);if(!d.temDados&&!glosaHE)return '';
-    const divergencia=glosaHE||valoresCorrecaoHE(l,false);
-    const diferencaConsulta=codigoAuditoria(l.evento.codigo)==='10101039'&&Math.abs((divergencia?.adicionar||divergencia?.retirar||0)-arredondarTabela(numeroAuditoria(l.referencia?.t)*numeroAuditoria(l.evento.quantidade)*0.3,l.evento.codigo))<0.011;
-    const motivoHE=(l.evento.glosas||[]).some(g=>/HORARIO ESPECIAL|ACRESCIMO.*30|30.*ACRESCIMO/.test(normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`)));
-    const vinculoHE=glosaHE||conferenciaHEValida(l.guia)||diferencaConsulta||motivoHE||avisosConferenciaHE(l).some(a=>a.startsWith('Fator apresentado'));
-    if(!vinculoHE||!(divergencia?.adicionar||divergencia?.retirar))return '';
-    if(divergencia.retirar&&!conferenciaHEValida(l.guia)&&(l.evento.glosas||[]).some(g=>{const m=normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`);return m&&!/HORARIO ESPECIAL|ACRESCIMO.*30|30.*ACRESCIMO/.test(m);}))return '';
+    const d=dadosHorarioHE(l.evento),glosaHE=glosaRetirandoHorarioEspecial(l);
+    if(!glosaHE)return '';
     const avisos=avisosConferenciaHE(l),aplicado=acrescimoHEConsiderado(l),confirmado=conferenciaHEValida(l.guia),v=valoresCorrecaoHE(l);
     const tag=`HE: ${d.marcado?'sim':l.evento.horarioEspecial==='N'?'não':'não informado'}${d.horario?' · '+d.horario:''}${aplicado?' · +30% considerado':''}`;
     const diferenca=v?.retirar?`Retirar glosa do Benner: ${valorBRL(v.retirar)}`:v?.adicionar?`Diferença a ser lançada: ${valorBRL(v.adicionar)}`:'';
