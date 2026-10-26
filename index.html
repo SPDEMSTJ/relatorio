@@ -840,6 +840,11 @@
 #saida .oculto-filtro-sem-glosa,#saida .oculto-filtro-fracionado{display:none!important;}
 #selecionarTodosFracionados,#saida .selecao-correcao input[type="checkbox"]{width:14px!important;height:14px!important;min-width:14px!important;min-height:14px!important;padding:0!important;margin:0 5px 0 0!important;vertical-align:middle;flex:0 0 14px;}
 #listaEventosFracionados label{display:inline-flex;align-items:center;width:auto;font-size:12px;font-weight:400;}
+.tabela-beneficiarios-processo .ordenar-cabecalho-beneficiarios{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0;margin:0;padding:0;background:transparent;color:inherit;border:0;border-radius:3px;box-shadow:none;font:inherit;text-align:left;cursor:pointer;}
+.tabela-beneficiarios-processo .ordenar-cabecalho-beneficiarios span{font-size:15px;color:#5578a5;line-height:1;}
+.tabela-beneficiarios-processo th[aria-sort="ascending"] .ordenar-cabecalho-beneficiarios span,.tabela-beneficiarios-processo th[aria-sort="descending"] .ordenar-cabecalho-beneficiarios span{color:#1d4ed8;}
+.tabela-beneficiarios-processo .ordenar-cabecalho-beneficiarios:hover{color:#1d4ed8;background:transparent;transform:none;}
+.tabela-beneficiarios-processo .ordenar-cabecalho-beneficiarios:focus-visible{outline:2px solid #2563eb;outline-offset:3px;}
 #acaoValidarPegFinal[hidden]{display:none!important;}
 #acaoValidarPegFinal{display:flex;justify-content:center;padding:24px 0 12px;}
 #btnValidarPegFinal{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 45%,#1e40af 100%);color:#fff;border:1px solid #2563eb;border-radius:14px;padding:15px 30px;min-height:50px;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.25);cursor:pointer;transition:transform .15s,box-shadow .15s;}
@@ -1062,7 +1067,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.18</p>
+    <p class="versao-relatorio">Versão 6.19</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1345,6 +1350,13 @@ function localizarBeneficiarioPopup(valor, contexto = document) {
     area.scrollTo({ top:Math.max(0, encontrada.offsetTop - alturaCabecalho), behavior:'smooth' });
 }
 
+function ordenarBeneficiariosPeloCabecalho(criterio){
+    const ordem=document.getElementById('ordemBeneficiariosProcesso'),direcao=document.getElementById('direcaoBeneficiariosProcesso');
+    if(!ordem||!direcao||!['guia','data','nome'].includes(criterio))return;
+    direcao.value=ordem.value===criterio&&direcao.value==='asc'?'desc':'asc';ordem.value=criterio;
+    renderizarPopupBeneficiariosProcesso();atualizarConteudoJanelaSeparada('beneficiarios');
+    document.querySelector(`[data-ordenar-beneficiarios="${criterio}"]`)?.focus({preventScroll:true});
+}
 function renderizarPopupBeneficiariosProcesso() {
     const dados = GLOBAL_DADOS_RESUMO[PEG_BENEFICIARIOS_POPUP];
     const destino = document.getElementById('conteudoBeneficiariosProcesso');
@@ -1373,7 +1385,11 @@ function renderizarPopupBeneficiariosProcesso() {
     const valorTotalApresentado = lista.reduce((soma,item) => soma + item.valor, 0);
     document.getElementById('subtituloBeneficiariosProcesso').innerHTML = `${lista.length} guia(s)<small class="prestador-popup-beneficiarios">Prestador: ${escAuditoria(prestador)}</small>`;
     document.getElementById('valorTotalBeneficiariosProcesso').textContent = `R$ ${fmt(valorTotalApresentado)}`;
-    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr><th>Guia</th><th>Data</th><th>Beneficiário</th><th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th><th class="valor">Valor pago</th><th>Glosa</th></tr></thead><tbody>${lista.map(item => {
+    const cabecalhoOrdenavel=(campo,titulo)=>{
+        const ativo=criterio===campo,asc=direcao===1,seta=ativo?(asc?'↑':'↓'):'↕';
+        return `<th aria-sort="${ativo?(asc?'ascending':'descending'):'none'}"><button type="button" class="ordenar-cabecalho-beneficiarios" data-ordenar-beneficiarios="${campo}" onclick="ordenarBeneficiariosPeloCabecalho(this.dataset.ordenarBeneficiarios)" title="Ordenar por ${titulo}: ${ativo&&asc?'decrescente':'crescente'}">${titulo}<span aria-hidden="true">${seta}</span></button></th>`;
+    };
+    destino.innerHTML = `<table class="tabela-beneficiarios-processo"><thead><tr>${cabecalhoOrdenavel('guia','Guia')}${cabecalhoOrdenavel('data','Data')}${cabecalhoOrdenavel('nome','Beneficiário')}<th>Matrícula</th><th>Regime</th><th class="valor">Valor apresentado</th><th class="valor">Valor pago</th><th>Glosa</th></tr></thead><tbody>${lista.map(item => {
         const chave = chaveConferenciaBeneficiario(item);
         const conferido = BENEFICIARIOS_CONFERIDOS_POPUP.has(chave);
         const botaoGlosa = item.glosas?.length ? `<button type="button" class="btn-ver-glosa-beneficiario" data-chave-glosa="${escAuditoria(chave)}" onclick="event.stopPropagation();abrirPopupGlosasBeneficiario(this.dataset.chaveGlosa)" onkeydown="event.stopPropagation()">Ver glosa (${item.glosas.length})</button>` : '—';
@@ -1528,6 +1544,10 @@ function abrirPopupEmJanelaSeparada(tipo) {
         linha?.scrollIntoView({ behavior:'smooth', block:'center' });
         linha?.classList.add('pendencia-destacada');
         setTimeout(() => linha?.classList.remove('pendencia-destacada'), 2400);
+    };
+    janela.ordenarBeneficiariosPeloCabecalho = criterio => {
+        ordenarBeneficiariosPeloCabecalho(criterio);
+        janela.document.querySelector(`[data-ordenar-beneficiarios="${criterio}"]`)?.focus({preventScroll:true});
     };
     janela.renderizarPopupBeneficiariosProcesso = () => {
         const ordem = janela.document.getElementById('ordemBeneficiariosProcesso');
