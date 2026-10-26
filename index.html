@@ -1055,7 +1055,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.14</p>
+    <p class="versao-relatorio">Versão 6.15</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -4141,6 +4141,7 @@ function limparAuditoria(preservarPercentuais = false) {
     if (!preservarPercentuais) { SECOES_GUIAS_FILTRADAS.clear(); PERCENTUAIS_EVENTOS_AUDITORIA.clear(); VIAS_HOSPITALARES.clear(); TIPOS_HOSPITALARES_MANUAIS.clear(); HORARIOS_ESPECIAIS_HOSPITALARES.clear(); AJUSTES_HORARIO_GUIA.clear(); PERCENTUAIS_PORTES_PERITO.clear(); }
     if (!preservarPercentuais) { CONDICOES_EVENTOS_AUDITORIA.clear(); CONFERENCIAS_HE_GUIAS.clear(); }
     if (!preservarPercentuais) BILATERALIDADE_OFTALMO_AUDITORIA.clear();
+    if (!preservarPercentuais) EVENTOS_RADIOLOGIA_PARECER_EXPLICITO.clear();
     const area = document.getElementById('auditoriaSaida');
     if (area) area.innerHTML = '';
     const resumo = document.getElementById('resumoAreasAuditoria');
@@ -5371,6 +5372,7 @@ function atualizarResumoAreasAuditoria(linhas) {
 }
 
 function calcularPercentualEventoAuditoria(linha, percentual) {
+    if(linha.parecerRadiologiaExplicito){const valor=arredondarTabela(numeroAuditoria(linha.referencia.t)*linha.evento.quantidade*Number(percentual)/100);return {valor,tabela:String(linha.referencia.anoFonte||''),simulacao:false,texto:`Limite conforme parecer: ${valorBRL(valor)} (${percentual}% do valor da tabela)`};}
     if(linha.tabelaDiferenciada)return {valor:null,texto:'Prestador com tabela diferenciada.'};
     if (linha.referencia?.hospitalar) {
         const ref = linha.referencia;
@@ -5464,7 +5466,7 @@ function aplicarPercentualEventoAuditoria(seletor) {
     const valor = Number(seletor.value);
     const linhaAtual = GLOBAL_TODAS_LINHAS_AUDITORIA.find(linha => linha.evento.id === id);
     const categoria = linhaAtual?.categoria;
-    if ((categoria === 'Radiologia' ? [70, 100, 170] : categoria === 'Oftalmologia' ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
+    if ((categoria === 'Radiologia' ? linhaAtual.parecerRadiologiaExplicito?[50,70,100]:[70, 100, 170] : categoria === 'Oftalmologia' ? [70, 100] : [50, 70, 100]).includes(valor)) PERCENTUAIS_EVENTOS_AUDITORIA.set(id, valor);
     else PERCENTUAIS_EVENTOS_AUDITORIA.delete(id);
     atualizarAuditoria();
 }
@@ -5512,7 +5514,7 @@ function renderizarTabelaAuditoria(linhas, internacoes, prefixoId = '') {
         const informado = ehOftalmologia && valorInformado === 50 ? undefined : valorInformado;
         const calculo = calcularPercentualEventoAuditoria(linha, linha.parecerAnotacao?.tipo==='percentual'?linha.parecerAnotacao.percentual:informado ?? linha.percentual);
         const cirurgia = linha.categoria === 'Cirurgia';
-        const radiologia = linha.categoria === 'Radiologia';
+        const radiologia = linha.categoria === 'Radiologia'&&!linha.parecerRadiologiaExplicito;
         const honorariosGerais = linha.categoria === 'Tabela de honorários';
         const hospitalar = Boolean(linha.referencia?.hospitalar);
         const hospitalarIntegral = hospitalar && !ehPorteHospitalar(linha.evento.codigo);
@@ -5674,20 +5676,37 @@ function escolherPrincipalParecer(correspondencias,linhas) {
     return candidatos[0].bloco;
 }
 
+const EVENTOS_RADIOLOGIA_PARECER_EXPLICITO=new Set();
+function chaveGrupoParecerOcorrencias(linha){
+    return JSON.stringify([linha.guia.peg,chaveBeneficiarioAuditoria(linha.guia.beneficiario,linha.guia.matricula),linha.categoria]);
+}
+function aplicarRadiologiaParecerExplicito(linhas){
+    return linhas.map(l=>{
+        const p=PERCENTUAIS_EVENTOS_AUDITORIA.get(l.evento.id);
+        if(l.categoria!=='Radiologia'||l.tabelaDiferenciada||!EVENTOS_RADIOLOGIA_PARECER_EXPLICITO.has(l.evento.id)||![50,70,100].includes(p))return l;
+        const valor=numeroOuNulo(l.referencia?.t),limite=valor===null?null:arredondarTabela(valor*l.evento.quantidade*p/100);
+        return Object.assign(criarLinhaAuditoria(l.evento,l.categoria,limite,{
+            referencia:l.referencia,percentual:p,limiteReferencia:limite,
+            regra:`${p}% do valor da tabela conforme parecer médico explícito`,
+            observacao:'Percentual do parecer aplicado ao valor total de referência deste evento. A regra automática de redução apenas da UCO foi substituída pela orientação explícita.',
+            baseComparacao:'Parecer médico explícito',alerta:limite===null?'Preço de referência indisponível; conferir a tabela.':''
+        }),{parecerRadiologiaExplicito:true});
+    });
+}
 function percentuaisOrientacaoPorOcorrencia(linhas,regras,demais) {
     const percentuais=new Map(linhas.map(l=>[l.evento.id,demais]));
     const grupos=new Map();
-    for(const linha of linhas){const chave=chaveGrupoPercentualAuditoria(linha);if(!grupos.has(chave))grupos.set(chave,[]);grupos.get(chave).push(linha);}
+    for(const linha of linhas){const chave=chaveGrupoParecerOcorrencias(linha);if(!grupos.has(chave))grupos.set(chave,[]);grupos.get(chave).push(linha);}
     for(const itens of grupos.values())for(const [codigo,percentual] of regras) {
         const roles=new Map();
         for(const l of itens.filter(l=>codigoAuditoria(l.evento.codigo)===codigo)) {
-            const papel=l.categoria==='Cirurgia'?(l.funcaoCirurgica||equipeCirurgica(l.evento.grau)?.tipo||l.evento.grau):l.evento.grau||l.categoria;
+            const papel=/ANESTES/.test(normalizarAuditoria(l.evento.grau))?(auxiliarAnestesista(l.evento)?'Auxiliar de anestesista':'Anestesista'):l.categoria==='Cirurgia'?(l.funcaoCirurgica||equipeCirurgica(l.evento.grau)?.tipo||l.evento.grau):normalizarAuditoria(l.evento.grau||l.categoria);
             if(!roles.has(papel))roles.set(papel,[]);roles.get(papel).push(l);
         }
-        const referencia=roles.get('Cirurgião')||[...roles.values()][0];if(!referencia?.length)continue;
-        let escolhido=0;
-        for(let i=1;i<referencia.length;i++)if(numeroAuditoria(referencia[i].evento.valorApresentado)>numeroAuditoria(referencia[escolhido].evento.valorApresentado))escolhido=i;
-        for(const ocorrencias of roles.values())if(ocorrencias[escolhido])percentuais.set(ocorrencias[escolhido].evento.id,percentual);
+        for(const ocorrencias of roles.values()){
+            const escolhido=ocorrencias.reduce((maior,l)=>numeroAuditoria(l.evento.valorApresentado)>numeroAuditoria(maior.evento.valorApresentado)?l:maior);
+            percentuais.set(escolhido.evento.id,percentual);
+        }
     }
     return percentuais;
 }
@@ -5695,31 +5714,24 @@ function percentuaisOrientacaoPorOcorrencia(linhas,regras,demais) {
 function aplicarParecerCompleto() {
     const area=document.getElementById('resultadoParecerCompleto');
     const {blocos,avisos}=interpretarParecerCompleto(document.getElementById('parecerMedicoCompleto').value);
-    const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).filter(l=>l.categoria!=='Radiologia'&&!l.referencia?.hospitalar),grupos=new Map(),resultados=[];
+    const elegiveis=linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).filter(l=>!l.tabelaDiferenciada&&!l.referencia?.hospitalar),grupos=new Map(),resultados=[];
     const idsElegiveis=new Set(elegiveis.map(l=>l.evento.id));
     const principaisIntegrais=GLOBAL_TODAS_LINHAS_AUDITORIA.filter(l=>!idsElegiveis.has(l.evento.id)&&codigoSempreIntegral(l.evento.codigo)&&l.referencia&&CATEGORIAS_REGRA_BENEFICIARIO.has(l.categoria)&&!ehEventoPacoteAuditoria(l.evento,l.referencia)&&blocos.some(b=>b.codigo===codigoAuditoria(l.evento.codigo)&&b.principal===100));
     const linhasAssociacao=[...elegiveis,...principaisIntegrais];
     if(!linhasAssociacao.length){area.textContent='Gere o relatório e selecione o PEG antes de aplicar o parecer.';return;}
-    for(const l of linhasAssociacao){const key=chaveGrupoPercentualAuditoria(l);if(!grupos.has(key))grupos.set(key,[]);grupos.get(key).push(l);}
+    for(const l of linhasAssociacao){const key=chaveGrupoParecerOcorrencias(l);if(!grupos.has(key))grupos.set(key,[]);grupos.get(key).push(l);}
     for(const b of blocos)if(!linhasAssociacao.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo)){const localizado=GLOBAL_TODAS_LINHAS_AUDITORIA.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo);avisos.push(`Código ${formatarCodigoAuditoria(b.codigo)} ${localizado?'encontrado no PEG, mas fora dos eventos elegíveis para ajuste de vias pelas regras atuais':'não encontrado nos eventos elegíveis do PEG ativo'}.`);}
     let total=0;
-    const gruposAplicacao=[];
-    for(const linhas of grupos.values()) {
-        const principais=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));
-        if(principais.length>1) {
-            const porGuia=new Map();for(const l of linhas){if(!porGuia.has(l.guia.id))porGuia.set(l.guia.id,[]);porGuia.get(l.guia.id).push(l);}
-            gruposAplicacao.push(...porGuia.values());
-        } else gruposAplicacao.push(linhas);
-    }
+    const gruposAplicacao=[...grupos.values()];
     for(const linhas of gruposAplicacao) {
         const correspondencias=blocos.filter(b=>linhas.some(l=>codigoAuditoria(l.evento.codigo)===b.codigo));if(!correspondencias.length)continue;
         const principalEscolhido=escolherPrincipalParecer(correspondencias,linhas);
         if(!principalEscolhido){avisos.push(`${linhas[0].guia.beneficiario} · guia ${linhas[0].guia.ordem}: empate de porte e valor entre ${correspondencias.map(b=>formatarCodigoAuditoria(b.codigo)).join(' e ')}; escolha o principal no popup de análise de vias.`);continue;}
         const propostas=percentuaisOrientacaoPorOcorrencia(linhas,new Map([[principalEscolhido.codigo,principalEscolhido.principal]]),principalEscolhido.demais);
         const alteracoes=linhas.filter(l=>idsElegiveis.has(l.evento.id)).map(l=>({linha:l,percentual:propostas.get(l.evento.id)}));
-        const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||((l.categoria==='Radiologia'||l.categoria==='Oftalmologia')&&p===50));
+        const incompatibilidade=alteracoes.some(({linha:l,percentual:p})=>l.referencia?.hospitalar||(l.categoria==='Oftalmologia'&&p===50));
         if(incompatibilidade){avisos.push(`${linhas[0].guia.beneficiario} · ${formatarCodigoAuditoria(principalEscolhido.codigo)}: percentuais incompatíveis com os ajustes desta categoria; conferir manualmente.`);continue;}
-        for(const {linha,percentual} of alteracoes)PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);
+        for(const {linha,percentual} of alteracoes){PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);if(linha.categoria==='Radiologia')EVENTOS_RADIOLOGIA_PARECER_EXPLICITO.add(linha.evento.id);}
         total+=alteracoes.length;resultados.push({guia:linhas[0].guia,data:linhas[0].evento.data||linhas[0].guia.data,guias:[...new Set(linhas.map(l=>l.guia.ordem))].join(', '),codigo:principalEscolhido.codigo,principal:principalEscolhido.principal,demais:principalEscolhido.demais,quantidade:alteracoes.length});
     }
     if(total)atualizarAuditoria();
@@ -5765,10 +5777,16 @@ function previaPortesPerito(interpretacao, linhasDaGuia = null) {
     }
     return {alteracoes,erros};
 }
+function linhasCasoOrientacaoPerito(){
+    const guia=GLOBAL_MODELO_AUDITORIA.guias.find(g=>g.id===CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
+    if(!guia)return linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO);
+    const chave=chaveBeneficiarioAuditoria(guia.beneficiario,guia.matricula);
+    return linhasRegraBeneficiarioAuditoria(GLOBAL_TODAS_LINHAS_AUDITORIA).filter(l=>l.guia.peg===guia.peg&&chaveBeneficiarioAuditoria(l.guia.beneficiario,l.guia.matricula)===chave);
+}
 function previaOrientacaoPerito() {
     const interpretacao=interpretarOrientacaoPerito(TEXTO_ORIENTACAO_PERITO);
     const previaPortes=interpretacao.portes.length?previaPortesPerito(interpretacao):{alteracoes:[],erros:[]};
-    const linhas=linhasPopupAuditoriaPorGuia(GLOBAL_TODAS_LINHAS_AUDITORIA,CHAVE_POPUP_AUDITORIA_BENEFICIARIO).filter(l=>l.categoria!=='Radiologia'&&!l.referencia?.hospitalar);
+    const linhas=linhasCasoOrientacaoPerito().filter(l=>!l.tabelaDiferenciada&&!l.referencia?.hospitalar);
     const erros=[...interpretacao.erros,...previaPortes.erros];
     for(const codigo of interpretacao.regras.keys())if(!linhas.some(l=>codigoAuditoria(l.evento.codigo)===codigo))erros.push(`Código ${formatarCodigoAuditoria(codigo)} não encontrado neste caso.`);
     const alteracoes=[...previaPortes.alteracoes];
@@ -5776,7 +5794,7 @@ function previaOrientacaoPerito() {
     for(const linha of linhas) {
         const percentual=propostas.get(linha.evento.id);
         if(percentual===null||percentual===undefined)continue;
-        const permitidos=linha.referencia?.hospitalar?[]:linha.categoria==='Radiologia'||linha.categoria==='Oftalmologia'?[70,100]:[50,70,100];
+        const permitidos=linha.referencia?.hospitalar?[]:linha.categoria==='Oftalmologia'?[70,100]:[50,70,100];
         if(!permitidos.includes(percentual)){erros.push(`Guia ${linha.guia.ordem}, item ${linha.evento.ordem}, código ${formatarCodigoAuditoria(linha.evento.codigo)}: ${percentual}% incompatível com os ajustes desta categoria; conferir manualmente.`);continue;}
         alteracoes.push({linha,percentual});
     }
@@ -5793,7 +5811,7 @@ function atualizarPreviaOrientacaoPerito(campo) {
 }
 function aplicarOrientacaoPerito() {
     const {alteracoes,erros}=previaOrientacaoPerito();if(erros.length||!alteracoes.length)return;
-    for(const {linha,percentual,percentuaisPorte} of alteracoes){if(percentuaisPorte)PERCENTUAIS_PORTES_PERITO.set(linha.evento.id,percentuaisPorte);else PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);}
+    for(const {linha,percentual,percentuaisPorte} of alteracoes){if(percentuaisPorte)PERCENTUAIS_PORTES_PERITO.set(linha.evento.id,percentuaisPorte);else {PERCENTUAIS_EVENTOS_AUDITORIA.set(linha.evento.id,percentual);if(linha.categoria==='Radiologia')EVENTOS_RADIOLOGIA_PARECER_EXPLICITO.add(linha.evento.id);}}
     ORIENTACAO_PERITO_ABERTA=false;
     SUCESSO_ORIENTACAO_PERITO=`Orientação aplicada a ${alteracoes.length} evento(s) deste caso. Confira os limites recalculados.`;
     atualizarAuditoria();
@@ -6396,7 +6414,7 @@ function atualizarAuditoria() {
     modelo.internacoes = internacoes;
     const avaliar = () => {
         const especificas = [...avaliarServicosHospitalares(modelo.eventos), ...avaliarRadiologia(modelo.eventos), ...avaliarCirurgia(modelo.eventos), ...avaliarAnestesia(modelo.eventos)];
-        return incluirEventosSemReferencia(modelo.eventos,[...especificas,...avaliarHonorariosGerais(modelo.eventos,especificas)]);
+        return aplicarRadiologiaParecerExplicito(incluirEventosSemReferencia(modelo.eventos,[...especificas,...avaliarHonorariosGerais(modelo.eventos,especificas)]));
     };
     let linhas=avaliar();
     prepararPareceresAnotacoes(linhas);
