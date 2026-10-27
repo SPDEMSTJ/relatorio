@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.24</p>
+    <p class="versao-relatorio">Versão 6.25</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2612,9 +2612,18 @@ function prepararCatalogoParaRender(){
     return Boolean(PEG_ATIVO_CATALOGO&&CATALOGO_PEGS.has(PEG_ATIVO_CATALOGO));
 }
 function ordenarPegsParaTrabalho(pegs){
-    const ordem=[...new Set(document.getElementById('peg').value.split(/[\s;,]+/).map(p=>p.trim()).filter(Boolean))];
+    const ordem=[...new Set(document.getElementById('peg').value.split(/[\s;,]+/).map(p=>p.replace(/\D/g,'')).filter(Boolean))];
     const posicoes=new Map(ordem.map((peg,i)=>[peg,i]));
     return [...pegs].sort((a,b)=>(posicoes.get(String(a.peg))??Infinity)-(posicoes.get(String(b.peg))??Infinity)||String(a.peg).localeCompare(String(b.peg),'pt-BR',{numeric:true}));
+}
+function sincronizarOrdemPegsInformada(){
+    if(CATALOGO_PEGS.size)atualizarSeletorCatalogo();
+    const dialogo=document.getElementById('selecaoPegsImportacao');
+    if(dialogo?.open){
+        SELECAO_IMPORTACAO_PEGS=ordenarPegsParaTrabalho(CATALOGO_PEGS.values());
+        const corpo=document.getElementById('listaPegsImportacao'),linhas=[...corpo.querySelectorAll('tr')];
+        for(const {linha} of ordenarPegsParaTrabalho(linhas.map(linha=>({peg:linha.querySelector('[data-selecao-peg]')?.value||'',linha}))))corpo.append(linha);
+    }
 }
 function solicitarSelecaoPegsImportacao(){
     if(!CATALOGO_PEGS.size)return false;
@@ -2669,6 +2678,8 @@ function processarExtracaoColada(campo){
         }catch(erro){statusConsultaSQL('Não foi possível processar a extração: '+erro.message+'. Clique em Gerar Relatório para tentar novamente.',true);}
     },80);
 }
+document.getElementById('peg').addEventListener('input',sincronizarOrdemPegsInformada);
+document.getElementById('peg').addEventListener('change',sincronizarOrdemPegsInformada);
 let COLAGEM_EXTRACAO_PENDENTE=null;
 document.getElementById('input').addEventListener('paste',evento=>{
     const campo=evento.currentTarget;
@@ -3341,7 +3352,7 @@ function renderizarSeletorPegsTP(){
 function pesquisarPegTP(campo){renderizarSeletorPegsTP();document.getElementById('listaSeletorPegsTP').hidden=false;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded','true');}
 function teclasPesquisaPegTP(e){const lista=document.getElementById('listaSeletorPegsTP');if(e.key==='ArrowDown'){e.preventDefault();lista.hidden=false;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded','true');lista.querySelector('button')?.focus();}else if(e.key==='Enter'){e.preventDefault();if(lista.querySelectorAll('button').length===1)lista.querySelector('button').click();}else if(e.key==='Escape'){e.preventDefault();fecharListaPegsTP();}}
 function fecharListaPegsTP(){document.getElementById('listaSeletorPegsTP').hidden=true;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded','false');}
-function alternarListaPegsTP(){const lista=document.getElementById('listaSeletorPegsTP');lista.hidden=!lista.hidden;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded',String(!lista.hidden));if(!lista.hidden)lista.querySelector('[aria-selected="true"]')?.focus();}
+function alternarListaPegsTP(){sincronizarOrdemPegsInformada();const lista=document.getElementById('listaSeletorPegsTP');lista.hidden=!lista.hidden;document.getElementById('botaoSeletorPegTP').setAttribute('aria-expanded',String(!lista.hidden));if(!lista.hidden)lista.querySelector('[aria-selected="true"]')?.focus();}
 document.addEventListener('click',e=>{if(!e.target.closest('.seletor-pegs-tp'))fecharListaPegsTP();});
 
 function atualizarIndicadoresAnotacoesPeg() {
