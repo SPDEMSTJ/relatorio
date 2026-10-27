@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.23</p>
+    <p class="versao-relatorio">Versão 6.24</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -6093,7 +6093,7 @@ function temGlosaAuditoriaMedica(evento){return (evento?.glosas||[]).some(g=>/\b
 function criticaXthmInternacao(evento){
     const fator=numeroOuNulo(evento?.fatorXthm);
     const grau=normalizarAuditoria(evento?.grauDetalhado||evento?.grau||'').replace(/[^A-Z0-9]+/g,' ');
-    const procedimento=/^[1-4]\d{7}$/.test(codigoAuditoria(evento?.codigo))&&!gruposGrauParecer(grau).length&&!/\b(?:DIARIAS?|PACOTES?)\b|SERVICOS HOSPITALARES/.test(grau);
+    const procedimento=/^[1-4]\d{7}$/.test(codigoAuditoria(evento?.codigo))&&!gruposGrauParecer(grau).length&&!/\b(?:DIARIAS?|PACOTES?|EXAMES?|SADT|RADIOLOGIA|LABORATORIAIS|LABORATORIAL)\b|SERVICOS HOSPITALARES/.test(grau);
     return procedimento&&/INTERNACAO/.test(normalizarAuditoria(evento?.guia?.regime||''))&&fator!==null&&Math.abs(fator-1)<0.000001;
 }
 function avisoXthmInternacao(evento){return criticaXthmInternacao(evento)?'<span class="alerta-xthm-internacao">Regime de internação com xTHM 1,00 no Benner. Verificar a acomodação e o fator aplicado ao evento.</span>':'';}
