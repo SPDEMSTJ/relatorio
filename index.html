@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.22</p>
+    <p class="versao-relatorio">Versão 6.23</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1797,7 +1797,7 @@ function valoresCorrecao(l){
     return {retirar:retirar>1?retirar/100:0,adicionar:adicionar>1?adicionar/100:0};
 }
 function controleCorrecaoEvento(l){
-    const fracionado=possivelEventoFracionado(l.evento)?checkboxCorrecao('fracionado',l.guia,l.evento,'Possível evento fracionado: conferir unidade, quantidade e glosa'):'';
+    const fracionado=possivelEventoFracionado(l.evento)?checkboxCorrecao('fracionado',l.guia,l.evento,motivoCorrecaoFracionado(l.evento)):'';
     const cbo=alertaCboCarimbo(l.evento)?checkboxCorrecao('cbo',l.guia,l.evento,'Verificar CBO do executante e possível retirada da glosa'):'';
     const he=valoresCorrecaoHE(l),temHE=he&&(he.retirar||he.adicionar);
     const controleHE=temHE?checkboxCorrecao('he',l.guia,l.evento,he.retirar?'HE confirmado: retirar glosa do Benner':'HE confirmado: lançar diferença'):'',v=valoresCorrecao(l);
@@ -1822,7 +1822,7 @@ function montarSeletoresCorrecoesGuias(linhas){
         if(destino&&criticas.length&&!guiaIntegralmenteGlosada(g)){const div=document.createElement('div');div.className='seletores-correcao-guia';div.innerHTML=criticas.map(([tipo,motivo])=>checkboxCorrecao(tipo,g,null,motivo)).join('');destino.append(div);}
         for(const e of g.eventos){const row=[...card.querySelectorAll('tr[data-auditoria-id]')].find(r=>r.dataset.auditoriaId===e.id);if(!row)continue;
             const l=linhas.find(l=>l.evento.id===e.id);const div=document.createElement('div');div.className='selecao-correcao-evento';
-            div.innerHTML=l?controleCorrecaoEvento(l):possivelEventoFracionado(e)?checkboxCorrecao('fracionado',g,e,'Possível evento fracionado: conferir unidade, quantidade e glosa'):'';
+            div.innerHTML=l?controleCorrecaoEvento(l):possivelEventoFracionado(e)?checkboxCorrecao('fracionado',g,e,motivoCorrecaoFracionado(e)):'';
             let next=row.nextElementSibling;while(next&&!next.dataset.auditoriaId){if(next.classList.contains('alerta-parecer-grupo')&&!guiaIntegralmenteGlosada(g)){div.innerHTML+=checkboxCorrecao('parecer-grupo',g,e,next.classList.contains('alerta-parecer-parcial')?'Glosa parcial: conferir parecer técnico no SEI':'Sem glosa: conferir parecer técnico no SEI');break;}if(next.classList.contains('alerta-parecer-sei')&&!guiaIntegralmenteGlosada(g)){div.innerHTML+=checkboxCorrecao('parecer',g,e,'Sem glosa: conferir parecer técnico no SEI');break;}next=next.nextElementSibling;}
             if(div.innerHTML)row.cells[3]?.append(div);
         }
@@ -1932,8 +1932,9 @@ function textoRelatorioCorrecoes(peg){
             plural=correcao.replace('retirar a glosa','retirar as glosas');
         }
         else if(item.tipo==='fracionado'){
-            correcao='CORREÇÃO: Possível evento fracionado. Verificar a unidade de medida e a quantidade utilizada.';
-            plural='CORREÇÃO: Possíveis eventos fracionados. Verificar as unidades de medida e as quantidades utilizadas.';
+            const comprimido=possivelMedicamentoFracionadoComprimido(evento);
+            correcao='CORREÇÃO: '+motivoCorrecaoFracionado(evento);
+            plural=comprimido?'CORREÇÃO: Possíveis medicamentos fracionados por comprimido. Verificar a prescrição e as quantidades utilizadas.':'CORREÇÃO: Possíveis eventos fracionados. Verificar as unidades de medida e as quantidades utilizadas.';
             detalhes.push(`Unidade no Benner: ${evento.unidadeMedida} · Quantidade: ${evento.quantidade}.`, `Valor apresentado: ${valorBRL(evento.valorApresentado)} · Valor glosado: ${valorBRL(evento.valorGlosadoBenner)} · Valor pago: ${valorBRL(evento.valorPago)}.`);
         }
         else if(item.tipo==='parecer-grupo'){
@@ -6091,10 +6092,27 @@ document.addEventListener('keydown', event => {
 function temGlosaAuditoriaMedica(evento){return (evento?.glosas||[]).some(g=>/\bGLOSA DE AUDITORIA MEDICA\b/.test(normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ')));}
 function criticaXthmInternacao(evento){
     const fator=numeroOuNulo(evento?.fatorXthm);
-    return /INTERNACAO/.test(normalizarAuditoria(evento?.guia?.regime||''))&&fator!==null&&Math.abs(fator-1)<0.000001;
+    const grau=normalizarAuditoria(evento?.grauDetalhado||evento?.grau||'').replace(/[^A-Z0-9]+/g,' ');
+    const procedimento=/^[1-4]\d{7}$/.test(codigoAuditoria(evento?.codigo))&&!gruposGrauParecer(grau).length&&!/\b(?:DIARIAS?|PACOTES?)\b|SERVICOS HOSPITALARES/.test(grau);
+    return procedimento&&/INTERNACAO/.test(normalizarAuditoria(evento?.guia?.regime||''))&&fator!==null&&Math.abs(fator-1)<0.000001;
 }
 function avisoXthmInternacao(evento){return criticaXthmInternacao(evento)?'<span class="alerta-xthm-internacao">Regime de internação com xTHM 1,00 no Benner. Verificar a acomodação e o fator aplicado ao evento.</span>':'';}
+function condicoesGlosaFracionamento(evento){
+    if(!evento||temGlosaAuditoriaMedica(evento))return false;
+    const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
+    if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
+    const apresentado=centavosTabela(numeroAuditoria(evento.valorApresentado)),glosa=centavosTabela(numeroAuditoria(evento.valorGlosadoBenner)),pago=centavosTabela(numeroAuditoria(evento.valorPago));
+    return apresentado>0&&glosa>0&&pago>0&&glosa*10>=apresentado;
+}
+function possivelMedicamentoFracionadoComprimido(evento){
+    if(!condicoesGlosaFracionamento(evento)||numeroAuditoria(evento.quantidade)!==1)return false;
+    const descricao=normalizarAuditoria(evento.descricao||'');
+    return [...descricao.matchAll(/(?:^|[^A-Z0-9])(\d+)\s*(?:CPRS?|CP|COMPRIMIDOS?)(?=$|[^A-Z])/g)].some(m=>Number(m[1])>1);
+}
+function motivoCorrecaoFracionado(evento){return possivelMedicamentoFracionadoComprimido(evento)?'Possível medicamento fracionado por comprimido. Verificar a prescrição e a quantidade utilizada.':'Possível evento fracionado. Verificar a unidade de medida e a quantidade utilizada.';}
 function possivelEventoFracionado(evento){
+    if(!condicoesGlosaFracionamento(evento))return false;
+    if(possivelMedicamentoFracionadoComprimido(evento))return true;
     const unidade=normalizarAuditoria(evento?.unidadeMedida||'').replace(/[^A-Z0-9]+/g,' ').trim();
     if(!unidade)return false;
     const descricao=normalizarAuditoria(evento.descricao||'');
@@ -6106,11 +6124,7 @@ function possivelEventoFracionado(evento){
     const medidasUnicas=[...new Set(medidas.map(m=>Number(m[1].replace(',','.'))))];
     const quantidadeDivergente=medidasUnicas.length===1&&Math.abs(numeroAuditoria(evento.quantidade)-medidasUnicas[0])>0.000001;
     if(unidadeCorreta&&!quantidadeDivergente)return false;
-    if(temGlosaAuditoriaMedica(evento))return false;
-    const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
-    if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
-    const apresentado=centavosTabela(numeroAuditoria(evento.valorApresentado)),glosa=centavosTabela(numeroAuditoria(evento.valorGlosadoBenner));
-    return apresentado>0&&glosa>0&&glosa*10>=apresentado;
+    return true;
 }
 function eventosFracionadosAtuais(){
     const peg=pegDasAnotacoes();
@@ -6177,7 +6191,7 @@ function abrirEventosFracionados(){
     if(FILTRO_EVENTOS_FRACIONADOS){FILTRO_ITENS_SEM_GLOSA=false;atualizarFiltroItensSemGlosa();}
     atualizarListaEventosFracionados();
 }
-function avisoEventoFracionado(evento){return possivelEventoFracionado(evento)?'<span class="alerta-evento-fracionado">Possível evento fracionado. Verificar a unidade de medida e a quantidade utilizada.</span>':'';}
+function avisoEventoFracionado(evento){return possivelEventoFracionado(evento)?`<span class="alerta-evento-fracionado">${motivoCorrecaoFracionado(evento)}</span>`:'';}
 
 function atualizarAlertasNasGuias(linhas) {
     const porId = new Map(linhas.map(linha => [linha.evento.id, linha]));
