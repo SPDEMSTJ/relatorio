@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.27</p>
+    <p class="versao-relatorio">Versão 6.28</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -6110,7 +6110,7 @@ function criticaXthmInternacao(evento){
 function avisoXthmInternacao(evento){return criticaXthmInternacao(evento)?'<span class="alerta-xthm-internacao">Regime de internação com xTHM 1,00 no Benner. Verificar a acomodação e o fator aplicado ao evento.</span>':'';}
 function condicoesGlosaFracionamento(evento){
     if(!evento||temGlosaAuditoriaMedica(evento))return false;
-    if(/(?:^|[^A-Z])SERINGAS?(?=$|[^A-Z])/.test(normalizarAuditoria(evento.descricao||'')))return false;
+    if(/(?:^|[^A-Z])(?:SERINGAS?|EQUIPOS?|CATETER(?:ES)?)(?=$|[^A-Z])/.test(normalizarAuditoria(evento.descricao||'')))return false;
     const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
     if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
     const apresentado=centavosTabela(numeroAuditoria(evento.valorApresentado)),glosa=centavosTabela(numeroAuditoria(evento.valorGlosadoBenner)),pago=centavosTabela(numeroAuditoria(evento.valorPago));
