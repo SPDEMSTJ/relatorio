@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.28</p>
+    <p class="versao-relatorio">Versão 6.29</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2467,7 +2467,7 @@ function atualizarLinhasValidacaoPegs(){
 }
 function atualizarBotaoPegsValidados(){document.getElementById('botaoPegsValidados').textContent=`✓ PEGs validados (${listaCompletaPegsValidados().length})`;}
 function abrirPegsValidados(){renderizarPegsValidados();document.getElementById('popupPegsValidados').showModal();}
-function listaCompletaPegsValidados(){const hoje=diaValidacaoBrasilia();return Object.values(PEGS_VALIDADOS).filter(p=>p?.validadoEm&&diaValidacaoBrasilia(p.validadoEm)===hoje).sort((a,b)=>String(a.peg).localeCompare(String(b.peg),'pt-BR',{numeric:true}));}
+function listaCompletaPegsValidados(){const hoje=diaValidacaoBrasilia();return ordenarPegsParaTrabalho(Object.values(PEGS_VALIDADOS).filter(p=>p?.validadoEm&&diaValidacaoBrasilia(p.validadoEm)===hoje));}
 function atualizarBotaoValidarPegFinal(){
     const area=document.getElementById('acaoValidarPegFinal'),botao=document.getElementById('btnValidarPegFinal');if(!area||!botao)return;
     const peg=pegDasAnotacoes(),disponivel=Boolean(peg&&CATALOGO_PEGS.has(peg)&&PEGS_TRABALHO.has(peg));
@@ -2618,6 +2618,7 @@ function ordenarPegsParaTrabalho(pegs){
 }
 function sincronizarOrdemPegsInformada(){
     if(CATALOGO_PEGS.size)atualizarSeletorCatalogo();
+    if(document.getElementById('popupPegsValidados')?.open)renderizarPegsValidados();
     const dialogo=document.getElementById('selecaoPegsImportacao');
     if(dialogo?.open){
         SELECAO_IMPORTACAO_PEGS=ordenarPegsParaTrabalho(CATALOGO_PEGS.values());
