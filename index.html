@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.30</p>
+    <p class="versao-relatorio">Versão 6.31</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -6115,7 +6115,7 @@ function condicoesGlosaFracionamento(evento){
     const motivo='VALOR COBRADO MAIOR QUE O VALOR DA TABELA ACORDADA';
     if(!(evento.glosas||[]).some(g=>normalizarAuditoria(g.motivo||'').replace(/[^A-Z0-9]+/g,' ').trim()===motivo))return false;
     const apresentado=centavosTabela(numeroAuditoria(evento.valorApresentado)),glosa=centavosTabela(numeroAuditoria(evento.valorGlosadoBenner)),pago=centavosTabela(numeroAuditoria(evento.valorPago));
-    return apresentado>0&&glosa>0&&pago>0&&glosa*10>=apresentado;
+    return apresentado>0&&glosa>0&&pago>0&&glosa*2>=apresentado;
 }
 function possivelMedicamentoFracionadoComprimido(evento){
     if(!condicoesGlosaFracionamento(evento)||numeroAuditoria(evento.quantidade)!==1)return false;
