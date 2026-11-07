@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.29</p>
+    <p class="versao-relatorio">Versão 6.30</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -1928,7 +1928,7 @@ function textoRelatorioCorrecoes(peg){
         }
         else if(item.tipo==='cbo'){
             const identificacao=identificacaoCbosConferencia(guia);
-            correcao=`CORREÇÃO: Verificar o CBO do médico no Benner (${identificacao}) e, se cabível, retirar a glosa por especialidade cobrada divergente do carimbo médico.`;
+            correcao=`CORREÇÃO: Verificar o CBO do médico no Benner (${identificacao}) e, se cabível, retirar a glosa da consulta (${motivosGlosaConsultaCbo(evento).join('; ')}).`;
             plural=correcao.replace('retirar a glosa','retirar as glosas');
         }
         else if(item.tipo==='fracionado'){
@@ -6227,6 +6227,8 @@ function atualizarAlertasNasGuias(linhas) {
         if (!linha.referencia?.hospitalar && /\bSIRIO LIBANES\b/.test(normalizarAuditoria(linha.guia.prestador).replace(/[^A-Z0-9]+/g, ' '))) return;
         if (!(linha.excessoTabela > 0)) return;
         if (comGlosaBenner) return;
+        const consulta=/^10101/.test(codigoAuditoria(linha.evento.codigo))||/\bCONSULTAS?\b/.test(normalizarAuditoria(`${linha.evento.descricao||''} ${linha.referencia?.d||''}`));
+        if(consulta)return;
         const aviso = document.createElement('tr');
         aviso.className = 'alerta-preco-sem-glosa';
         aviso.setAttribute('aria-label', 'Alerta de possível preço acima da tabela sem glosa Benner');
@@ -6239,11 +6241,8 @@ function atualizarAlertasNasGuias(linhas) {
         const valorTabela = linha.categoria === 'Anestesia' ? linha.limiteReferencia : unitarioTabela === null ? linha.limiteReferencia
             : arredondarTabela(unitarioTabela * Math.max(numeroAuditoria(linha.evento.quantidade), 1) * multiplicadorInternacaoVisita(linha.evento) * multiplicadorHorarioEspecialConsulta(linha.evento), linha.evento.codigo);
         const limiteRegra = numeroOuNulo(linha.limiteReferencia);
-        const consulta = /^10101/.test(codigoAuditoria(linha.evento.codigo))
-            || /^CONSULTAS?\b/.test(normalizarAuditoria(linha.evento.descricao || linha.referencia?.d || ''));
 
         texto.textContent = `Evento com possível preço acima da tabela não glosado no benner · Valor da tabela${linha.referencia?.hospitalar ? ` hospitalar tipo ${linha.referencia.tipoHospital}` : ''}: ${valorBRL(valorTabela)}`
-            + (consulta ? ' - Verifique a especialidade e o CBO do profissional no Benner.' : '')
             + (limiteRegra !== null && Math.abs(limiteRegra - valorTabela) > 0.01 ? ` · Limite pela regra: ${valorBRL(limiteRegra)}` : '');
         row.insertAdjacentElement('afterend', aviso);
     });
@@ -6449,15 +6448,22 @@ function cbosConferenciaGuia(guia){
     return campos;
 }
 function identificacaoCbosConferencia(guia){return cbosConferenciaGuia(guia).map(c=>`${c.rotulo}: ${c.codigo}${c.descricao?' - '+c.descricao:''}`).join(' · ');}
+function motivosGlosaConsultaCbo(evento){
+    const textos=(evento.glosas||[]).map(g=>normalizarAuditoria(`${g.motivo||''} ${g.complemento||''}`).replace(/[^A-Z0-9]+/g,' ').trim());
+    const motivos=[];
+    if(textos.some(t=>/ESPECIALIDADE COBRADA DIVERGE DO CARIMBO MEDICO/.test(t)))motivos.push('especialidade cobrada divergente do carimbo médico');
+    if(textos.some(t=>/\bVALOR\b.*\bMAIOR\b/.test(t)))motivos.push('valor cobrado maior');
+    return motivos;
+}
 function alertaCboCarimbo(evento){
     const g=evento.guia;
     if(!cbosConferenciaGuia(g).length)return '';
     const consulta=/^10101/.test(codigoAuditoria(evento.codigo))||/\bCONSULTAS?\b/.test(normalizarAuditoria(evento.descricao||''));
     if(!consulta)return '';
-    const motivo=(evento.glosas||[]).some(glosa=>/ESPECIALIDADE COBRADA DIVERGE DO CARIMBO MEDICO/.test(normalizarAuditoria(`${glosa.motivo||''} ${glosa.complemento||''}`).replace(/[^A-Z0-9]+/g,' ').trim()));
+    const motivos=motivosGlosaConsultaCbo(evento);
     const glosado=numeroAuditoria(evento.valorGlosadoBenner)>0||(evento.glosas||[]).some(glosa=>numeroAuditoria(glosa.valor)>0);
-    if(!motivo||!glosado)return '';
-    return `Alerta: Verifique o CBO do médico no Benner e, se cabível, retire a glosa por divergência de especialidade. ${identificacaoCbosConferencia(g)}${g.profissionalExecutante?' · Profissional: '+g.profissionalExecutante:''}${g.conselhoExecutante?' · Conselho: '+g.conselhoExecutante:''}.`;
+    if(!motivos.length||!glosado)return '';
+    return `Alerta: Verifique o CBO do médico no Benner e, se cabível, retire a glosa da consulta (${motivos.join('; ')}). ${identificacaoCbosConferencia(g)}${g.profissionalExecutante?' · Profissional: '+g.profissionalExecutante:''}${g.conselhoExecutante?' · Conselho: '+g.conselhoExecutante:''}.`;
 }
 function atualizarAlertasCboCarimbo(){
     document.querySelectorAll('#saida .alerta-cbo-carimbo').forEach(e=>e.remove());
