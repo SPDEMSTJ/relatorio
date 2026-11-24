@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.33</p>
+    <p class="versao-relatorio">Versão 6.34</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -2527,9 +2527,24 @@ setInterval(()=>{
     if(document.getElementById('popupPegsValidados').open)renderizarPegsValidados();
 },30000);
 
+function normalizarLinhaExtracao(linha,totalColunas){
+    const c=linha.split('\t');
+    if(c.length<=totalColunas||!c[0]?.trim()||c[1]!==''||!/^\d+$/.test(c[3]||''))return linha;
+    const tipo=c[40],guia=/^[0124]$/.test(tipo||'')&&/^\d+$/.test(c[2]||'')&&/^\d{2}\/\d{2}\/\d{4}$/.test(c[4]||'');
+    const familia=tipo==='3'&&c[2]===''&&/^\d+$/.test(c[35]||'');
+    if(!guia&&!familia)return linha;
+    // Tabulação ao final do nome vira uma coluna vazia na cópia do SQL.
+    c.splice(1,1);
+    if(familia){
+        if(c.length>totalColunas&&c[45]===c[0]&&c[46]===''&&/^[SN]$/.test(c[47]||''))c.splice(46,1);
+        if(c.length>totalColunas&&c[51]===c[0]&&c[52]==='')c.splice(52,1);
+    }
+    return c.join('\t');
+}
 function indexarExtracaoPegs(texto){
     const registros=new Map();let atual='',cabecalho='';
-    const linhas=texto.replace(/^\uFEFF/,'').split(/\r?\n/),pegsPorHandleGuia=new Map();
+    const originais=texto.replace(/^\uFEFF/,'').split(/\r?\n/),totalColunas=originais[0].split('\t').length;
+    const linhas=originais.map(linha=>normalizarLinhaExtracao(linha,totalColunas)),pegsPorHandleGuia=new Map();
     // O SQL pode trazer cabeçalhos de PEGs diferentes antes dos respectivos eventos.
     for(const linha of linhas){const c=linha.split('\t',54);if(String(c[39]||'').trim()==='0'&&String(c[53]||'').trim())pegsPorHandleGuia.set(c[53].trim(),String(c[34]||'').trim());}
     for(const linha of linhas){
