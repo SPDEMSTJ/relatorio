@@ -1068,7 +1068,7 @@
 
 <div class="footer-security no-print">
     🔒 <span>Segurança:</span> O processamento é realizado 100% no seu navegador. Nenhum dado deste relatório é enviado para servidores externos.
-    <p class="versao-relatorio">Versão 6.34</p>
+    <p class="versao-relatorio">Versão 6.35</p>
 </div>
 
 <div id="boasVindas" class="onboarding-overlay no-print" role="dialog" aria-modal="true" aria-labelledby="boasVindasTitulo" hidden>
@@ -6198,7 +6198,10 @@ function atualizarListaEventosFracionados(){
     const itens=eventosFracionadosAtuais(),botao=document.getElementById('btnVerFracionados'),painel=document.getElementById('listaEventosFracionados');
     if(!botao||!painel)return;
     if(!itens.length)FILTRO_EVENTOS_FRACIONADOS=false;
-    botao.hidden=!itens.length;botao.textContent=FILTRO_EVENTOS_FRACIONADOS?`Mostrar todos os eventos (${itens.length} fracionados)`:`Ver eventos fracionados (${itens.length})`;
+    botao.hidden=!itens.length;botao.textContent=FILTRO_EVENTOS_FRACIONADOS?'Mostrar todos os eventos':`Ver eventos fracionados (${itens.length})`;
+    botao.style.background=FILTRO_EVENTOS_FRACIONADOS?'#166534':'linear-gradient(135deg,#ffb347,#f97316)';
+    botao.style.color=FILTRO_EVENTOS_FRACIONADOS?'#ffffff':'#351800';
+    botao.style.borderColor=FILTRO_EVENTOS_FRACIONADOS?'#14532d':'#ea880c';
     botao.setAttribute('aria-expanded',String(FILTRO_EVENTOS_FRACIONADOS));painel.hidden=!FILTRO_EVENTOS_FRACIONADOS;
     painel.querySelector('[data-total-fracionados]').textContent=`PEG ${pegDasAnotacoes()||'—'} · ${itens.length} possível(is) evento(s) fracionado(s), listados nas guias abaixo. A lista acompanha os filtros do relatório.`;
     const ids=new Set(itens.map(i=>i.evento.id));
